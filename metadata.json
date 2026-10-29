@@ -1,0 +1,6 @@
+{
+  "name": "PrintMax - Soluciones Kyocera en México",
+  "description": "Distribuidor autorizado y centro de distribución oficial de Kyocera Japón en México. Venta, renta, soporte técnico especializado y tienda en línea de multifuncionales A3/A4 e impresoras de alto rendimiento.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
