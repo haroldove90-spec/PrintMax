@@ -250,14 +250,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               {/* Checkout Button */}
               <button
                 onClick={onProceedToCheckout}
-                className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-sm tracking-wide shadow-xl shadow-blue-600/30 transition flex items-center justify-center space-x-2"
+                className="w-full py-3.5 px-4 rounded-xl bg-black hover:bg-neutral-900 active:bg-neutral-950 text-white font-bold text-sm tracking-wide border border-neutral-700 hover:border-blue-500 shadow-xl transition flex items-center justify-center space-x-2"
               >
                 <span>Proceder al Checkout</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-blue-500" />
               </button>
 
               <div className="flex items-center justify-center space-x-2 text-[11px] text-slate-500">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
                 <span>Factura CFDI 4.0 al confirmar su compra</span>
               </div>
             </div>

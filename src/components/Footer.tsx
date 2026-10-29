@@ -1,35 +1,43 @@
 import React from 'react';
 import { 
-  Printer, 
   ShieldCheck, 
   MapPin, 
   Phone, 
   Mail, 
   Clock, 
-  ArrowUp,
-  FileText
+  ArrowUp
 } from 'lucide-react';
+import { AppSection } from '../types';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onSelectSection: (section: AppSection) => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleNav = (section: AppSection) => {
+    onSelectSection(section);
+    scrollToTop();
+  };
+
   return (
-    <footer className="bg-[#090d14] text-white border-t border-slate-800 font-['Plus_Jakarta_Sans',sans-serif]">
+    <footer className="bg-black text-white border-t border-neutral-800 font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Upper Footer: Quick Support Banner */}
-      <div className="border-b border-slate-800/80 py-8 px-4 sm:px-6 lg:px-8 bg-[#0b1019]">
+      <div className="border-b border-neutral-800/80 py-8 px-4 sm:px-6 lg:px-8 bg-neutral-950">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-3 text-center md:text-left">
-            <div className="p-3 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="p-3 rounded-2xl bg-neutral-900 border border-neutral-800 text-blue-500">
+              <ShieldCheck className="w-6 h-6 text-blue-500" />
             </div>
             <div>
               <h4 className="text-sm sm:text-base font-bold text-white">
-                ¿Necesita asistencia técnica urgente para su multifuncional Kyocera?
+                ¿Necesita asistencia técnica o asesoría para su equipo Kyocera?
               </h4>
-              <p className="text-xs text-slate-400">
-                Garantizamos visita en menos de 24 horas a través de nuestra red de ingenieros certificados.
+              <p className="text-xs text-neutral-400">
+                Garantizamos respuesta en menos de 24 horas con refacciones originales y técnicos certificados.
               </p>
             </div>
           </div>
@@ -37,18 +45,18 @@ export const Footer: React.FC = () => {
           <div className="flex items-center space-x-3">
             <a
               href="tel:4448123000"
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center space-x-1.5"
+              className="px-4 py-2.5 rounded-xl bg-black hover:bg-neutral-900 text-white text-xs font-bold transition flex items-center space-x-1.5 border border-neutral-800"
             >
-              <Phone className="w-3.5 h-3.5 text-blue-400" />
+              <Phone className="w-3.5 h-3.5 text-blue-500" />
               <span>(444) 812-3000</span>
             </a>
             <a
-              href="https://wa.me/524448123000?text=Hola,%20solicito%20soporte%20tecnico%20urgente%20Kyocera"
+              href="https://wa.me/524448123000?text=Hola,%20solicito%20atencion%20Printmax%20Kyocera"
               target="_blank"
               rel="noreferrer"
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center space-x-1.5"
+              className="px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-bold transition flex items-center space-x-1.5 border border-neutral-700 hover:border-emerald-500"
             >
-              <span>WhatsApp de Soporte</span>
+              <span>WhatsApp de Atención</span>
             </a>
           </div>
         </div>
@@ -62,102 +70,92 @@ export const Footer: React.FC = () => {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center space-x-3">
               <img
-                src="https://appdesignproyectos.com/printmaxlogo.png"
-                alt="PrintMax Kyocera"
-                className="h-10 w-auto object-contain"
+                src="/printmaxlogo.png"
+                alt="Printmax"
+                className="h-10 sm:h-12 w-auto object-contain"
                 onError={(e) => {
-                  (e.currentTarget as HTMLElement).style.display = 'none';
+                  e.currentTarget.src = "https://appdesignproyectos.com/printmaxlogo.png";
                 }}
               />
-              <div>
-                <span className="text-xl font-black text-white">
-                  PRINT<span className="text-blue-500">MAX</span>
-                </span>
-                <span className="block text-[10px] text-slate-400 tracking-wider uppercase font-semibold">
-                  KM Corporación S.A. de C.V.
-                </span>
-              </div>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed font-light max-w-sm">
+            <p className="text-xs text-neutral-400 leading-relaxed font-light max-w-sm">
               Con más de tres décadas de experiencia en el mercado mexicano, somos distribuidores autorizados y centro de distribución oficial de Kyocera Japón, con base en San Luis Potosí y cobertura de servicio a nivel nacional.
             </p>
 
-            <div className="pt-2 text-xs text-slate-400 space-y-2">
+            <div className="pt-2 text-xs text-neutral-400 space-y-2">
               <div className="flex items-start space-x-2">
-                <MapPin className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                 <span>San Luis Potosí, S.L.P., México. C.P. 78230</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-blue-400 shrink-0" />
+                <Clock className="w-4 h-4 text-blue-500 shrink-0" />
                 <span>Lunes a Viernes: 09:00 a 18:00 hrs</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-blue-400 shrink-0" />
+                <Mail className="w-4 h-4 text-blue-500 shrink-0" />
                 <span>contacto@printmax.com.mx</span>
               </div>
             </div>
           </div>
 
-          {/* Col 3: Hardware */}
+          {/* Col 3: Secciones */}
           <div>
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-blue-500 pl-2">
-              Hardware Kyocera
+              Secciones
             </h4>
-            <ul className="space-y-2.5 text-xs text-slate-400">
-              <li><a href="#hardware" className="hover:text-blue-400 transition">Multifuncionales A3 Color</a></li>
-              <li><a href="#hardware" className="hover:text-blue-400 transition">Multifuncionales A3 B&N</a></li>
-              <li><a href="#hardware" className="hover:text-blue-400 transition">Multifuncionales A4 Compactos</a></li>
-              <li><a href="#hardware" className="hover:text-blue-400 transition">Impresoras Láser ECOSYS</a></li>
-              <li><a href="#hardware" className="hover:text-blue-400 transition">Inyección TASKalfa Pro</a></li>
-              <li><a href="#tienda" className="hover:text-blue-400 transition">Tóner Original Certificado</a></li>
+            <ul className="space-y-2.5 text-xs text-neutral-400">
+              <li><button onClick={() => handleNav('inicio')} className="hover:text-blue-400 transition text-left">Inicio & Slider</button></li>
+              <li><button onClick={() => handleNav('tienda')} className="hover:text-blue-400 transition text-left">Tienda en Línea</button></li>
+              <li><button onClick={() => handleNav('hardware')} className="hover:text-blue-400 transition text-left">Hardware & Equipos</button></li>
+              <li><button onClick={() => handleNav('renta')} className="hover:text-blue-400 transition text-left">Renta de Equipos</button></li>
+              <li><button onClick={() => handleNav('software')} className="hover:text-blue-400 transition text-left">Software Kyocera</button></li>
+              <li><button onClick={() => handleNav('soporte')} className="hover:text-blue-400 transition text-left">Soporte Técnico &lt; 24h</button></li>
             </ul>
           </div>
 
-          {/* Col 4: Soluciones & Renta */}
+          {/* Col 4: Hardware & Soluciones */}
           <div>
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-blue-500 pl-2">
-              Software & Renta
+              Equipos & Software
             </h4>
-            <ul className="space-y-2.5 text-xs text-slate-400">
-              <li><a href="#software" className="hover:text-blue-400 transition">KYOCERA Net Manager</a></li>
-              <li><a href="#software" className="hover:text-blue-400 transition">Control de Costos MyQ</a></li>
-              <li><a href="#software" className="hover:text-blue-400 transition">Fleet Services & Monitoreo</a></li>
-              <li><a href="#software" className="hover:text-blue-400 transition">DMConnect & OCR</a></li>
-              <li><a href="#renta" className="hover:text-blue-400 transition">Renta Deducible al 100%</a></li>
-              <li><a href="#renta" className="hover:text-blue-400 transition">Calculadora de Renta</a></li>
+            <ul className="space-y-2.5 text-xs text-neutral-400">
+              <li><button onClick={() => handleNav('hardware')} className="hover:text-blue-400 transition text-left">Multifuncionales A3 Color</button></li>
+              <li><button onClick={() => handleNav('hardware')} className="hover:text-blue-400 transition text-left">Multifuncionales A4 Compactos</button></li>
+              <li><button onClick={() => handleNav('tienda')} className="hover:text-blue-400 transition text-left">Tóner y Consumibles</button></li>
+              <li><button onClick={() => handleNav('software')} className="hover:text-blue-400 transition text-left">KYOCERA Net Manager</button></li>
+              <li><button onClick={() => handleNav('software')} className="hover:text-blue-400 transition text-left">Control de Costos MyQ</button></li>
+              <li><button onClick={() => handleNav('renta')} className="hover:text-blue-400 transition text-left">Simulador de Arrendamiento</button></li>
             </ul>
           </div>
 
-          {/* Col 5: Soporte & Legal */}
+          {/* Col 5: Empresa & Soporte */}
           <div>
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-blue-500 pl-2">
-              Soporte y Garantías
+              Empresa y Atención
             </h4>
-            <ul className="space-y-2.5 text-xs text-slate-400">
-              <li><a href="#soporte" className="hover:text-blue-400 transition">Asistencia Técnica &lt; 24h</a></li>
-              <li><a href="#soporte" className="hover:text-blue-400 transition">Póliza Anual de Mantenimiento</a></li>
-              <li><a href="#soporte" className="hover:text-blue-400 transition">Servicio en Taller SLP</a></li>
-              <li><a href="#tienda" className="hover:text-blue-400 transition">Facturación CFDI 4.0 SAT</a></li>
-              <li><a href="#contacto" className="hover:text-blue-400 transition">Aviso de Privacidad</a></li>
-              <li><a href="#contacto" className="hover:text-blue-400 transition">Términos de Garantía</a></li>
+            <ul className="space-y-2.5 text-xs text-neutral-400">
+              <li><button onClick={() => handleNav('nosotros')} className="hover:text-blue-400 transition text-left">Sobre Nosotros</button></li>
+              <li><button onClick={() => handleNav('soporte')} className="hover:text-blue-400 transition text-left">Póliza Anual de Mantenimiento</button></li>
+              <li><button onClick={() => handleNav('contacto')} className="hover:text-blue-400 transition text-left">Contacto Directo</button></li>
+              <li><button onClick={() => handleNav('tienda')} className="hover:text-blue-400 transition text-left">Facturación CFDI 4.0 SAT</button></li>
             </ul>
           </div>
 
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-12 mt-12 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+        <div className="pt-12 mt-12 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-400 gap-4">
           <div>
-            © {new Date().getFullYear()} KM Corporación / PrintMax. Todos los derechos reservados. Distribuidor Autorizado Kyocera Document Solutions Japón en México.
+            © {new Date().getFullYear()} Printmax / KM Corporación. Todos los derechos reservados. Distribuidor Autorizado Kyocera Japón en México.
           </div>
 
           <button
             onClick={scrollToTop}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 transition"
           >
             <span>Volver arriba</span>
-            <ArrowUp className="w-3.5 h-3.5" />
+            <ArrowUp className="w-3.5 h-3.5 text-blue-500" />
           </button>
         </div>
       </div>

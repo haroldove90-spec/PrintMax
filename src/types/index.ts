@@ -1,3 +1,13 @@
+export type AppSection = 
+  | 'inicio'
+  | 'tienda'
+  | 'hardware'
+  | 'renta'
+  | 'software'
+  | 'soporte'
+  | 'nosotros'
+  | 'contacto';
+
 export type ProductCategory = 
   | 'todos'
   | 'multifuncionales-a3'

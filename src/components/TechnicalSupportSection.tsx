@@ -40,26 +40,26 @@ export const TechnicalSupportSection: React.FC<TechnicalSupportSectionProps> = (
           </p>
         </div>
 
-        {/* 3 Modalities Grid */}
+        {/* 3 Modalities Grid with Black Background Cards and Blue Icons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {SERVICE_MODALITIES.map((mod, index) => {
             const Icon = modalityIcons[index] || Wrench;
             return (
               <div 
                 key={mod.title}
-                className="bg-white rounded-2xl p-7 border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-400 transition flex flex-col justify-between"
+                className="bg-black text-white rounded-3xl p-7 border border-neutral-800 shadow-xl hover:border-neutral-700 transition flex flex-col justify-between"
               >
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-5 border border-blue-100">
-                    <Icon className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 text-blue-500 flex items-center justify-center mb-5">
+                    <Icon className="w-6 h-6 text-blue-500" />
                   </div>
-                  <div className="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold text-blue-700 bg-blue-50 mb-2">
+                  <div className="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-neutral-900 border border-neutral-800 mb-2">
                     {mod.schedule}
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">
+                  <h3 className="text-lg font-bold text-white mb-2">
                     {mod.title}
                   </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                  <p className="text-xs text-neutral-400 leading-relaxed font-normal">
                     {mod.description}
                   </p>
                 </div>

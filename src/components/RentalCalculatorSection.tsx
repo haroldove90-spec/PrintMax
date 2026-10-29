@@ -70,23 +70,23 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
           </p>
         </div>
 
-        {/* 4 Benefits Cards */}
+        {/* 4 Benefits Cards with Black Background and Blue Icons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {RENTAL_PERKS.map((perk, i) => {
             const Icon = perkIcons[perk.icon] || CheckCircle2;
             return (
               <div 
                 key={i} 
-                className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-blue-400 hover:shadow-lg transition group flex flex-col justify-between"
+                className="p-6 rounded-2xl bg-black text-white border border-neutral-800 hover:border-neutral-700 hover:shadow-xl transition flex flex-col justify-between"
               >
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center mb-4 group-hover:scale-105 transition shadow-md shadow-blue-600/20">
-                    <Icon className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 text-blue-500 flex items-center justify-center mb-4">
+                    <Icon className="w-6 h-6 text-blue-500" />
                   </div>
-                  <h4 className="text-base font-bold text-slate-900 mb-2">
+                  <h4 className="text-base font-bold text-white mb-2">
                     {perk.title}
                   </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                  <p className="text-xs text-neutral-400 leading-relaxed font-normal">
                     {perk.description}
                   </p>
                 </div>

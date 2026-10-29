@@ -182,9 +182,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       onAddToCart(product, 'compra');
                       onClose();
                     }}
-                    className="py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/30"
+                    className="py-3 px-4 rounded-xl bg-black hover:bg-neutral-900 text-white font-bold text-xs sm:text-sm border border-neutral-700 hover:border-blue-500 transition flex items-center justify-center space-x-2 shadow-md"
                   >
-                    <ShoppingCart className="w-4 h-4" />
+                    <ShoppingCart className="w-4 h-4 text-blue-500" />
                     <span>Añadir a Carrito</span>
                   </button>
 

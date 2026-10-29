@@ -452,9 +452,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs sm:text-sm font-bold tracking-wide shadow-xl shadow-blue-600/30 transition flex items-center space-x-2 disabled:opacity-50"
+                  className="px-6 py-3 rounded-xl bg-black hover:bg-neutral-900 active:bg-neutral-950 text-white text-xs sm:text-sm font-bold tracking-wide border border-neutral-700 hover:border-blue-500 shadow-xl transition flex items-center space-x-2 disabled:opacity-50"
                 >
-                  <Lock className="w-4 h-4" />
+                  <Lock className="w-4 h-4 text-blue-500" />
                   <span>{isSubmitting ? 'Procesando Orden...' : 'Confirmar y Generar Pedido'}</span>
                 </button>
               </div>
