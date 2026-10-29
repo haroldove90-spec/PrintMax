@@ -6,7 +6,8 @@ export type AppSection =
   | 'software'
   | 'soporte'
   | 'nosotros'
-  | 'contacto';
+  | 'contacto'
+  | 'admin';
 
 export type ProductCategory = 
   | 'todos'
@@ -18,13 +19,13 @@ export type ProductCategory =
   | 'polizas';
 
 export interface ProductSpec {
-  velocidad: string; // e.g. "35 ppm B&N y Color"
-  formato: string; // e.g. "Hasta Doble Carta (11\" x 17\")"
-  resolucion: string; // e.g. "1200 x 1200 dpi"
-  cicloMensual: string; // e.g. "100,000 páginas"
-  capacidadPapel: string; // e.g. "1,150 a 7,150 hojas"
-  tipoTinta: string; // e.g. "Tóner microfino cerámico de larga duración"
-  conectividad: string[]; // ["Ethernet Gigabit", "USB 3.0", "Wi-Fi Direct", "Móvil"]
+  velocidad: string;
+  formato: string;
+  resolucion: string;
+  cicloMensual: string;
+  capacidadPapel: string;
+  tipoTinta: string;
+  conectividad: string[];
   duplex: boolean;
   red: boolean;
   color: boolean;
@@ -35,12 +36,12 @@ export interface ProductSpec {
 export interface Product {
   id: string;
   name: string;
-  code: string; // e.g. "TASKalfa 3554ci"
+  code: string;
   category: ProductCategory;
   categoryLabel: string;
-  price: number; // in MXN
-  rentalPriceMonthly?: number; // in MXN for leasing
-  badge?: string; // "Más Vendido", "A3 Pro", "Ecológico ECOSYS", "Nuevo"
+  price: number;
+  rentalPriceMonthly?: number;
+  badge?: string;
   shortDescription: string;
   description: string;
   image: string;
@@ -49,7 +50,7 @@ export interface Product {
   inStock: boolean;
   rating: number;
   reviewsCount: number;
-  originalRef?: string; // e.g. "Compatible con Tóner TK-8527"
+  originalRef?: string;
 }
 
 export interface CartItem {
@@ -57,6 +58,14 @@ export interface CartItem {
   quantity: number;
   acquisitionType: 'compra' | 'renta';
 }
+
+export type OrderStatus = 
+  | 'pendiente' 
+  | 'confirmado' 
+  | 'en_proceso' 
+  | 'enviado' 
+  | 'entregado' 
+  | 'cancelado';
 
 export interface OrderDetails {
   orderId: string;
@@ -76,6 +85,8 @@ export interface OrderDetails {
   shipping: number;
   total: number;
   date: string;
+  status: OrderStatus;
+  trackingNumber?: string;
   notes?: string;
 }
 
@@ -91,4 +102,48 @@ export interface HeroSlide {
   badgeText: string;
   imageUrl: string;
   features: string[];
+}
+
+export type AdminRole = 'super_admin' | 'admin_web' | 'admin_tienda';
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: AdminRole;
+  roleLabel: string;
+}
+
+export interface SiteContent {
+  slides: HeroSlide[];
+  trustMetrics: {
+    value: string;
+    label: string;
+    description: string;
+  }[];
+  about: {
+    headline: string;
+    subheadline: string;
+    queHacemosTitle: string;
+    queHacemosText: string;
+    sobreNosotrosTitle: string;
+    sobreNosotrosText1: string;
+    sobreNosotrosText2: string;
+    clientsCount: string;
+    experienceYears: string;
+  };
+  contact: {
+    phone: string;
+    tollFree: string;
+    salesEmail: string;
+    supportEmail: string;
+    address: string;
+    schedule: string;
+    whatsapp: string;
+  };
+  support: {
+    annualPolicyPrice: number;
+    responseTime: string;
+    modalitySchedule: string;
+  };
 }

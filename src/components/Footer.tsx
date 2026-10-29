@@ -139,6 +139,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
               <li><button onClick={() => handleNav('soporte')} className="hover:text-blue-400 transition text-left">Póliza Anual de Mantenimiento</button></li>
               <li><button onClick={() => handleNav('contacto')} className="hover:text-blue-400 transition text-left">Contacto Directo</button></li>
               <li><button onClick={() => handleNav('tienda')} className="hover:text-blue-400 transition text-left">Facturación CFDI 4.0 SAT</button></li>
+              <li><button onClick={() => handleNav('admin')} className="text-blue-400 hover:text-white font-semibold transition text-left flex items-center space-x-1"><span>Acceso Admin Autoadministrable →</span></button></li>
             </ul>
           </div>
 

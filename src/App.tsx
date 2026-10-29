@@ -15,8 +15,22 @@ import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { ProductComparatorModal } from './components/ProductComparatorModal';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AdminLoginModal } from './components/admin/AdminLoginModal';
+import { ProductFormModal } from './components/admin/ProductFormModal';
+import { OrderDetailModal } from './components/admin/OrderDetailModal';
 import { PRODUCTS } from './data/mockData';
-import { AppSection, CartItem, Product } from './types';
+import { INITIAL_SITE_CONTENT, INITIAL_ADMIN_USERS, INITIAL_ORDERS } from './data/initialContent';
+import { 
+  AppSection, 
+  CartItem, 
+  Product, 
+  SiteContent, 
+  AdminUser, 
+  AdminRole, 
+  OrderDetails, 
+  OrderStatus 
+} from './types';
 import { 
   MessageCircle, 
   Store, 
@@ -25,7 +39,6 @@ import {
   Cpu, 
   Clock, 
   Building2, 
-  PhoneCall, 
   ArrowRight, 
   ChevronRight, 
   ShieldCheck,
@@ -36,14 +49,88 @@ export default function App() {
   // Navigation: SEPARATE INDEPENDENT SECTIONS
   const [activeSection, setActiveSection] = useState<AppSection>(() => {
     const hash = window.location.hash.replace('#', '') as AppSection;
-    const validSections: AppSection[] = ['inicio', 'tienda', 'hardware', 'renta', 'software', 'soporte', 'nosotros', 'contacto'];
+    const validSections: AppSection[] = [
+      'inicio', 
+      'tienda', 
+      'hardware', 
+      'renta', 
+      'software', 
+      'soporte', 
+      'nosotros', 
+      'contacto',
+      'admin'
+    ];
     return validSections.includes(hash) ? hash : 'inicio';
   });
+
+  // ==========================================
+  // AUTO-ADMINISTRABLE PERSISTENT STATE
+  // ==========================================
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem('printmax_products');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return PRODUCTS;
+  });
+
+  const [orders, setOrders] = useState<OrderDetails[]>(() => {
+    try {
+      const saved = localStorage.getItem('printmax_orders');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return INITIAL_ORDERS;
+  });
+
+  const [siteContent, setSiteContent] = useState<SiteContent>(() => {
+    try {
+      const saved = localStorage.getItem('printmax_site_content');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return INITIAL_SITE_CONTENT;
+  });
+
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('printmax_current_admin');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return INITIAL_ADMIN_USERS[0]; // Default to Super Admin so user can test immediately
+  });
+
+  // Sync state changes to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('printmax_products', JSON.stringify(products));
+  }, [products]);
+
+  useEffect(() => {
+    localStorage.setItem('printmax_orders', JSON.stringify(orders));
+  }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem('printmax_site_content', JSON.stringify(siteContent));
+  }, [siteContent]);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('printmax_current_admin', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('printmax_current_admin');
+    }
+  }, [currentUser]);
 
   // Cart state
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
-      product: PRODUCTS[0], // TASKalfa 3554ci
+      product: products[0] || PRODUCTS[0],
       quantity: 1,
       acquisitionType: 'renta'
     }
@@ -51,13 +138,20 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  // Modal states
+  // Public modals
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [comparedProducts, setComparedProducts] = useState<Product[]>([
-    PRODUCTS[0],
-    PRODUCTS[2]
+    products[0] || PRODUCTS[0],
+    products[2] || PRODUCTS[2]
   ]);
   const [isComparatorOpen, setIsComparatorOpen] = useState(false);
+
+  // Admin modals
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
+  const [isProductFormOpen, setIsProductFormOpen] = useState(false);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
+  const [orderToInspect, setOrderToInspect] = useState<OrderDetails | null>(null);
 
   // Global search and prefill
   const [searchQuery, setSearchQuery] = useState('');
@@ -73,7 +167,17 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '') as AppSection;
-      const validSections: AppSection[] = ['inicio', 'tienda', 'hardware', 'renta', 'software', 'soporte', 'nosotros', 'contacto'];
+      const validSections: AppSection[] = [
+        'inicio', 
+        'tienda', 
+        'hardware', 
+        'renta', 
+        'software', 
+        'soporte', 
+        'nosotros', 
+        'contacto',
+        'admin'
+      ];
       if (validSections.includes(hash)) {
         setActiveSection(hash);
       }
@@ -127,6 +231,11 @@ export default function App() {
     setIsCheckoutOpen(true);
   };
 
+  // When customer completes checkout, register order into Admin Dashboard
+  const handleOrderCreated = (newOrder: OrderDetails) => {
+    setOrders((prev) => [newOrder, ...prev]);
+  };
+
   // Comparator Handlers
   const handleToggleCompare = (product: Product) => {
     setComparedProducts((prev) => {
@@ -163,6 +272,62 @@ export default function App() {
     navigateToSection('contacto');
   };
 
+  // ==========================================
+  // ADMIN DASHBOARD CRUD ACTIONS
+  // ==========================================
+  const handleSaveProduct = (product: Product) => {
+    setProducts((prev) => {
+      const existsIndex = prev.findIndex((p) => p.id === product.id);
+      if (existsIndex > -1) {
+        const copy = [...prev];
+        copy[existsIndex] = product;
+        return copy;
+      }
+      return [product, ...prev];
+    });
+    setIsProductFormOpen(false);
+    setProductToEdit(null);
+  };
+
+  const handleDeleteProduct = (productId: string) => {
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
+  };
+
+  const handleUpdateOrderStatus = (orderId: string, status: OrderStatus, trackingNumber?: string) => {
+    setOrders((prev) =>
+      prev.map((ord) => {
+        if (ord.orderId === orderId) {
+          return {
+            ...ord,
+            status,
+            trackingNumber: trackingNumber !== undefined ? trackingNumber : ord.trackingNumber
+          };
+        }
+        return ord;
+      })
+    );
+  };
+
+  const handleSaveSiteContent = (newContent: SiteContent) => {
+    setSiteContent(newContent);
+  };
+
+  const handleResetFactoryData = () => {
+    setProducts(PRODUCTS);
+    setOrders(INITIAL_ORDERS);
+    setSiteContent(INITIAL_SITE_CONTENT);
+    setCurrentUser(INITIAL_ADMIN_USERS[0]);
+    localStorage.removeItem('printmax_products');
+    localStorage.removeItem('printmax_orders');
+    localStorage.removeItem('printmax_site_content');
+    localStorage.removeItem('printmax_current_admin');
+  };
+
+  const handleChangeAdminRole = (role: AdminRole) => {
+    const userForRole = INITIAL_ADMIN_USERS.find((u) => u.role === role) || INITIAL_ADMIN_USERS[0];
+    setCurrentUser(userForRole);
+  };
+
   const sectionTitles: Record<AppSection, string> = {
     inicio: 'Inicio',
     tienda: 'Tienda en Línea',
@@ -171,22 +336,31 @@ export default function App() {
     software: 'Software Kyocera',
     soporte: 'Soporte Técnico Especializado < 24h',
     nosotros: 'Sobre Nosotros & Qué Hacemos',
-    contacto: 'Contacto & Asesoría Directa'
+    contacto: 'Contacto & Asesoría Directa',
+    admin: 'Panel de Control (Admin Autoadministrable)'
   };
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-['Plus_Jakarta_Sans',sans-serif] selection:bg-black selection:text-white">
-      {/* Header (Black, responsive with logo and section navigation) */}
+      {/* Header (Black, responsive with logo, full clean navigation and cart) */}
       <Header
         activeSection={activeSection}
         onSelectSection={navigateToSection}
         cartItems={cartItems}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenQuickQuote={() => navigateToSection('renta')}
+        onOpenAdmin={() => {
+          if (activeSection === 'admin') {
+            navigateToSection('inicio');
+          } else {
+            navigateToSection('admin');
+          }
+        }}
+        currentUser={currentUser}
       />
 
       {/* Breadcrumb Navigation when viewing an internal separate section */}
-      {activeSection !== 'inicio' && (
+      {activeSection !== 'inicio' && activeSection !== 'admin' && (
         <div className="bg-neutral-950 text-white border-b border-neutral-800 py-3 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto flex items-center justify-between text-xs">
             <div className="flex items-center space-x-2 text-neutral-400">
@@ -214,15 +388,21 @@ export default function App() {
 
       {/* MAIN VIEW: RENDERS ONLY THE ACTIVE INDEPENDENT SECTION */}
       <main className="flex-1">
+        {/* ========================================================= */}
+        {/* 1. SECCIÓN INDEPENDIENTE: INICIO CON SLIDER Y CMS VIVO */}
+        {/* ========================================================= */}
         {activeSection === 'inicio' && (
           <div>
-            {/* 1. Slider Principal (3 slides) */}
-            <HeroSlider onNavigate={navigateToSection} />
+            {/* Slider Principal con textos dinámicos del CMS */}
+            <HeroSlider 
+              onNavigate={navigateToSection} 
+              slides={siteContent.slides}
+            />
 
-            {/* 2. Métricas de Experiencia */}
-            <TrustStats />
+            {/* Métricas de Experiencia dinámicas */}
+            <TrustStats metrics={siteContent.trustMetrics} />
 
-            {/* 3. Portales Rápidos a las Secciones Separadas */}
+            {/* Portales Rápidos a las Secciones Separadas */}
             <section className="py-16 bg-white border-b border-slate-200">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-2xl mx-auto mb-12">
@@ -375,20 +555,24 @@ export default function App() {
           </div>
         )}
 
+        {/* ========================================================= */}
         {/* 2. SECCIÓN INDEPENDIENTE: TIENDA EN LÍNEA */}
+        {/* ========================================================= */}
         {activeSection === 'tienda' && (
           <OnlineStoreSection
-            products={PRODUCTS}
+            products={products}
             onAddToCart={handleAddToCart}
             onOpenProductDetail={(prod) => setSelectedProduct(prod)}
             initialSearchQuery={searchQuery}
           />
         )}
 
+        {/* ========================================================= */}
         {/* 3. SECCIÓN INDEPENDIENTE: HARDWARE & EQUIPOS */}
+        {/* ========================================================= */}
         {activeSection === 'hardware' && (
           <HardwareCatalog
-            products={PRODUCTS}
+            products={products}
             onAddToCart={handleAddToCart}
             onOpenProductDetail={(prod) => setSelectedProduct(prod)}
             comparedProducts={comparedProducts}
@@ -397,46 +581,99 @@ export default function App() {
           />
         )}
 
+        {/* ========================================================= */}
         {/* 4. SECCIÓN INDEPENDIENTE: RENTA DE EQUIPOS */}
+        {/* ========================================================= */}
         {activeSection === 'renta' && (
           <RentalCalculatorSection
             onQuoteRental={handleQuoteRentalCalculation}
           />
         )}
 
+        {/* ========================================================= */}
         {/* 5. SECCIÓN INDEPENDIENTE: SOFTWARE KYOCERA */}
+        {/* ========================================================= */}
         {activeSection === 'software' && (
           <SoftwareSolutionsSection
             onOpenConsultation={handleConsultation}
           />
         )}
 
+        {/* ========================================================= */}
         {/* 6. SECCIÓN INDEPENDIENTE: SOPORTE TÉCNICO Y PÓLIZAS */}
+        {/* ========================================================= */}
         {activeSection === 'soporte' && (
           <TechnicalSupportSection
             onSelectPolicy={(policyName) => handleConsultation(`Contratación de: ${policyName}`)}
           />
         )}
 
+        {/* ========================================================= */}
         {/* 7. SECCIÓN INDEPENDIENTE: SOBRE NOSOTROS & QUÉ HACEMOS */}
+        {/* ========================================================= */}
         {activeSection === 'nosotros' && (
           <div>
-            <AboutSection />
+            <AboutSection 
+              content={siteContent.about} 
+              onNavigate={navigateToSection}
+            />
             <CoverageMapSection />
           </div>
         )}
 
+        {/* ========================================================= */}
         {/* 8. SECCIÓN INDEPENDIENTE: CONTACTO & COTIZACIONES */}
+        {/* ========================================================= */}
         {activeSection === 'contacto' && (
           <div>
-            <ContactSection prefilledSubject={prefilledContactSubject} />
+            <ContactSection 
+              prefilledSubject={prefilledContactSubject} 
+              contactInfo={siteContent.contact}
+            />
             <CoverageMapSection />
           </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* 9. SECCIÓN INDEPENDIENTE: PANEL DE CONTROL ADMINISTRATIVO */}
+        {/* ========================================================= */}
+        {activeSection === 'admin' && (
+          <AdminDashboard
+            currentUser={currentUser || INITIAL_ADMIN_USERS[0]}
+            onLogout={() => {
+              setCurrentUser(null);
+              setIsAdminLoginOpen(true);
+            }}
+            onExitToPublicSite={() => navigateToSection('inicio')}
+            products={products}
+            onSaveProduct={handleSaveProduct}
+            onDeleteProduct={handleDeleteProduct}
+            orders={orders}
+            onUpdateOrderStatus={handleUpdateOrderStatus}
+            siteContent={siteContent}
+            onSaveSiteContent={handleSaveSiteContent}
+            onResetFactoryData={handleResetFactoryData}
+            onOpenNewProductModal={() => {
+              setProductToEdit(null);
+              setIsProductFormOpen(true);
+            }}
+            onOpenEditProductModal={(prod) => {
+              setProductToEdit(prod);
+              setIsProductFormOpen(true);
+            }}
+            onOpenOrderDetailModal={(ord) => {
+              setOrderToInspect(ord);
+              setIsOrderDetailOpen(true);
+            }}
+            onChangeRole={handleChangeAdminRole}
+          />
         )}
       </main>
 
       {/* Footer Corporativo */}
-      <Footer onSelectSection={navigateToSection} />
+      {activeSection !== 'admin' && (
+        <Footer onSelectSection={navigateToSection} />
+      )}
 
       {/* Modals & Drawers */}
       <CartDrawer
@@ -453,6 +690,7 @@ export default function App() {
         onClose={() => setIsCheckoutOpen(false)}
         items={cartItems}
         onClearCart={handleClearCart}
+        onOrderCreated={handleOrderCreated}
       />
 
       <ProductDetailModal
@@ -473,40 +711,75 @@ export default function App() {
         onAddToCart={handleAddToCart}
       />
 
-      {/* Floating Shopping Cart Button (Always accessible) */}
-      <aside aria-label="Carrito flotante" className="fixed bottom-22 right-6 z-40">
-        <button
-          onClick={() => setIsCartOpen(true)}
-          className="group relative flex items-center space-x-2 bg-black hover:bg-neutral-900 active:bg-neutral-950 text-white p-3.5 sm:px-4 sm:py-3 rounded-full border border-neutral-700 hover:border-blue-500 shadow-2xl transition transform hover:scale-105"
-          title="Ver Carrito de Compras"
-        >
-          <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 shrink-0" />
-          <span className="hidden sm:inline text-xs font-bold tracking-wide">
-            Carrito ({cartItems.reduce((acc, it) => acc + it.quantity, 0)})
-          </span>
-          {cartItems.reduce((acc, it) => acc + it.quantity, 0) > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-blue-600/50 animate-bounce">
-              {cartItems.reduce((acc, it) => acc + it.quantity, 0)}
+      {/* Admin Specific Modals */}
+      <AdminLoginModal
+        isOpen={isAdminLoginOpen}
+        onClose={() => setIsAdminLoginOpen(false)}
+        currentUser={currentUser}
+        onLogin={(user) => {
+          setCurrentUser(user);
+          navigateToSection('admin');
+        }}
+      />
+
+      <ProductFormModal
+        isOpen={isProductFormOpen}
+        onClose={() => {
+          setIsProductFormOpen(false);
+          setProductToEdit(null);
+        }}
+        productToEdit={productToEdit}
+        onSave={handleSaveProduct}
+      />
+
+      <OrderDetailModal
+        isOpen={isOrderDetailOpen}
+        onClose={() => {
+          setIsOrderDetailOpen(false);
+          setOrderToInspect(null);
+        }}
+        order={orderToInspect}
+        onUpdateStatus={handleUpdateOrderStatus}
+      />
+
+      {/* Floating Shopping Cart Button (Always accessible on public sections) */}
+      {activeSection !== 'admin' && (
+        <aside aria-label="Carrito flotante" className="fixed bottom-22 right-6 z-40">
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="group relative flex items-center space-x-2 bg-black hover:bg-neutral-900 active:bg-neutral-950 text-white p-3.5 sm:px-4 sm:py-3 rounded-full border border-neutral-700 hover:border-blue-500 shadow-2xl transition transform hover:scale-105"
+            title="Ver Carrito de Compras"
+          >
+            <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 shrink-0" />
+            <span className="hidden sm:inline text-xs font-bold tracking-wide">
+              Carrito ({cartItems.reduce((acc, it) => acc + it.quantity, 0)})
             </span>
-          )}
-        </button>
-      </aside>
+            {cartItems.reduce((acc, it) => acc + it.quantity, 0) > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-blue-600/50 animate-bounce">
+                {cartItems.reduce((acc, it) => acc + it.quantity, 0)}
+              </span>
+            )}
+          </button>
+        </aside>
+      )}
 
       {/* Floating WhatsApp Action Button */}
-      <aside aria-label="Contacto rápido" className="fixed bottom-6 right-6 z-40">
-        <a
-          href="https://wa.me/524448123000?text=Hola,%20me%20comunico%20desde%20la%20pagina%20web%20de%20PrintMax%20Kyocera%20para%20solicitar%20asesoria."
-          target="_blank"
-          rel="noreferrer"
-          className="group flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-2xl shadow-emerald-600/40 transition transform hover:scale-105"
-          title="Atención directa por WhatsApp"
-        >
-          <MessageCircle className="w-6 h-6 shrink-0" />
-          <span className="hidden sm:inline text-xs font-bold tracking-wide">
-            WhatsApp Asesor Kyocera
-          </span>
-        </a>
-      </aside>
+      {activeSection !== 'admin' && (
+        <aside aria-label="Contacto rápido" className="fixed bottom-6 right-6 z-40">
+          <a
+            href={`https://wa.me/${siteContent.contact.whatsapp}?text=Hola,%20me%20comunico%20desde%20la%20pagina%20web%20de%20PrintMax%20Kyocera%20para%20solicitar%20asesoria.`}
+            target="_blank"
+            rel="noreferrer"
+            className="group flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-2xl shadow-emerald-600/40 transition transform hover:scale-105"
+            title="Atención directa por WhatsApp"
+          >
+            <MessageCircle className="w-6 h-6 shrink-0" />
+            <span className="hidden sm:inline text-xs font-bold tracking-wide">
+              WhatsApp Asesor Kyocera
+            </span>
+          </a>
+        </aside>
+      )}
     </div>
   );
 }

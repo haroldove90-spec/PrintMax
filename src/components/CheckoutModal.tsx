@@ -20,13 +20,15 @@ interface CheckoutModalProps {
   onClose: () => void;
   items: CartItem[];
   onClearCart: () => void;
+  onOrderCreated?: (order: OrderDetails) => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
   onClose,
   items,
-  onClearCart
+  onClearCart,
+  onOrderCreated
 }) => {
   const [formData, setFormData] = useState({
     customerName: '',
@@ -82,12 +84,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         shipping,
         total,
         date: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        status: 'pendiente',
         notes: formData.notes
       };
 
       setConfirmedOrder(order);
       setIsSubmitting(false);
       onClearCart();
+      if (onOrderCreated) {
+        onOrderCreated(order);
+      }
     }, 1200);
   };
 

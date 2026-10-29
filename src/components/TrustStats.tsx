@@ -1,15 +1,21 @@
 import React from 'react';
 import { Award, Users, Clock, ShieldCheck, CheckCircle } from 'lucide-react';
+import { SiteContent } from '../types';
 import { TRUST_METRICS } from '../data/mockData';
 
-export const TrustStats: React.FC = () => {
+interface TrustStatsProps {
+  metrics?: SiteContent['trustMetrics'];
+}
+
+export const TrustStats: React.FC<TrustStatsProps> = ({ metrics }) => {
+  const activeMetrics = metrics && metrics.length > 0 ? metrics : TRUST_METRICS;
   const iconMap = [Award, Users, Clock, ShieldCheck];
 
   return (
     <section className="bg-white border-b border-slate-200 py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {TRUST_METRICS.map((metric, index) => {
+          {activeMetrics.map((metric: { value: string; label: string; description: string }, index: number) => {
             const Icon = iconMap[index] || CheckCircle;
             return (
               <div 

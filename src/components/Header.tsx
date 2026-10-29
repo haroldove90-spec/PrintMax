@@ -11,9 +11,10 @@ import {
   Clock,
   Building2,
   PhoneCall,
-  Home
+  Home,
+  ShieldCheck
 } from 'lucide-react';
-import { AppSection, CartItem } from '../types';
+import { AppSection, CartItem, AdminUser } from '../types';
 
 interface HeaderProps {
   activeSection: AppSection;
@@ -21,6 +22,8 @@ interface HeaderProps {
   cartItems: CartItem[];
   onOpenCart: () => void;
   onOpenQuickQuote: () => void;
+  onOpenAdmin: () => void;
+  currentUser?: AdminUser | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -28,7 +31,9 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectSection,
   cartItems,
   onOpenCart,
-  onOpenQuickQuote
+  onOpenQuickQuote,
+  onOpenAdmin,
+  currentUser
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -116,6 +121,22 @@ export const Header: React.FC<HeaderProps> = ({
               <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
             </button>
 
+            {/* Admin Portal Button */}
+            <button
+              onClick={onOpenAdmin}
+              className={`p-2.5 rounded-xl border transition flex items-center justify-center space-x-1.5 shadow-sm ${
+                activeSection === 'admin'
+                  ? 'bg-neutral-800 text-white border-blue-500/80 ring-1 ring-blue-500'
+                  : 'bg-neutral-900 hover:bg-black text-neutral-300 hover:text-white border-neutral-800 hover:border-neutral-700'
+              }`}
+              title="Panel de Control Autoadministrable (Admin Web y Tienda)"
+            >
+              <ShieldCheck className="w-5 h-5 text-blue-500" />
+              <span className="hidden xl:inline text-xs font-bold text-neutral-200">
+                {activeSection === 'admin' ? 'Dashboard' : 'Admin'}
+              </span>
+            </button>
+
             {/* Mobile Hamburger Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -161,7 +182,7 @@ export const Header: React.FC<HeaderProps> = ({
             })}
           </div>
 
-          <div className="pt-3 border-t border-neutral-800">
+          <div className="pt-3 border-t border-neutral-800 space-y-2">
             <button
               onClick={() => {
                 onSelectSection('renta');
@@ -171,6 +192,17 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <span>Cotizar Renta de Equipos</span>
               <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
+            </button>
+
+            <button
+              onClick={() => {
+                onOpenAdmin();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full py-2.5 bg-neutral-950 text-white rounded-xl text-xs font-bold uppercase tracking-wider border border-neutral-800 text-center flex items-center justify-center space-x-2"
+            >
+              <ShieldCheck className="w-4 h-4 text-blue-500" />
+              <span>Panel de Control (Admin)</span>
             </button>
           </div>
         </div>

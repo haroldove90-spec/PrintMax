@@ -1,22 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
+import { AppSection, HeroSlide } from '../types';
 import { HERO_SLIDES } from '../data/mockData';
-import { AppSection } from '../types';
 
 interface HeroSliderProps {
   onNavigate: (section: AppSection) => void;
+  slides?: HeroSlide[];
 }
 
-export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
+export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) => {
+  const activeSlides = slides && slides.length > 0 ? slides : HERO_SLIDES;
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-  }, []);
+    setCurrentSlide((prev) => (prev + 1) % activeSlides.length);
+  }, [activeSlides.length]);
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
+    setCurrentSlide((prev) => (prev - 1 + activeSlides.length) % activeSlides.length);
   };
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
     >
       {/* Slide Images & Overlays */}
       <div className="relative min-h-[560px] lg:min-h-[620px] flex items-center">
-        {HERO_SLIDES.map((slide, index) => {
+        {activeSlides.map((slide: HeroSlide, index: number) => {
           const isActive = index === currentSlide;
           return (
             <div
@@ -67,24 +69,24 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
             {/* Tag / Category Badge */}
             <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-neutral-900/90 border border-neutral-700 text-neutral-200 text-xs sm:text-sm font-semibold mb-6 backdrop-blur-md">
               <Sparkles className="w-4 h-4 text-blue-500" />
-              <span>{HERO_SLIDES[currentSlide].tag}</span>
+              <span>{activeSlides[currentSlide].tag}</span>
               <span className="text-white/30">•</span>
-              <span className="text-blue-400 font-normal">{HERO_SLIDES[currentSlide].badgeText}</span>
+              <span className="text-blue-400 font-normal">{activeSlides[currentSlide].badgeText}</span>
             </div>
 
             {/* Slide Title */}
             <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white tracking-tight leading-[1.12] mb-6">
-              {HERO_SLIDES[currentSlide].title}
+              {activeSlides[currentSlide].title}
             </h1>
 
             {/* Subtitle */}
             <p className="text-lg sm:text-xl text-neutral-300 leading-relaxed font-light mb-8 max-w-2xl">
-              {HERO_SLIDES[currentSlide].subtitle}
+              {activeSlides[currentSlide].subtitle}
             </p>
 
             {/* Feature Bullets */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
-              {HERO_SLIDES[currentSlide].features.map((feat, idx) => (
+              {activeSlides[currentSlide].features.map((feat: string, idx: number) => (
                 <div key={idx} className="flex items-start space-x-2.5">
                   <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                   <span className="text-sm text-neutral-200 font-medium">{feat}</span>
@@ -98,7 +100,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
                 onClick={() => onNavigate(getSlideNavigationTarget(currentSlide, true))}
                 className="inline-flex items-center space-x-2.5 bg-black hover:bg-neutral-900 text-white px-7 py-3.5 rounded-xl font-bold text-sm tracking-wide border border-neutral-700 hover:border-blue-500 transition shadow-xl transform hover:-translate-y-0.5"
               >
-                <span>{HERO_SLIDES[currentSlide].ctaPrimaryText}</span>
+                <span>{activeSlides[currentSlide].ctaPrimaryText}</span>
                 <ArrowRight className="w-4 h-4 text-blue-500" />
               </button>
 
@@ -106,7 +108,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
                 onClick={() => onNavigate(getSlideNavigationTarget(currentSlide, false))}
                 className="inline-flex items-center space-x-2 bg-neutral-900/90 hover:bg-black text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700 px-6 py-3.5 rounded-xl font-semibold text-sm transition"
               >
-                <span>{HERO_SLIDES[currentSlide].ctaSecondaryText}</span>
+                <span>{activeSlides[currentSlide].ctaSecondaryText}</span>
               </button>
             </div>
           </div>
@@ -131,7 +133,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
 
         {/* Bottom Slide Indicators */}
         <div className="absolute bottom-6 left-0 right-0 z-30 flex justify-center items-center space-x-3">
-          {HERO_SLIDES.map((slide, index) => (
+          {activeSlides.map((slide: HeroSlide, index: number) => (
             <button
               key={slide.id}
               onClick={() => setCurrentSlide(index)}

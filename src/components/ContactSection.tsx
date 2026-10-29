@@ -11,13 +11,24 @@ import {
   HelpCircle
 } from 'lucide-react';
 
+import { SiteContent } from '../types';
+
 interface ContactSectionProps {
   prefilledSubject?: string;
+  contactInfo?: SiteContent['contact'];
 }
 
 export const ContactSection: React.FC<ContactSectionProps> = ({
-  prefilledSubject = ''
+  prefilledSubject = '',
+  contactInfo
 }) => {
+  const phone = contactInfo?.phone || "(444) 812-3000";
+  const tollFree = contactInfo?.tollFree || "01 800 KYOCERA";
+  const salesEmail = contactInfo?.salesEmail || "ventas@kmcorporacion.com.mx";
+  const supportEmail = contactInfo?.supportEmail || "soporte@printmax.com.mx";
+  const address = contactInfo?.address || "Av. Venustiano Carranza #1450, Col. Tequisquiapan, San Luis Potosí, S.L.P. C.P. 78230";
+  const schedule = contactInfo?.schedule || "Lunes a Viernes de 09:00 a 18:00 hrs";
+  const whatsapp = contactInfo?.whatsapp || "524448123000";
   const [formData, setFormData] = useState({
     name: '',
     company: '',
@@ -95,7 +106,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   </div>
                   <div className="text-xs">
                     <span className="font-bold text-white block">Oficinas y Taller Central:</span>
-                    <span className="text-slate-300">San Luis Potosí, S.L.P., México. Cobertura en toda la República Mexicana.</span>
+                    <span className="text-slate-300">{address}</span>
                   </div>
                 </div>
 
@@ -105,10 +116,10 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   </div>
                   <div className="text-xs">
                     <span className="font-bold text-white block">Líneas Telefónicas Directas:</span>
-                    <a href="tel:4448123000" className="text-blue-400 hover:underline block font-semibold">
-                      (444) 812-3000
+                    <a href={`tel:${phone.replace(/\D/g, '')}`} className="text-blue-400 hover:underline block font-semibold">
+                      {phone}
                     </a>
-                    <span className="text-slate-400">Línea sin costo: 800 KYOCERA-MX</span>
+                    <span className="text-slate-400">Línea sin costo: {tollFree}</span>
                   </div>
                 </div>
 
@@ -118,8 +129,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   </div>
                   <div className="text-xs">
                     <span className="font-bold text-white block">Correos Corporativos:</span>
-                    <span className="text-slate-300 block">ventas@kmcorporacion.com.mx</span>
-                    <span className="text-slate-400">soporte@printmax.com.mx</span>
+                    <span className="text-slate-300 block">{salesEmail}</span>
+                    <span className="text-slate-400">{supportEmail}</span>
                   </div>
                 </div>
 
@@ -129,7 +140,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   </div>
                   <div className="text-xs">
                     <span className="font-bold text-white block">Horarios de Asistencia:</span>
-                    <span className="text-slate-300">Lunes a Viernes: 09:00 a 18:00 hrs</span>
+                    <span className="text-slate-300">{schedule}</span>
                   </div>
                 </div>
               </div>
@@ -138,7 +149,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
             {/* Direct WhatsApp Callout */}
             <div className="relative z-10 pt-6 mt-6 border-t border-slate-800">
               <a
-                href="https://wa.me/524448123000?text=Hola,%20deseo%20asesoria%20sobre%20impresoras%20y%20multifuncionales%20Kyocera"
+                href={`https://wa.me/${whatsapp}?text=Hola,%20deseo%20asesoria%20sobre%20impresoras%20y%20multifuncionales%20Kyocera`}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs sm:text-sm text-center flex items-center justify-center space-x-2 transition shadow-lg shadow-emerald-600/30"

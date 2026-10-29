@@ -11,7 +11,22 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-export const AboutSection: React.FC = () => {
+import { SiteContent, AppSection } from '../types';
+
+interface AboutSectionProps {
+  content?: SiteContent['about'];
+  onNavigate?: (section: AppSection) => void;
+}
+
+export const AboutSection: React.FC<AboutSectionProps> = ({ content, onNavigate }) => {
+  const headline = content?.headline || "Tres Décadas de Liderazgo en Gestión Documental";
+  const subheadline = content?.subheadline || "Con base central en San Luis Potosí y cobertura a nivel nacional, respaldamos a más de 2,000 empresas con tecnología de impresión y soporte técnico especializado.";
+  const queHacemosText = content?.queHacemosText || "Impulsamos la calidad, eficiencia y productividad en cada uno de sus procesos de gestión documental. Nos apasiona optimizar el rendimiento de su infraestructura tecnológica, por lo que ponemos a su disposición la venta, renta y soporte técnico especializado de equipos Kyocera.";
+  const sobreNosotrosText1 = content?.sobreNosotrosText1 || "Creemos firmemente que el motor de nuestro crecimiento como empresa y como personas es la absoluta satisfacción de cada cliente. Somos un centro de distribución oficial de Kyocera en México con sede en San Luis Potosí y más de dos décadas de trayectoria en el mercado.";
+  const sobreNosotrosText2 = content?.sobreNosotrosText2 || "Como representantes líderes en el sector de la impresión digital, respaldamos a una cartera de más de 2,000 clientes a nivel nacional con servicios de renta, venta y soporte técnico especializado.";
+  const clientsCount = content?.clientsCount || "+2,000";
+  const experienceYears = content?.experienceYears || "+30";
+
   return (
     <section id="nosotros" className="py-20 bg-white text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -23,10 +38,10 @@ export const AboutSection: React.FC = () => {
             <span>Centro Oficial de Distribución Kyocera Japón</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-black tracking-tight">
-            Tres Décadas de Liderazgo en Gestión Documental
+            {headline}
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
-            Con base central en <strong className="text-black">San Luis Potosí</strong> y cobertura a nivel nacional, respaldamos a más de 2,000 empresas con tecnología de impresión y soporte técnico especializado.
+            {subheadline}
           </p>
         </div>
 
@@ -47,7 +62,7 @@ export const AboutSection: React.FC = () => {
                 Qué Hacemos
               </h3>
               <p className="text-neutral-300 leading-relaxed mb-6 font-normal text-sm sm:text-base">
-                Impulsamos la <strong className="text-white">calidad, eficiencia y productividad</strong> en cada uno de sus procesos de gestión documental. Nos apasiona optimizar el rendimiento de su infraestructura tecnológica, por lo que ponemos a su disposición la <strong className="text-white">venta, renta y soporte técnico especializado</strong> de equipos Kyocera.
+                {queHacemosText}
               </p>
               
               <div className="p-5 rounded-2xl bg-neutral-900/90 border border-neutral-800 text-xs sm:text-sm text-neutral-300 mb-6 space-y-3">
@@ -96,34 +111,38 @@ export const AboutSection: React.FC = () => {
                 Sobre Nosotros
               </h3>
               <p className="text-neutral-300 leading-relaxed mb-6 font-normal text-sm sm:text-base">
-                Creemos firmemente que el motor de nuestro crecimiento como empresa y como personas es la <strong className="text-white font-medium">absoluta satisfacción de cada cliente</strong>. Somos un centro de distribución oficial de Kyocera en México con sede en San Luis Potosí y más de tres décadas de trayectoria en el mercado.
+                {sobreNosotrosText1}
               </p>
               
               <p className="text-neutral-300 leading-relaxed mb-6 font-normal text-xs sm:text-sm">
-                Como representantes líderes en el sector de la impresión digital, respaldamos a una cartera de más de <strong className="text-white font-medium">2,000 clientes a nivel nacional</strong>. Desde una impresora esencial hasta robustas soluciones de software para el control y gestión del trabajo, le ofrecemos asesoramiento profesional, trato totalmente personalizado y un equipo en constante capacitación.
+                {sobreNosotrosText2}
               </p>
 
               <div className="grid grid-cols-2 gap-4 my-6">
                 <div className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800">
-                  <div className="text-2xl font-black text-white">+2,000</div>
+                  <div className="text-2xl font-black text-white">{clientsCount}</div>
                   <div className="text-xs text-neutral-400">Empresas respaldadas</div>
                 </div>
                 <div className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800">
-                  <div className="text-2xl font-black text-white">SLP y Nal.</div>
-                  <div className="text-xs text-neutral-400">Cobertura en México</div>
+                  <div className="text-2xl font-black text-white">{experienceYears} Años</div>
+                  <div className="text-xs text-neutral-400">Trayectoria Oficial Kyocera</div>
                 </div>
               </div>
             </div>
 
             <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
               <span className="text-xs text-neutral-400 font-mono">KM Corporación / PrintMax</span>
-              <a 
-                href="#contacto" 
-                className="inline-flex items-center space-x-1.5 text-xs font-bold text-neutral-300 hover:text-white transition"
-              >
-                <span>Solicitar Asesoría</span>
-                <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
-              </a>
+              {onNavigate ? (
+                <button 
+                  onClick={() => onNavigate('contacto')}
+                  className="inline-flex items-center space-x-1.5 text-xs font-bold text-neutral-300 hover:text-white transition"
+                >
+                  <span>Solicitar Asesoría</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
+                </button>
+              ) : (
+                <span className="text-xs text-neutral-500">San Luis Potosí, México</span>
+              )}
             </div>
           </div>
         </div>
