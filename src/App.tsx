@@ -26,9 +26,10 @@ import {
   Clock, 
   Building2, 
   PhoneCall, 
-  ArrowRight,
-  ChevronRight,
-  ShieldCheck
+  ArrowRight, 
+  ChevronRight, 
+  ShieldCheck,
+  ShoppingCart
 } from 'lucide-react';
 
 export default function App() {
@@ -181,13 +182,7 @@ export default function App() {
         onSelectSection={navigateToSection}
         cartItems={cartItems}
         onOpenCart={() => setIsCartOpen(true)}
-        comparedProducts={comparedProducts}
-        onOpenComparator={() => setIsComparatorOpen(true)}
         onOpenQuickQuote={() => navigateToSection('renta')}
-        onSearch={(query) => {
-          setSearchQuery(query);
-          navigateToSection('tienda');
-        }}
       />
 
       {/* Breadcrumb Navigation when viewing an internal separate section */}
@@ -477,6 +472,25 @@ export default function App() {
         onClearAll={handleClearAllCompared}
         onAddToCart={handleAddToCart}
       />
+
+      {/* Floating Shopping Cart Button (Always accessible) */}
+      <aside aria-label="Carrito flotante" className="fixed bottom-22 right-6 z-40">
+        <button
+          onClick={() => setIsCartOpen(true)}
+          className="group relative flex items-center space-x-2 bg-black hover:bg-neutral-900 active:bg-neutral-950 text-white p-3.5 sm:px-4 sm:py-3 rounded-full border border-neutral-700 hover:border-blue-500 shadow-2xl transition transform hover:scale-105"
+          title="Ver Carrito de Compras"
+        >
+          <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 shrink-0" />
+          <span className="hidden sm:inline text-xs font-bold tracking-wide">
+            Carrito ({cartItems.reduce((acc, it) => acc + it.quantity, 0)})
+          </span>
+          {cartItems.reduce((acc, it) => acc + it.quantity, 0) > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-blue-600/50 animate-bounce">
+              {cartItems.reduce((acc, it) => acc + it.quantity, 0)}
+            </span>
+          )}
+        </button>
+      </aside>
 
       {/* Floating WhatsApp Action Button */}
       <aside aria-label="Contacto rápido" className="fixed bottom-6 right-6 z-40">
