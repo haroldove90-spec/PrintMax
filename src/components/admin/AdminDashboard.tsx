@@ -143,6 +143,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onSaveProduct(duplicated);
   };
 
+  // Synchronize active tab when switching roles
+  React.useEffect(() => {
+    const isTabAllowed = allowedTabs.some((t) => t.id === activeTab);
+    if (!isTabAllowed) {
+      if (currentUser.role === 'admin_web') {
+        setActiveTab('cms');
+      } else if (currentUser.role === 'admin_tienda') {
+        setActiveTab('productos');
+      } else {
+        setActiveTab('resumen');
+      }
+    }
+  }, [currentUser.role, allowedTabs, activeTab]);
+
   return (
     <div className="min-h-screen bg-black text-white font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Top Admin Navigation Bar */}
@@ -196,6 +210,116 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           </div>
         </div>
+
+        {/* 1-Click Role Switcher Bar */}
+        <div className="bg-neutral-900/90 border-t border-b border-neutral-800/80 px-4 py-2.5">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
+            <div className="flex items-center space-x-2 text-xs">
+              <span className="font-bold uppercase tracking-wider text-neutral-400">
+                Cambiar Rol en 1 Clic:
+              </span>
+              <span className="text-neutral-500 hidden lg:inline">
+                (Prueba directamente el panel con cada rol)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {/* Rol 1: Admin Página Web */}
+              <button
+                onClick={() => {
+                  onChangeRole('admin_web');
+                  setActiveTab('cms');
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between sm:justify-center space-x-2 border ${
+                  currentUser.role === 'admin_web'
+                    ? 'bg-purple-950 text-purple-200 border-purple-500 shadow-md ring-1 ring-purple-500/50'
+                    : 'bg-black hover:bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-purple-500/50'
+                }`}
+                title="Cambiar a Rol Administrador Página Web (CMS)"
+              >
+                <div className="flex items-center space-x-1.5">
+                  <Globe className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                  <span>Admin Página Web</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-mono">
+                  CMS
+                </span>
+              </button>
+
+              {/* Rol 2: Admin Tienda en Línea */}
+              <button
+                onClick={() => {
+                  onChangeRole('admin_tienda');
+                  setActiveTab('productos');
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between sm:justify-center space-x-2 border ${
+                  currentUser.role === 'admin_tienda'
+                    ? 'bg-emerald-950 text-emerald-200 border-emerald-500 shadow-md ring-1 ring-emerald-500/50'
+                    : 'bg-black hover:bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-emerald-500/50'
+                }`}
+                title="Cambiar a Rol Administrador Tienda en Línea (Catálogo y Pedidos)"
+              >
+                <div className="flex items-center space-x-1.5">
+                  <Store className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Admin Tienda en Línea</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+                  Tienda
+                </span>
+              </button>
+
+              {/* Rol 3: Super Administrador */}
+              <button
+                onClick={() => {
+                  onChangeRole('super_admin');
+                  setActiveTab('resumen');
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between sm:justify-center space-x-2 border ${
+                  currentUser.role === 'super_admin'
+                    ? 'bg-blue-950 text-blue-200 border-blue-500 shadow-md ring-1 ring-blue-500/50'
+                    : 'bg-black hover:bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-blue-500/50'
+                }`}
+                title="Cambiar a Super Administrador (Acceso Maestro Total)"
+              >
+                <div className="flex items-center space-x-1.5">
+                  <KeyRound className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span>Super Administrador</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-mono">
+                  Full
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Context Role Guidance Banner */}
+        {currentUser.role === 'admin_web' && (
+          <div className="bg-purple-950/40 border-b border-purple-900/50 py-2.5 px-4 text-xs text-purple-200 text-center flex items-center justify-center space-x-2">
+            <Globe className="w-4 h-4 text-purple-400 shrink-0" />
+            <span>
+              <strong>Rol Activo: Administrador Página Web (CMS)</strong> — Tienes permisos para cambiar el contenido de toda la web: slider de 3 imágenes, Qué Hacemos, Sobre Nosotros, teléfonos y WhatsApp de contacto.
+            </span>
+          </div>
+        )}
+
+        {currentUser.role === 'admin_tienda' && (
+          <div className="bg-emerald-950/40 border-b border-emerald-900/50 py-2.5 px-4 text-xs text-emerald-200 text-center flex items-center justify-center space-x-2">
+            <Store className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>
+              <strong>Rol Activo: Administrador de Tienda en Línea</strong> — Tienes permisos para subir y editar productos, actualizar precios de venta y renta, stock y gestionar pedidos de clientes con facturación CFDI 4.0.
+            </span>
+          </div>
+        )}
+
+        {currentUser.role === 'super_admin' && (
+          <div className="bg-blue-950/40 border-b border-blue-900/50 py-2.5 px-4 text-xs text-blue-200 text-center flex items-center justify-center space-x-2">
+            <KeyRound className="w-4 h-4 text-blue-400 shrink-0" />
+            <span>
+              <strong>Rol Activo: Super Administrador Total</strong> — Control total unificado sobre la Tienda en Línea (productos y pedidos), el Editor Web (CMS de contenidos) y la configuración de roles.
+            </span>
+          </div>
+        )}
 
         {/* Tab Navigation */}
         <div className="bg-black border-t border-neutral-800/80">

@@ -35,20 +35,27 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="relative bg-white rounded-3xl shadow-2xl max-w-6xl w-full overflow-hidden border border-slate-100 my-8 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden">
+      {/* Backdrop */}
+      <div 
+        onClick={onClose}
+        className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" 
+      />
+
+      {/* Centered Modal Window */}
+      <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-6xl w-full flex flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden border border-slate-200 z-10 animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Header */}
-        <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-lg bg-blue-600 text-white">
+        {/* Header - Sticky */}
+        <div className="shrink-0 bg-slate-900 text-white px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between border-b border-slate-800">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+            <div className="p-2 rounded-xl bg-blue-600 text-white shrink-0">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-lg font-bold">
+            <div className="min-w-0">
+              <h3 className="text-base sm:text-lg font-bold truncate">
                 Comparador Técnico de Equipos Kyocera
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
                 Comparando {comparedProducts.length} de hasta 5 productos seleccionados
               </p>
             </div>
@@ -73,7 +80,7 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
         </div>
 
         {/* Comparison Content */}
-        <div className="flex-1 overflow-x-auto overflow-y-auto p-6">
+        <div className="flex-1 overflow-x-auto overflow-y-auto overscroll-contain min-h-0 p-4 sm:p-6">
           {comparedProducts.length === 0 ? (
             <div className="text-center py-16">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
@@ -165,7 +172,7 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500">
+        <div className="shrink-0 bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-200 flex flex-col sm:flex-row gap-2 justify-between items-center text-xs text-slate-500">
           <span>Comparador oficial con datos de fichas técnicas Kyocera Japón.</span>
           <button
             onClick={onClose}

@@ -244,7 +244,6 @@ export default function App() {
         return prev.filter((p) => p.id !== product.id);
       }
       if (prev.length >= 5) {
-        alert('Puede comparar un máximo de 5 productos simultáneamente.');
         return prev;
       }
       return [...prev, product];
@@ -355,6 +354,10 @@ export default function App() {
           } else {
             navigateToSection('admin');
           }
+        }}
+        onSelectRoleAndOpenAdmin={(role) => {
+          handleChangeAdminRole(role);
+          navigateToSection('admin');
         }}
         currentUser={currentUser}
       />

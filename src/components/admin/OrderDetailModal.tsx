@@ -68,34 +68,42 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="relative bg-black text-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-neutral-800 my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden">
+      {/* Backdrop */}
+      <div 
+        onClick={onClose}
+        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity" 
+      />
+
+      {/* Centered Modal Window */}
+      <div className="relative bg-black text-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden border border-neutral-800 z-10 animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Header */}
-        <div className="bg-neutral-950 px-6 py-5 flex items-center justify-between border-b border-neutral-800">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-blue-500">
+        {/* Header - Sticky */}
+        <div className="shrink-0 bg-neutral-950 px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between border-b border-neutral-800">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-blue-500 shrink-0">
               <Receipt className="w-5 h-5 text-blue-500" />
             </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-white">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-white truncate">
                 Gestión de Pedido: <span className="font-mono text-blue-400">{order.orderId}</span>
               </h3>
-              <p className="text-xs text-neutral-400">
+              <p className="text-[11px] sm:text-xs text-neutral-400 truncate">
                 Registrado el {order.date}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition shrink-0 ml-2"
+            aria-label="Cerrar modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 sm:p-8 space-y-6 max-h-[75vh] overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-4 sm:p-6 md:p-8 space-y-5">
           
           {/* Customer & Billing Info */}
           <div className="p-4 rounded-2xl bg-neutral-900/90 border border-neutral-800 text-xs space-y-3">

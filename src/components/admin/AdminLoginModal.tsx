@@ -47,38 +47,47 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="relative bg-black text-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-neutral-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden">
+      {/* Backdrop */}
+      <div 
+        onClick={onClose}
+        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity" 
+      />
+
+      {/* Centered Modal Window */}
+      <div className="relative bg-black text-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full flex flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden border border-neutral-800 z-10 animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Modal Header */}
-        <div className="bg-neutral-950 px-6 py-5 flex items-center justify-between border-b border-neutral-800">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-blue-500">
-              <ShieldCheck className="w-6 h-6 text-blue-500" />
+        {/* Modal Header - Sticky */}
+        <div className="shrink-0 bg-neutral-950 px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between border-b border-neutral-800">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-blue-500 shrink-0">
+              <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
             </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-white">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-white truncate">
                 Acceso al Módulo Administrativo
               </h3>
-              <p className="text-xs text-neutral-400">
+              <p className="text-[11px] sm:text-xs text-neutral-400 truncate">
                 Gestión Autoadministrable Printmax Kyocera
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition shrink-0 ml-2"
+            aria-label="Cerrar modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleConfirmLogin} className="p-6 sm:p-8 space-y-6">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">
-              1. Seleccione el Rol con el que desea ingresar:
-            </label>
+        <form onSubmit={handleConfirmLogin} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-4 sm:p-6 md:p-8 space-y-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">
+                1. Seleccione el Rol con el que desea ingresar:
+              </label>
 
             <div className="space-y-2.5">
               {/* Super Admin */}
@@ -183,19 +192,21 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
               />
             </div>
           </div>
+          </div>
 
-          <div className="pt-2 flex items-center justify-between gap-3">
+          {/* Sticky Actions Footer */}
+          <div className="shrink-0 p-3.5 sm:p-4 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-neutral-800 text-neutral-400 hover:text-white text-xs font-bold"
+              className="px-4 py-2 rounded-xl border border-neutral-800 text-neutral-400 hover:text-white text-xs font-bold transition"
             >
               Cancelar
             </button>
 
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-700 hover:border-blue-500 text-xs sm:text-sm font-bold transition flex items-center space-x-2 shadow-lg"
+              className="px-5 sm:px-6 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-700 hover:border-blue-500 text-xs sm:text-sm font-bold transition flex items-center space-x-2 shadow-lg"
             >
               <span>Ingresar al Panel</span>
               <ArrowRight className="w-4 h-4 text-blue-500" />

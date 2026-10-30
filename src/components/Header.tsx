@@ -12,9 +12,11 @@ import {
   Building2,
   PhoneCall,
   Home,
-  ShieldCheck
+  ShieldCheck,
+  Globe,
+  KeyRound
 } from 'lucide-react';
-import { AppSection, CartItem, AdminUser } from '../types';
+import { AppSection, CartItem, AdminUser, AdminRole } from '../types';
 
 interface HeaderProps {
   activeSection: AppSection;
@@ -23,6 +25,7 @@ interface HeaderProps {
   onOpenCart: () => void;
   onOpenQuickQuote: () => void;
   onOpenAdmin: () => void;
+  onSelectRoleAndOpenAdmin?: (role: AdminRole) => void;
   currentUser?: AdminUser | null;
 }
 
@@ -33,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCart,
   onOpenQuickQuote,
   onOpenAdmin,
+  onSelectRoleAndOpenAdmin,
   currentUser
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -43,11 +47,12 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'inicio', name: 'Inicio', icon: Home },
     { id: 'tienda', name: 'Tienda en Línea', icon: Store },
     { id: 'hardware', name: 'Hardware & Equipos', icon: Printer },
-    { id: 'renta', name: 'Renta de Equipos', icon: Calculator },
-    { id: 'software', name: 'Software Kyocera', icon: Cpu },
+    { id: 'renta', name: 'Renta', icon: Calculator },
+    { id: 'software', name: 'Software', icon: Cpu },
     { id: 'soporte', name: 'Soporte < 24h', icon: Clock },
     { id: 'nosotros', name: 'Nosotros', icon: Building2 },
-    { id: 'contacto', name: 'Contacto', icon: PhoneCall }
+    { id: 'contacto', name: 'Contacto', icon: PhoneCall },
+    { id: 'admin', name: 'Panel Admin', icon: ShieldCheck }
   ];
 
   return (
@@ -121,20 +126,25 @@ export const Header: React.FC<HeaderProps> = ({
               <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
             </button>
 
-            {/* Admin Portal Button */}
+            {/* Admin Portal Button: Prominent & clear */}
             <button
               onClick={onOpenAdmin}
-              className={`p-2.5 rounded-xl border transition flex items-center justify-center space-x-1.5 shadow-sm ${
+              className={`px-3 py-2 rounded-xl border transition flex items-center space-x-2 shadow-sm ${
                 activeSection === 'admin'
-                  ? 'bg-neutral-800 text-white border-blue-500/80 ring-1 ring-blue-500'
-                  : 'bg-neutral-900 hover:bg-black text-neutral-300 hover:text-white border-neutral-800 hover:border-neutral-700'
+                  ? 'bg-blue-600 text-white border-blue-500 shadow-blue-500/20 ring-1 ring-blue-500'
+                  : 'bg-neutral-900 hover:bg-neutral-850 text-neutral-200 hover:text-white border-neutral-700 hover:border-blue-500'
               }`}
-              title="Panel de Control Autoadministrable (Admin Web y Tienda)"
+              title="Panel Autoadministrable: Admin Web (CMS) y Admin Tienda en Línea"
             >
-              <ShieldCheck className="w-5 h-5 text-blue-500" />
-              <span className="hidden xl:inline text-xs font-bold text-neutral-200">
-                {activeSection === 'admin' ? 'Dashboard' : 'Admin'}
-              </span>
+              <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
+              <div className="flex flex-col text-left leading-none">
+                <span className="text-xs font-bold text-white tracking-wide">
+                  {activeSection === 'admin' ? 'Salir Admin' : 'Panel Admin'}
+                </span>
+                <span className="text-[9px] text-blue-400 font-semibold hidden md:inline">
+                  Web & Tienda
+                </span>
+              </div>
             </button>
 
             {/* Mobile Hamburger Menu Toggle */}
@@ -151,9 +161,9 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-black border-t border-neutral-800 px-4 pt-3 pb-6 space-y-2">
+        <div className="lg:hidden bg-black border-t border-neutral-800 px-4 pt-3 pb-6 space-y-3">
           <div className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 px-3 py-1">
-            Secciones
+            Secciones Públicas
           </div>
 
           <div className="space-y-1">
@@ -167,7 +177,7 @@ export const Header: React.FC<HeaderProps> = ({
                     onSelectSection(link.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center space-x-3 transition ${
+                  className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-semibold flex items-center space-x-3 transition ${
                     isActive
                       ? 'bg-neutral-900 text-white border border-neutral-700'
                       : 'text-neutral-300 hover:bg-neutral-900/60 hover:text-white'
@@ -182,27 +192,84 @@ export const Header: React.FC<HeaderProps> = ({
             })}
           </div>
 
+          {/* Dedicated Admin Roles in Mobile Menu */}
           <div className="pt-3 border-t border-neutral-800 space-y-2">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-1">
+              Acceso a Roles de Administración
+            </div>
+
+            {/* Direct Link: Admin Página Web (CMS) */}
+            <button
+              onClick={() => {
+                if (onSelectRoleAndOpenAdmin) {
+                  onSelectRoleAndOpenAdmin('admin_web');
+                } else {
+                  onOpenAdmin();
+                }
+                setMobileMenuOpen(false);
+              }}
+              className="w-full py-2.5 px-3 bg-purple-950/40 hover:bg-purple-900/60 text-purple-200 rounded-xl text-xs font-bold border border-purple-500/40 text-left flex items-center justify-between transition"
+            >
+              <div className="flex items-center space-x-2">
+                <Globe className="w-4 h-4 text-purple-400" />
+                <span>Admin Página Web (CMS)</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">
+                Slider & Textos
+              </span>
+            </button>
+
+            {/* Direct Link: Admin Tienda en Línea */}
+            <button
+              onClick={() => {
+                if (onSelectRoleAndOpenAdmin) {
+                  onSelectRoleAndOpenAdmin('admin_tienda');
+                } else {
+                  onOpenAdmin();
+                }
+                setMobileMenuOpen(false);
+              }}
+              className="w-full py-2.5 px-3 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-200 rounded-xl text-xs font-bold border border-emerald-500/40 text-left flex items-center justify-between transition"
+            >
+              <div className="flex items-center space-x-2">
+                <Store className="w-4 h-4 text-emerald-400" />
+                <span>Admin Tienda en Línea</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+                Productos & Pedidos
+              </span>
+            </button>
+
+            {/* Direct Link: Super Administrador */}
+            <button
+              onClick={() => {
+                if (onSelectRoleAndOpenAdmin) {
+                  onSelectRoleAndOpenAdmin('super_admin');
+                } else {
+                  onOpenAdmin();
+                }
+                setMobileMenuOpen(false);
+              }}
+              className="w-full py-2.5 px-3 bg-neutral-900 hover:bg-neutral-850 text-white rounded-xl text-xs font-bold border border-neutral-700 text-left flex items-center justify-between transition"
+            >
+              <div className="flex items-center space-x-2">
+                <KeyRound className="w-4 h-4 text-blue-400" />
+                <span>Super Administrador (Total)</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">
+                Full Access
+              </span>
+            </button>
+
             <button
               onClick={() => {
                 onSelectSection('renta');
                 setMobileMenuOpen(false);
               }}
-              className="w-full py-2.5 bg-neutral-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider border border-neutral-700 text-center flex items-center justify-center space-x-1.5"
+              className="w-full mt-2 py-2.5 bg-neutral-950 text-white rounded-xl text-xs font-bold uppercase tracking-wider border border-neutral-800 text-center flex items-center justify-center space-x-1.5"
             >
               <span>Cotizar Renta de Equipos</span>
               <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
-            </button>
-
-            <button
-              onClick={() => {
-                onOpenAdmin();
-                setMobileMenuOpen(false);
-              }}
-              className="w-full py-2.5 bg-neutral-950 text-white rounded-xl text-xs font-bold uppercase tracking-wider border border-neutral-800 text-center flex items-center justify-center space-x-2"
-            >
-              <ShieldCheck className="w-4 h-4 text-blue-500" />
-              <span>Panel de Control (Admin)</span>
             </button>
           </div>
         </div>
