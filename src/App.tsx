@@ -6,8 +6,6 @@ import { AboutSection } from './components/AboutSection';
 import { HardwareCatalog } from './components/HardwareCatalog';
 import { OnlineStoreSection } from './components/OnlineStoreSection';
 import { SoftwareSolutionsSection } from './components/SoftwareSolutionsSection';
-import { RentalCalculatorSection } from './components/RentalCalculatorSection';
-import { TechnicalSupportSection } from './components/TechnicalSupportSection';
 import { CoverageMapSection } from './components/CoverageMapSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
@@ -55,9 +53,7 @@ export default function App() {
       'inicio', 
       'tienda', 
       'hardware', 
-      'renta', 
       'software', 
-      'soporte', 
       'nosotros', 
       'contacto',
       'admin'
@@ -173,9 +169,7 @@ export default function App() {
         'inicio', 
         'tienda', 
         'hardware', 
-        'renta', 
         'software', 
-        'soporte', 
         'nosotros', 
         'contacto',
         'admin'
@@ -333,9 +327,7 @@ export default function App() {
     inicio: 'Inicio',
     tienda: 'Tienda en Línea',
     hardware: 'Hardware & Equipos',
-    renta: 'Renta de Equipos',
     software: 'Software Kyocera',
-    soporte: 'Soporte Técnico Especializado < 24h',
     nosotros: 'Sobre Nosotros & Qué Hacemos',
     contacto: 'Contacto & Asesoría Directa',
     admin: 'Panel de Control (Admin Autoadministrable)'
@@ -353,7 +345,7 @@ export default function App() {
           onSelectSection={navigateToSection}
           cartItems={cartItems}
           onOpenCart={() => setIsCartOpen(true)}
-          onOpenQuickQuote={() => navigateToSection('renta')}
+          onOpenQuickQuote={() => navigateToSection('contacto')}
           onOpenAdmin={() => {
             navigateToSection('admin');
           }}
@@ -423,7 +415,7 @@ export default function App() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Card 1: Tienda */}
                   <div 
                     onClick={() => navigateToSection('tienda')}
@@ -468,29 +460,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Card 3: Renta */}
-                  <div 
-                    onClick={() => navigateToSection('renta')}
-                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
-                        <Calculator className="w-6 h-6 text-[#F27C36]" />
-                      </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
-                        Renta de Equipos
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        Arrendamiento 100% deducible con tóner original, refacciones y soporte en menos de 24h garantizados por LUMESA.
-                      </p>
-                    </div>
-                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
-                      <span>Simulador de Renta</span>
-                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-
-                  {/* Card 4: Software */}
+                  {/* Card 3: Software */}
                   <div 
                     onClick={() => navigateToSection('software')}
                     className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
@@ -512,29 +482,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Card 5: Soporte Técnico */}
-                  <div 
-                    onClick={() => navigateToSection('soporte')}
-                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
-                        <Clock className="w-6 h-6 text-[#F27C36]" />
-                      </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
-                        Soporte & Pólizas
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        Asistencia en sitio en &lt; 24h, ingenieros certificados y pólizas anuales con 15% de descuento en refacciones.
-                      </p>
-                    </div>
-                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
-                      <span>Planes de Soporte</span>
-                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-
-                  {/* Card 6: Nosotros */}
+                  {/* Card 4: Nosotros */}
                   <div 
                     onClick={() => navigateToSection('nosotros')}
                     className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
@@ -588,29 +536,11 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* 4. SECCIÓN INDEPENDIENTE: RENTA DE EQUIPOS */}
-        {/* ========================================================= */}
-        {activeSection === 'renta' && (
-          <RentalCalculatorSection
-            onQuoteRental={handleQuoteRentalCalculation}
-          />
-        )}
-
-        {/* ========================================================= */}
-        {/* 5. SECCIÓN INDEPENDIENTE: SOFTWARE KYOCERA */}
+        {/* 4. SECCIÓN INDEPENDIENTE: SOFTWARE KYOCERA */}
         {/* ========================================================= */}
         {activeSection === 'software' && (
           <SoftwareSolutionsSection
             onOpenConsultation={handleConsultation}
-          />
-        )}
-
-        {/* ========================================================= */}
-        {/* 6. SECCIÓN INDEPENDIENTE: SOPORTE TÉCNICO Y PÓLIZAS */}
-        {/* ========================================================= */}
-        {activeSection === 'soporte' && (
-          <TechnicalSupportSection
-            onSelectPolicy={(policyName) => handleConsultation(`Contratación de: ${policyName}`)}
           />
         )}
 

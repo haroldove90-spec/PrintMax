@@ -48,9 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'inicio', name: 'Inicio', icon: Home },
     { id: 'tienda', name: 'Tienda en Línea', icon: Store },
     { id: 'hardware', name: 'Hardware & Equipos', icon: Printer },
-    { id: 'renta', name: 'Renta', icon: Calculator },
     { id: 'software', name: 'Software', icon: Cpu },
-    { id: 'soporte', name: 'Soporte < 24h', icon: Clock },
     { id: 'nosotros', name: 'Nosotros', icon: Building2 },
     { id: 'contacto', name: 'Contacto', icon: PhoneCall },
     { id: 'admin', name: 'Panel Admin', icon: ShieldCheck }
@@ -67,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span>LUMESA • Distribuidor Oficial Kyocera Japón</span>
             </span>
             <span className="hidden sm:inline text-slate-400">|</span>
-            <span className="hidden sm:inline text-slate-400">Soporte Certificado &lt; 24h en México</span>
+            <span className="hidden sm:inline text-slate-400">Soluciones Documentales Kyocera en México</span>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -143,12 +141,12 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* Cotizar Renta Button: LUMESA Vibrant Orange Accent */}
+            {/* Cotizar Button: LUMESA Vibrant Orange Accent */}
             <button
               onClick={onOpenQuickQuote}
               className="hidden sm:inline-flex items-center space-x-1.5 bg-[#F27C36] hover:bg-[#d96624] active:bg-[#c2591b] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold tracking-wide uppercase transition shadow-md"
             >
-              <span>Cotizar Renta</span>
+              <span>Cotizar</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
@@ -289,12 +287,12 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => {
-                onSelectSection('renta');
+                onSelectSection('contacto');
                 setMobileMenuOpen(false);
               }}
               className="w-full mt-2 py-2.5 bg-[#F27C36] hover:bg-[#d96624] text-white rounded-xl text-xs font-bold uppercase tracking-wider text-center flex items-center justify-center space-x-1.5 transition shadow"
             >
-              <span>Cotizar Renta de Equipos</span>
+              <span>Solicitar Cotización</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

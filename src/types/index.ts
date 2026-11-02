@@ -2,9 +2,7 @@ export type AppSection =
   | 'inicio'
   | 'tienda'
   | 'hardware'
-  | 'renta'
   | 'software'
-  | 'soporte'
   | 'nosotros'
   | 'contacto'
   | 'admin';

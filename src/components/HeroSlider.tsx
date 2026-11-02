@@ -32,8 +32,8 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) =>
   // Route target for slide buttons
   const getSlideNavigationTarget = (slideIndex: number, isPrimary: boolean): AppSection => {
     if (slideIndex === 0) return isPrimary ? 'tienda' : 'hardware';
-    if (slideIndex === 1) return isPrimary ? 'hardware' : 'renta';
-    return isPrimary ? 'soporte' : 'contacto';
+    if (slideIndex === 1) return isPrimary ? 'hardware' : 'software';
+    return isPrimary ? 'software' : 'contacto';
   };
 
   return (

@@ -34,10 +34,10 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
             </div>
             <div>
               <h4 className="text-sm sm:text-base font-bold text-white">
-                ¿Necesita asistencia técnica o asesoría para su equipo Kyocera?
+                ¿Necesita asesoría o equipamiento Kyocera para su empresa?
               </h4>
               <p className="text-xs text-slate-300">
-                LUMESA garantiza respuesta en menos de 24 horas con refacciones originales y técnicos certificados.
+                LUMESA ofrece soluciones documentales de vanguardia, consumibles originales y atención personalizada en México.
               </p>
             </div>
           </div>
@@ -108,9 +108,9 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
               <li><button onClick={() => handleNav('inicio')} className="hover:text-[#F27C36] transition text-left">Inicio & Slider</button></li>
               <li><button onClick={() => handleNav('tienda')} className="hover:text-[#F27C36] transition text-left">Tienda en Línea</button></li>
               <li><button onClick={() => handleNav('hardware')} className="hover:text-[#F27C36] transition text-left">Hardware & Equipos</button></li>
-              <li><button onClick={() => handleNav('renta')} className="hover:text-[#F27C36] transition text-left">Renta de Equipos</button></li>
               <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">Software Kyocera</button></li>
-              <li><button onClick={() => handleNav('soporte')} className="hover:text-[#F27C36] transition text-left">Soporte Técnico &lt; 24h</button></li>
+              <li><button onClick={() => handleNav('nosotros')} className="hover:text-[#F27C36] transition text-left">Sobre Nosotros</button></li>
+              <li><button onClick={() => handleNav('contacto')} className="hover:text-[#F27C36] transition text-left">Contacto & Asesoría</button></li>
             </ul>
           </div>
 
@@ -125,7 +125,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
               <li><button onClick={() => handleNav('tienda')} className="hover:text-[#F27C36] transition text-left">Tóner y Consumibles</button></li>
               <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">KYOCERA Net Manager</button></li>
               <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">Control de Costos MyQ</button></li>
-              <li><button onClick={() => handleNav('renta')} className="hover:text-[#F27C36] transition text-left">Simulador de Arrendamiento</button></li>
+              <li><button onClick={() => handleNav('contacto')} className="hover:text-[#F27C36] transition text-left">Asesoría en Equipamiento</button></li>
             </ul>
           </div>
 
@@ -136,7 +136,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-300">
               <li><button onClick={() => handleNav('nosotros')} className="hover:text-[#F27C36] transition text-left">Sobre Nosotros</button></li>
-              <li><button onClick={() => handleNav('soporte')} className="hover:text-[#F27C36] transition text-left">Póliza Anual de Mantenimiento</button></li>
+              <li><button onClick={() => handleNav('nosotros')} className="hover:text-[#F27C36] transition text-left">Cobertura en México</button></li>
               <li><button onClick={() => handleNav('contacto')} className="hover:text-[#F27C36] transition text-left">Contacto Directo</button></li>
               <li><button onClick={() => handleNav('tienda')} className="hover:text-[#F27C36] transition text-left">Facturación CFDI 4.0 SAT</button></li>
               <li><button onClick={() => handleNav('admin')} className="text-[#F27C36] hover:text-white font-semibold transition text-left flex items-center space-x-1"><span>Acceso Admin Autoadministrable →</span></button></li>
