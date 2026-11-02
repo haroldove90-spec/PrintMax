@@ -105,12 +105,12 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
               Secciones
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-300">
-              <li><button onClick={() => handleNav('inicio')} className="hover:text-[#F27C36] transition text-left">Inicio & Slider</button></li>
+              <li><button onClick={() => handleNav('inicio')} className="hover:text-[#F27C36] transition text-left">Inicio</button></li>
+              <li><button onClick={() => handleNav('nosotros')} className="hover:text-[#F27C36] transition text-left">Nosotros</button></li>
+              <li><button onClick={() => handleNav('renta_venta')} className="hover:text-[#F27C36] transition text-left">Renta / Venta</button></li>
+              <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">Software</button></li>
               <li><button onClick={() => handleNav('tienda')} className="hover:text-[#F27C36] transition text-left">Tienda en Línea</button></li>
-              <li><button onClick={() => handleNav('hardware')} className="hover:text-[#F27C36] transition text-left">Hardware & Equipos</button></li>
-              <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">Software Kyocera</button></li>
-              <li><button onClick={() => handleNav('nosotros')} className="hover:text-[#F27C36] transition text-left">Sobre Nosotros</button></li>
-              <li><button onClick={() => handleNav('contacto')} className="hover:text-[#F27C36] transition text-left">Contacto & Asesoría</button></li>
+              <li><button onClick={() => handleNav('contacto')} className="hover:text-[#F27C36] transition text-left">Contacto</button></li>
             </ul>
           </div>
 

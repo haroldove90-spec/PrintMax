@@ -51,14 +51,15 @@ export default function App() {
     const hash = window.location.hash.replace('#', '') as AppSection;
     const validSections: AppSection[] = [
       'inicio', 
-      'tienda', 
+      'nosotros', 
+      'renta_venta', 
       'hardware', 
       'software', 
-      'nosotros', 
+      'tienda', 
       'contacto',
       'admin'
     ];
-    return validSections.includes(hash) ? hash : 'inicio';
+    return validSections.includes(hash) ? hash : 'tienda';
   });
 
   // ==========================================
@@ -167,10 +168,11 @@ export default function App() {
       const hash = window.location.hash.replace('#', '') as AppSection;
       const validSections: AppSection[] = [
         'inicio', 
-        'tienda', 
+        'nosotros', 
+        'renta_venta', 
         'hardware', 
         'software', 
-        'nosotros', 
+        'tienda', 
         'contacto',
         'admin'
       ];
@@ -325,10 +327,11 @@ export default function App() {
 
   const sectionTitles: Record<AppSection, string> = {
     inicio: 'Inicio',
-    tienda: 'Tienda en Línea',
-    hardware: 'Hardware & Equipos',
-    software: 'Software Kyocera',
     nosotros: 'Sobre Nosotros & Qué Hacemos',
+    renta_venta: 'Renta / Venta de Equipos',
+    hardware: 'Renta / Venta de Equipos',
+    software: 'Software Kyocera',
+    tienda: 'Tienda en Línea',
     contacto: 'Contacto & Asesoría Directa',
     admin: 'Panel de Control (Admin Autoadministrable)'
   };
@@ -357,16 +360,16 @@ export default function App() {
         />
       )}
 
-      {/* Breadcrumb Navigation when viewing an internal separate section */}
-      {activeSection !== 'inicio' && activeSection !== 'admin' && (
+      {/* Breadcrumb Navigation when viewing an internal separate section (hidden on Home / Tienda) */}
+      {activeSection !== 'tienda' && activeSection !== 'inicio' && activeSection !== 'admin' && (
         <div className="bg-[#182F4F] text-white border-b border-[#394B61] py-3 px-4 sm:px-6 lg:px-8 shadow-sm">
           <div className="max-w-7xl mx-auto flex items-center justify-between text-xs">
             <div className="flex items-center space-x-2 text-slate-300">
               <button 
-                onClick={() => navigateToSection('inicio')}
+                onClick={() => navigateToSection('tienda')}
                 className="hover:text-white transition"
               >
-                Inicio
+                Tienda (Inicio)
               </button>
               <ChevronRight className="w-3.5 h-3.5 text-[#F27C36]" />
               <span className="text-[#F27C36] font-bold">
@@ -375,10 +378,10 @@ export default function App() {
             </div>
 
             <button
-              onClick={() => navigateToSection('inicio')}
+              onClick={() => navigateToSection('tienda')}
               className="text-slate-300 hover:text-white flex items-center space-x-1"
             >
-              <span>← Volver al Menú Principal</span>
+              <span>← Volver a la Tienda</span>
             </button>
           </div>
         </div>
@@ -438,9 +441,9 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Card 2: Hardware */}
+                  {/* Card 2: Renta / Venta */}
                   <div 
-                    onClick={() => navigateToSection('hardware')}
+                    onClick={() => navigateToSection('renta_venta')}
                     className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
                   >
                     <div>
@@ -448,14 +451,14 @@ export default function App() {
                         <Printer className="w-6 h-6 text-[#F27C36]" />
                       </div>
                       <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
-                        Hardware & Equipos
+                        Renta / Venta de Equipos
                       </h4>
                       <p className="text-xs text-slate-300 leading-relaxed">
-                        Multifuncionales A3, A4, impresoras láser ECOSYS y prensas de producción TASKalfa con comparador técnico.
+                        Multifuncionales A3, A4 y prensas Kyocera en opciones de arrendamiento mensual deducible o compra directa.
                       </p>
                     </div>
                     <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
-                      <span>Ver Catálogo</span>
+                      <span>Ver Equipos</span>
                       <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
@@ -522,9 +525,9 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* 3. SECCIÓN INDEPENDIENTE: HARDWARE & EQUIPOS */}
+        {/* 3. SECCIÓN INDEPENDIENTE: RENTA / VENTA (HARDWARE & EQUIPOS) */}
         {/* ========================================================= */}
-        {activeSection === 'hardware' && (
+        {(activeSection === 'renta_venta' || activeSection === 'hardware') && (
           <HardwareCatalog
             products={products}
             onAddToCart={handleAddToCart}
@@ -580,7 +583,7 @@ export default function App() {
               setCurrentUser(null);
               setIsAdminLoginOpen(true);
             }}
-            onExitToPublicSite={() => navigateToSection('inicio')}
+            onExitToPublicSite={() => navigateToSection('tienda')}
             products={products}
             onSaveProduct={handleSaveProduct}
             onDeleteProduct={handleDeleteProduct}

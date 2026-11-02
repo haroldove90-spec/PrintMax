@@ -72,13 +72,13 @@ export const HardwareCatalog: React.FC<HardwareCatalogProps> = ({
           <div>
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#182F4F] text-white border border-[#394B61] text-xs font-bold uppercase tracking-wider mb-3">
               <Printer className="w-3.5 h-3.5 text-[#F27C36]" />
-              <span>Hardware: Impresoras & Multifuncionales</span>
+              <span>Catálogo Oficial: Renta / Venta de Multifuncionales</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#182F4F] tracking-tight">
-              Equipos Kyocera de Alto Rendimiento
+              Equipos Kyocera en Renta y Venta Directa
             </h2>
             <p className="mt-3 text-[#394B61] max-w-2xl text-base">
-              Escanee, copie e imprima con facilidad añadiendo un dispositivo premiado, fiable y eficiente a su espacio de trabajo.
+              Adquiera su multifuncional mediante compra definitiva o arrendamiento 100% deducible con tóner original y garantía directa LUMESA.
             </p>
           </div>
 

@@ -32,11 +32,11 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 'h
       {variant === 'header' && (
         <button
           onClick={handleAction}
-          className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition bg-[#F27C36] hover:bg-[#d96624] text-white shadow-sm border border-[#F27C36]/80 cursor-pointer"
-          title="Instalar LUMESA en tu dispositivo (PWA)"
+          className="p-2.5 rounded-xl text-white transition bg-[#394B61] hover:bg-[#F27C36] shadow-sm border border-[#394B61] hover:border-[#F27C36] cursor-pointer flex items-center justify-center shrink-0"
+          title="Instalar App LUMESA (PWA)"
+          aria-label="Instalar App"
         >
-          <Download className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Instalar App</span>
+          <Download className="w-5 h-5 text-white" />
         </button>
       )}
 

@@ -84,41 +84,29 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
     <section id="tienda" className="py-20 bg-white text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Store Header with Official LUMESA Logo (Un-encapsulated, clean) */}
+        {/* Store Header Banner */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-8 mb-10 border-b border-slate-200 gap-6">
-          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
-            {/* Clean un-encapsulated LUMESA logo */}
-            <img
-              src="/lumesalogo.png"
-              alt="LUMESA Tienda Oficial"
-              className="h-11 sm:h-14 w-auto object-contain select-none"
-              onError={(e) => {
-                e.currentTarget.src = "https://appdesignproyectos.com/lumesalogo.png";
-              }}
-            />
-
-            <div>
-              <div className="inline-flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-[#F27C36] mb-1">
-                <Store className="w-3.5 h-3.5 text-[#F27C36]" />
-                <span>Tienda Oficial en Línea</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-[#182F4F] tracking-tight">
-                Catálogo de Equipos, Tóner & Pólizas
-              </h2>
-              <p className="text-xs sm:text-sm text-[#394B61] mt-1 max-w-xl">
-                Compra y renta directa con facturación SAT (CFDI 4.0), garantía oficial LUMESA y soporte técnico garantizado en menos de 24 horas.
-              </p>
+          <div>
+            <div className="inline-flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-[#F27C36] mb-1.5">
+              <Store className="w-4 h-4 text-[#F27C36]" />
+              <span>Tienda Oficial en Línea</span>
             </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#182F4F] tracking-tight">
+              Catálogo de Multifuncionales, Tóner y Equipos
+            </h1>
+            <p className="text-xs sm:text-sm text-[#394B61] mt-1.5 max-w-xl">
+              Equipos Kyocera y consumibles genuinos con facturación electrónica SAT (CFDI 4.0), garantía directa LUMESA y envío seguro a todo México.
+            </p>
           </div>
 
-          <div className="flex items-center space-x-4 text-xs font-medium text-[#394B61]">
-            <span className="flex items-center">
+          <div className="flex items-center space-x-4 text-xs font-semibold text-[#182F4F]">
+            <span className="flex items-center bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
               <ShieldCheck className="w-4 h-4 text-[#F27C36] mr-1.5" />
               100% Original Kyocera
             </span>
-            <span className="flex items-center">
+            <span className="flex items-center bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
               <Truck className="w-4 h-4 text-[#F27C36] mr-1.5" />
-              Envío Nacional
+              Envío SLP & Nacional
             </span>
           </div>
         </div>

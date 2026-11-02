@@ -46,12 +46,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navLinks: { id: AppSection; name: string; icon: React.ElementType }[] = [
     { id: 'inicio', name: 'Inicio', icon: Home },
-    { id: 'tienda', name: 'Tienda en Línea', icon: Store },
-    { id: 'hardware', name: 'Hardware & Equipos', icon: Printer },
-    { id: 'software', name: 'Software', icon: Cpu },
     { id: 'nosotros', name: 'Nosotros', icon: Building2 },
+    { id: 'renta_venta', name: 'Renta / Venta', icon: Printer },
+    { id: 'software', name: 'Software', icon: Cpu },
+    { id: 'tienda', name: 'Tienda en Línea', icon: Store },
     { id: 'contacto', name: 'Contacto', icon: PhoneCall },
-    { id: 'admin', name: 'Panel Admin', icon: ShieldCheck }
   ];
 
   return (
@@ -81,12 +80,12 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-3">
           
-          {/* Logo (Clean, completely un-encapsulated: no box, no border, no background) */}
+          {/* Logo (Clean, completely un-encapsulated - Navigates to Online Store / Home) */}
           <div className="shrink-0 flex items-center">
             <button
-              onClick={() => onSelectSection('inicio')}
+              onClick={() => onSelectSection('tienda')}
               className="flex items-center group focus:outline-none p-0 bg-transparent border-0"
-              title="Ir a Inicio - LUMESA"
+              title="LUMESA - Tienda Oficial"
             >
               <img
                 src="/lumesalogo.png"
@@ -99,10 +98,10 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Complete Desktop Navigation Menu */}
+          {/* Desktop Navigation Menu in requested order: Inicio, Nosotros, Renta / Venta, Software, Tienda en línea, Contacto */}
           <nav className="hidden lg:flex items-center space-x-1 xl:space-x-1.5">
             {navLinks.map((link) => {
-              const isActive = activeSection === link.id;
+              const isActive = activeSection === link.id || (link.id === 'renta_venta' && (activeSection as string) === 'hardware');
               return (
                 <button
                   key={link.id}
@@ -121,15 +120,29 @@ export const Header: React.FC<HeaderProps> = ({
             })}
           </nav>
 
-          {/* Action Buttons: PWA Install, Cart, Cotizar Renta, Admin */}
-          <div className="flex items-center space-x-2.5 shrink-0">
-            {/* In-App PWA Install Button */}
+          {/* Action Buttons in requested order: Icono Panel Admin, Icono Instalar App, Icono Carrito, Boton COTIZAR */}
+          <div className="flex items-center space-x-2 shrink-0">
+            {/* 7. Icono ( Panel admin ) - Only icon, no text */}
+            <button
+              onClick={onOpenAdmin}
+              className={`p-2.5 rounded-xl border transition flex items-center justify-center shadow-sm shrink-0 ${
+                activeSection === 'admin'
+                  ? 'bg-[#F27C36] text-white border-[#F27C36] shadow-[#F27C36]/20 ring-1 ring-[#F27C36]'
+                  : 'bg-[#394B61] hover:bg-[#000000] text-white border-[#394B61] hover:border-[#F27C36]'
+              }`}
+              title="Panel de Administración LUMESA"
+              aria-label="Panel Admin"
+            >
+              <ShieldCheck className="w-5 h-5 text-[#F27C36]" />
+            </button>
+
+            {/* 8. Icono ( instalar app ) - Only icon, no text */}
             <PWAInstallButton variant="header" />
 
-            {/* Cart Button: ONLY ICON AND NUMBER INDICATOR */}
+            {/* 9. Icono ( Carrito de compras ) - Only icon + counter */}
             <button
               onClick={onOpenCart}
-              className="relative p-2.5 rounded-xl bg-[#394B61] hover:bg-[#000000] text-white border border-[#394B61] hover:border-[#F27C36] transition flex items-center justify-center shadow-sm"
+              className="relative p-2.5 rounded-xl bg-[#394B61] hover:bg-[#000000] text-white border border-[#394B61] hover:border-[#F27C36] transition flex items-center justify-center shadow-sm shrink-0"
               aria-label={`Carrito de compras con ${totalCartCount} productos`}
               title="Ver Carrito de Compras"
             >
@@ -141,40 +154,20 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* Cotizar Button: LUMESA Vibrant Orange Accent */}
+            {/* 10. Boton: COTIZAR */}
             <button
               onClick={onOpenQuickQuote}
-              className="hidden sm:inline-flex items-center space-x-1.5 bg-[#F27C36] hover:bg-[#d96624] active:bg-[#c2591b] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold tracking-wide uppercase transition shadow-md"
+              className="inline-flex items-center space-x-1.5 bg-[#F27C36] hover:bg-[#d96624] active:bg-[#c2591b] text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tracking-wider uppercase transition shadow-md shrink-0"
+              title="Solicitar Cotización Inmediata"
             >
-              <span>Cotizar</span>
+              <span>COTIZAR</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Admin Portal Button: Prominent & clear */}
-            <button
-              onClick={onOpenAdmin}
-              className={`px-3 py-2 rounded-xl border transition flex items-center space-x-2 shadow-sm ${
-                activeSection === 'admin'
-                  ? 'bg-[#F27C36] text-white border-[#F27C36] shadow-[#F27C36]/20 ring-1 ring-[#F27C36]'
-                  : 'bg-[#000000]/60 hover:bg-[#000000] text-slate-200 hover:text-white border-[#394B61] hover:border-[#F27C36]'
-              }`}
-              title="Panel Autoadministrable LUMESA: Admin Web (CMS) y Admin Tienda en Línea"
-            >
-              <ShieldCheck className="w-4 h-4 text-[#F27C36] shrink-0" />
-              <div className="flex flex-col text-left leading-none">
-                <span className="text-xs font-bold text-white tracking-wide">
-                  {activeSection === 'admin' ? 'Salir Admin' : 'Panel Admin'}
-                </span>
-                <span className="text-[9px] text-[#F27C36] font-semibold hidden md:inline">
-                  Web & Tienda
-                </span>
-              </div>
             </button>
 
             {/* Mobile Hamburger Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-slate-200 hover:text-white bg-[#394B61] border border-[#394B61] transition"
+              className="lg:hidden p-2 rounded-xl text-slate-200 hover:text-white bg-[#394B61] border border-[#394B61] transition ml-1"
               aria-label="Abrir menú"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -290,10 +283,10 @@ export const Header: React.FC<HeaderProps> = ({
                 onSelectSection('contacto');
                 setMobileMenuOpen(false);
               }}
-              className="w-full mt-2 py-2.5 bg-[#F27C36] hover:bg-[#d96624] text-white rounded-xl text-xs font-bold uppercase tracking-wider text-center flex items-center justify-center space-x-1.5 transition shadow"
+              className="w-full mt-2 py-3 bg-[#F27C36] hover:bg-[#d96624] text-white rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wider text-center flex items-center justify-center space-x-1.5 transition shadow"
             >
-              <span>Solicitar Cotización</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>COTIZAR</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

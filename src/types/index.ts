@@ -1,9 +1,10 @@
 export type AppSection = 
   | 'inicio'
-  | 'tienda'
+  | 'nosotros'
+  | 'renta_venta'
   | 'hardware'
   | 'software'
-  | 'nosotros'
+  | 'tienda'
   | 'contacto'
   | 'admin';
 
