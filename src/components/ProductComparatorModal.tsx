@@ -46,16 +46,16 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
       <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-6xl w-full flex flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden border border-slate-200 z-10 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header - Sticky */}
-        <div className="shrink-0 bg-slate-900 text-white px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between border-b border-slate-800">
+        <div className="shrink-0 bg-[#182F4F] text-white px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between border-b border-[#394B61]">
           <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-            <div className="p-2 rounded-xl bg-blue-600 text-white shrink-0">
+            <div className="p-2 rounded-xl bg-[#F27C36] text-white shrink-0">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <h3 className="text-base sm:text-lg font-bold truncate">
                 Comparador Técnico de Equipos Kyocera
               </h3>
-              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+              <p className="text-[11px] sm:text-xs text-slate-300 truncate">
                 Comparando {comparedProducts.length} de hasta 5 productos seleccionados
               </p>
             </div>
@@ -131,7 +131,7 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
                             {p.code}
                           </span>
                           
-                          <div className="text-base font-extrabold text-blue-600">
+                          <div className="text-base font-extrabold text-[#F27C36]">
                             ${p.price.toLocaleString('es-MX')} MXN
                           </div>
                           {p.rentalPriceMonthly && (
@@ -142,7 +142,7 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
 
                           <button
                             onClick={() => onAddToCart(p, 'compra')}
-                            className="mt-3 w-full py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1"
+                            className="mt-3 w-full py-2 px-3 bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1 cursor-pointer"
                           >
                             <ShoppingCart className="w-3.5 h-3.5" />
                             <span>Comprar</span>
@@ -176,7 +176,7 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
           <span>Comparador oficial con datos de fichas técnicas Kyocera Japón.</span>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition"
+            className="px-4 py-2 bg-[#182F4F] hover:bg-[#394B61] text-white font-bold rounded-xl transition cursor-pointer"
           >
             Cerrar Comparador
           </button>

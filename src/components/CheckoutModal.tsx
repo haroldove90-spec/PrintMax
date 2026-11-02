@@ -102,7 +102,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   };
 
   const getWhatsAppLink = (order: OrderDetails) => {
-    const message = `Hola PrintMax Kyocera México, he generado el pedido ${order.orderId} a nombre de ${order.customerName} (${order.companyName}) por un total de $${order.total.toLocaleString('es-MX')} MXN. Solicito seguimiento de entrega y factura CFDI.`;
+    const message = `Hola LUMESA Kyocera México, he generado el pedido ${order.orderId} a nombre de ${order.customerName} (${order.companyName}) por un total de $${order.total.toLocaleString('es-MX')} MXN. Solicito seguimiento de entrega y factura CFDI.`;
     return `https://wa.me/524448123000?text=${encodeURIComponent(message)}`;
   };
 

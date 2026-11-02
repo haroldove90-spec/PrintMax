@@ -24,8 +24,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
 }) => {
   const phone = contactInfo?.phone || "(444) 812-3000";
   const tollFree = contactInfo?.tollFree || "01 800 KYOCERA";
-  const salesEmail = contactInfo?.salesEmail || "ventas@kmcorporacion.com.mx";
-  const supportEmail = contactInfo?.supportEmail || "soporte@printmax.com.mx";
+  const salesEmail = contactInfo?.salesEmail || "ventas@lumesa.com.mx";
+  const supportEmail = contactInfo?.supportEmail || "soporte@lumesa.com.mx";
   const address = contactInfo?.address || "Av. Venustiano Carranza #1450, Col. Tequisquiapan, San Luis Potosí, S.L.P. C.P. 78230";
   const schedule = contactInfo?.schedule || "Lunes a Viernes de 09:00 a 18:00 hrs";
   const whatsapp = contactInfo?.whatsapp || "524448123000";
@@ -65,37 +65,37 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   };
 
   return (
-    <section id="contacto" className="py-20 bg-slate-50 border-t border-slate-200">
+    <section id="contacto" className="py-20 bg-white border-t border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider mb-3">
-            <MessageSquare className="w-4 h-4 text-blue-600" />
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#182F4F] text-[#F27C36] text-xs font-bold uppercase tracking-wider mb-3">
+            <MessageSquare className="w-4 h-4 text-[#F27C36]" />
             <span>Atención Personalizada Inmediata</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#182F4F] tracking-tight">
             Contacto: ¿En qué podemos ayudarte?
           </h2>
-          <p className="mt-4 text-slate-600 text-base sm:text-lg leading-relaxed">
-            Estamos listos para impulsar la productividad de su negocio. Si necesita asesoría para elegir el equipo ideal, cotizar un servicio de renta o venta, o requiere soporte técnico especializado, póngase en contacto con nosotros. Nuestro equipo le responderá a la brevedad para ofrecerle la solución perfecta.
+          <p className="mt-4 text-[#394B61] text-base sm:text-lg leading-relaxed">
+            Estamos listos para impulsar la productividad de su negocio con tecnología Kyocera y servicio LUMESA. Si necesita asesoría para elegir el equipo ideal, cotizar un servicio de renta o venta, o requiere soporte técnico especializado, póngase en contacto con nosotros.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
           {/* Contact Details Card */}
-          <div className="lg:col-span-5 bg-slate-900 text-white rounded-3xl p-8 shadow-xl flex flex-col justify-between border border-slate-800 relative overflow-hidden">
+          <div className="lg:col-span-5 bg-[#182F4F] text-white rounded-3xl p-8 shadow-xl flex flex-col justify-between border border-[#394B61] relative overflow-hidden">
             <div className="relative z-10 space-y-6">
               <div>
-                <span className="text-xs font-bold text-blue-400 uppercase tracking-widest block mb-1">
-                  KM Corporación / PrintMax
+                <span className="text-xs font-bold text-[#F27C36] uppercase tracking-widest block mb-1">
+                  LUMESA México
                 </span>
                 <h3 className="text-2xl font-black text-white">
                   Centro de Atención a Clientes y Empresas
                 </h3>
                 <p className="text-xs text-slate-300 mt-2 font-light">
-                  Distribuidores autorizados de Kyocera Japón con soporte técnico en menos de 24 horas.
+                  Distribuidores autorizados de Kyocera Japón con soporte técnico garantizado en menos de 24 horas.
                 </p>
               </div>
 

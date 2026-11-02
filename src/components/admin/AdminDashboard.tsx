@@ -158,34 +158,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, [currentUser.role, allowedTabs, activeTab]);
 
   return (
-    <div className="min-h-screen bg-black text-white font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Top Admin Navigation Bar */}
-      <div className="bg-neutral-950 border-b border-neutral-800 sticky top-0 z-40">
+      <div className="bg-[#182F4F] text-white border-b border-[#394B61] sticky top-0 z-40 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20 gap-4">
             
-            {/* Left: Branding & Role badge */}
+            {/* Left: Branding & Role badge (Clean, completely un-encapsulated logo) */}
             <div className="flex items-center space-x-4">
               <img
-                src="/printmaxlogo.png"
-                alt="Printmax"
-                className="h-9 w-auto object-contain cursor-pointer"
+                src="/lumesalogo.png"
+                alt="LUMESA"
+                className="h-10 sm:h-12 w-auto object-contain cursor-pointer select-none"
                 onClick={onExitToPublicSite}
+                onError={(e) => {
+                  e.currentTarget.src = "https://appdesignproyectos.com/lumesalogo.png";
+                }}
               />
-              <div className="hidden sm:block border-l border-neutral-800 pl-4">
+              <div className="hidden sm:block border-l border-[#394B61] pl-4">
                 <div className="text-xs font-bold text-white flex items-center space-x-2">
-                  <span>Panel de Control</span>
+                  <span>Panel LUMESA</span>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
                     currentUser.role === 'super_admin' 
-                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                      ? 'bg-[#F27C36]/20 text-[#F27C36] border border-[#F27C36]/40'
                       : currentUser.role === 'admin_tienda'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      : 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
                   }`}>
                     {currentUser.roleLabel}
                   </span>
                 </div>
-                <span className="text-[11px] text-neutral-400">{currentUser.name}</span>
+                <span className="text-[11px] text-slate-300">{currentUser.name}</span>
               </div>
             </div>
 
@@ -193,16 +196,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="flex items-center space-x-3">
               <button
                 onClick={onExitToPublicSite}
-                className="px-3.5 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold border border-neutral-700 transition flex items-center space-x-1.5"
+                className="px-3.5 py-2 rounded-xl bg-[#394B61] hover:bg-[#000000] text-white text-xs font-bold border border-[#394B61] transition flex items-center space-x-1.5 shadow-sm"
                 title="Ver la tienda y el sitio web público"
               >
-                <Eye className="w-3.5 h-3.5 text-blue-500" />
+                <Eye className="w-3.5 h-3.5 text-[#F27C36]" />
                 <span>Ver Sitio Web</span>
               </button>
 
               <button
                 onClick={onLogout}
-                className="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-red-400 border border-neutral-800 transition"
+                className="p-2 rounded-xl bg-[#394B61] hover:bg-rose-900/60 text-slate-300 hover:text-white border border-[#394B61] transition"
                 title="Cerrar Sesión Administrativa"
               >
                 <LogOut className="w-4 h-4" />
@@ -211,15 +214,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
 
-        {/* 1-Click Role Switcher Bar */}
-        <div className="bg-neutral-900/90 border-t border-b border-neutral-800/80 px-4 py-2.5">
+        {/* 1-Click Role Switcher Bar in #000000 */}
+        <div className="bg-[#000000] border-t border-b border-[#394B61] px-4 py-2.5">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
             <div className="flex items-center space-x-2 text-xs">
-              <span className="font-bold uppercase tracking-wider text-neutral-400">
+              <span className="font-bold uppercase tracking-wider text-[#F27C36]">
                 Cambiar Rol en 1 Clic:
               </span>
-              <span className="text-neutral-500 hidden lg:inline">
-                (Prueba directamente el panel con cada rol)
+              <span className="text-slate-400 hidden lg:inline">
+                (Prueba directamente el panel LUMESA con cada rol)
               </span>
             </div>
 
@@ -276,16 +279,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 }}
                 className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-between sm:justify-center space-x-2 border ${
                   currentUser.role === 'super_admin'
-                    ? 'bg-blue-950 text-blue-200 border-blue-500 shadow-md ring-1 ring-blue-500/50'
-                    : 'bg-black hover:bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-blue-500/50'
+                    ? 'bg-[#F27C36] text-white border-[#F27C36] shadow-md ring-1 ring-[#F27C36]/50'
+                    : 'bg-[#182F4F] hover:bg-[#394B61] text-slate-200 border-[#394B61] hover:border-[#F27C36]'
                 }`}
                 title="Cambiar a Super Administrador (Acceso Maestro Total)"
               >
                 <div className="flex items-center space-x-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <KeyRound className="w-3.5 h-3.5 text-white shrink-0" />
                   <span>Super Administrador</span>
                 </div>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-mono">
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-black/30 text-white font-mono">
                   Full
                 </span>
               </button>
@@ -298,7 +301,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="bg-purple-950/40 border-b border-purple-900/50 py-2.5 px-4 text-xs text-purple-200 text-center flex items-center justify-center space-x-2">
             <Globe className="w-4 h-4 text-purple-400 shrink-0" />
             <span>
-              <strong>Rol Activo: Administrador Página Web (CMS)</strong> — Tienes permisos para cambiar el contenido de toda la web: slider de 3 imágenes, Qué Hacemos, Sobre Nosotros, teléfonos y WhatsApp de contacto.
+              <strong>Rol Activo: Administrador Página Web (CMS LUMESA)</strong> — Tienes permisos para cambiar el contenido de toda la web: slider de 3 imágenes, Qué Hacemos, Sobre Nosotros, teléfonos y WhatsApp de contacto.
             </span>
           </div>
         )}
@@ -307,23 +310,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="bg-emerald-950/40 border-b border-emerald-900/50 py-2.5 px-4 text-xs text-emerald-200 text-center flex items-center justify-center space-x-2">
             <Store className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>
-              <strong>Rol Activo: Administrador de Tienda en Línea</strong> — Tienes permisos para subir y editar productos, actualizar precios de venta y renta, stock y gestionar pedidos de clientes con facturación CFDI 4.0.
+              <strong>Rol Activo: Administrador de Tienda en Línea LUMESA</strong> — Tienes permisos para subir y editar productos, actualizar precios de venta y renta, stock y gestionar pedidos de clientes con facturación CFDI 4.0.
             </span>
           </div>
         )}
 
         {currentUser.role === 'super_admin' && (
-          <div className="bg-blue-950/40 border-b border-blue-900/50 py-2.5 px-4 text-xs text-blue-200 text-center flex items-center justify-center space-x-2">
-            <KeyRound className="w-4 h-4 text-blue-400 shrink-0" />
+          <div className="bg-[#182F4F] border-b border-[#394B61] py-2.5 px-4 text-xs text-white text-center flex items-center justify-center space-x-2">
+            <KeyRound className="w-4 h-4 text-[#F27C36] shrink-0" />
             <span>
-              <strong>Rol Activo: Super Administrador Total</strong> — Control total unificado sobre la Tienda en Línea (productos y pedidos), el Editor Web (CMS de contenidos) y la configuración de roles.
+              <strong>Rol Activo: Super Administrador Total LUMESA</strong> — Control total unificado sobre la Tienda en Línea (productos y pedidos), el Editor Web (CMS de contenidos) y la configuración de roles.
             </span>
           </div>
         )}
 
         {/* Tab Navigation */}
-        <div className="bg-black border-t border-neutral-800/80">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-3 overflow-x-auto py-2">
+        <div className="bg-[#182F4F] border-t border-[#394B61]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-2 overflow-x-auto py-2">
             {allowedTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -333,12 +336,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center space-x-2 whitespace-nowrap transition ${
                     isActive
-                      ? 'bg-neutral-900 text-white border border-neutral-700 shadow-md'
-                      : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+                      ? 'bg-[#F27C36] text-white shadow-md'
+                      : 'text-slate-300 hover:text-white hover:bg-[#394B61]'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : 'text-neutral-500'}`} />
-                  <span className={isActive ? 'text-blue-400' : ''}>{tab.label}</span>
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#F27C36]'}`} />
+                  <span>{tab.label}</span>
                 </button>
               );
             })}
@@ -787,7 +790,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-white">
-                  Editor de Contenido Web (CMS Printmax)
+                  Editor de Contenido Web (CMS LUMESA)
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-400 mt-1">
                   Modifique en tiempo real el slider principal de 3 imágenes, los textos corporativos y la información de contacto.

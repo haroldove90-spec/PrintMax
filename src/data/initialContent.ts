@@ -18,8 +18,8 @@ export const INITIAL_SITE_CONTENT: SiteContent = {
   contact: {
     phone: "(444) 812-3000",
     tollFree: "01 800 KYOCERA",
-    salesEmail: "ventas@kmcorporacion.com.mx",
-    supportEmail: "soporte@printmax.com.mx",
+    salesEmail: "ventas@lumesa.mx",
+    supportEmail: "soporte@lumesa.mx",
     address: "Av. Venustiano Carranza #1450, Col. Tequisquiapan, San Luis Potosí, S.L.P. C.P. 78230",
     schedule: "Lunes a Viernes de 09:00 a 18:00 hrs",
     whatsapp: "524448123000"
@@ -34,22 +34,22 @@ export const INITIAL_SITE_CONTENT: SiteContent = {
 export const INITIAL_ADMIN_USERS: AdminUser[] = [
   {
     id: "admin-super",
-    name: "Harold Ovalle (Super Admin)",
-    email: "admin@printmax.mx",
+    name: "Administrador General LUMESA",
+    email: "admin@lumesa.mx",
     role: "super_admin",
     roleLabel: "Super Administrador (Web + Tienda)"
   },
   {
     id: "admin-web",
     name: "Editor Web & Contenidos",
-    email: "webmaster@printmax.mx",
+    email: "webmaster@lumesa.mx",
     role: "admin_web",
     roleLabel: "Administrador Web (CMS / Contenidos)"
   },
   {
     id: "admin-tienda",
     name: "Gerente de E-commerce",
-    email: "tienda@printmax.mx",
+    email: "tienda@lumesa.mx",
     role: "admin_tienda",
     roleLabel: "Administrador Tienda (Productos / Pedidos)"
   }

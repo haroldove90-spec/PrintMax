@@ -131,14 +131,14 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ content, onNavigate 
             </div>
 
             <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
-              <span className="text-xs text-neutral-400 font-mono">KM Corporación / PrintMax</span>
+              <span className="text-xs text-neutral-400 font-mono">LUMESA Soluciones Documentales</span>
               {onNavigate ? (
                 <button 
                   onClick={() => onNavigate('contacto')}
                   className="inline-flex items-center space-x-1.5 text-xs font-bold text-neutral-300 hover:text-white transition"
                 >
                   <span>Solicitar Asesoría</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
+                  <ArrowRight className="w-3.5 h-3.5 text-[#F27C36]" />
                 </button>
               ) : (
                 <span className="text-xs text-neutral-500">San Luis Potosí, México</span>
@@ -147,16 +147,16 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ content, onNavigate 
           </div>
         </div>
 
-        {/* 3 Pillars in Black Background with Blue Icons */}
+        {/* 3 Pillars in Black Background with Orange/Blue Icons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 rounded-2xl bg-black text-white border border-neutral-800 shadow-md flex items-start space-x-4">
-            <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 shrink-0">
-              <Award className="w-6 h-6 text-blue-500" />
+          <div className="p-6 rounded-2xl bg-[#182F4F] text-white border border-[#394B61] shadow-md flex items-start space-x-4">
+            <div className="p-3 rounded-xl bg-[#000000]/50 border border-[#394B61] shrink-0">
+              <Award className="w-6 h-6 text-[#F27C36]" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-white">Certificación Directa Japón</h4>
-              <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-                Garantía oficial y soporte avalado por la fábrica con personal en constante actualización.
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                Garantía oficial LUMESA y soporte avalado por la fábrica con personal en constante actualización.
               </p>
             </div>
           </div>

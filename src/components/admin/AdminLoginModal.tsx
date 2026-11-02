@@ -26,7 +26,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   onLogin
 }) => {
   const [selectedRole, setSelectedRole] = useState<AdminRole>(currentUser?.role || 'super_admin');
-  const [email, setEmail] = useState('admin@printmax.mx');
+  const [email, setEmail] = useState('admin@lumesa.mx');
   const [password, setPassword] = useState('••••••••');
 
   if (!isOpen) return null;
@@ -55,20 +55,20 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
       />
 
       {/* Centered Modal Window */}
-      <div className="relative bg-black text-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full flex flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden border border-neutral-800 z-10 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-[#182F4F] text-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full flex flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden border border-[#394B61] z-10 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Modal Header - Sticky */}
-        <div className="shrink-0 bg-neutral-950 px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between border-b border-neutral-800">
+        <div className="shrink-0 bg-[#000000] px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between border-b border-[#394B61]">
           <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-blue-500 shrink-0">
-              <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#182F4F] border border-[#394B61] flex items-center justify-center text-[#F27C36] shrink-0">
+              <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-[#F27C36]" />
             </div>
             <div className="min-w-0">
               <h3 className="text-sm sm:text-base md:text-lg font-bold text-white truncate">
                 Acceso al Módulo Administrativo
               </h3>
-              <p className="text-[11px] sm:text-xs text-neutral-400 truncate">
-                Gestión Autoadministrable Printmax Kyocera
+              <p className="text-[11px] sm:text-xs text-slate-300 truncate">
+                Gestión Autoadministrable LUMESA Kyocera
               </p>
             </div>
           </div>

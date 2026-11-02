@@ -42,13 +42,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     setCouponError('');
     setCouponSuccess('');
     const code = couponCode.trim().toUpperCase();
-    if (code === 'KYOCERA10' || code === 'PRINTMAX10') {
+    if (code === 'KYOCERA10' || code === 'LUMESA10' || code === 'PRINTMAX10') {
       setDiscountPercent(10);
-      setCouponSuccess('¡Cupón del 10% de descuento corporativo aplicado!');
+      setCouponSuccess('¡Cupón LUMESA del 10% de descuento corporativo aplicado!');
     } else if (code === 'ENVIOFREE') {
       setCouponSuccess('¡Envío nacional gratuito aplicado!');
     } else {
-      setCouponError('Cupón inválido. Intente con: KYOCERA10');
+      setCouponError('Cupón inválido. Intente con: LUMESA10 o KYOCERA10');
     }
   };
 

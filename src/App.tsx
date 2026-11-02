@@ -19,6 +19,8 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
 import { ProductFormModal } from './components/admin/ProductFormModal';
 import { OrderDetailModal } from './components/admin/OrderDetailModal';
+import { SplashScreen } from './components/SplashScreen';
+import { PWAInstallButton } from './components/PWAInstallButton';
 import { PRODUCTS } from './data/mockData';
 import { INITIAL_SITE_CONTENT, INITIAL_ADMIN_USERS, INITIAL_ORDERS } from './data/initialContent';
 import { 
@@ -68,7 +70,7 @@ export default function App() {
   // ==========================================
   const [products, setProducts] = useState<Product[]>(() => {
     try {
-      const saved = localStorage.getItem('printmax_products');
+      const saved = localStorage.getItem('lumesa_products');
       if (saved) return JSON.parse(saved);
     } catch {
       // fallback
@@ -78,7 +80,7 @@ export default function App() {
 
   const [orders, setOrders] = useState<OrderDetails[]>(() => {
     try {
-      const saved = localStorage.getItem('printmax_orders');
+      const saved = localStorage.getItem('lumesa_orders');
       if (saved) return JSON.parse(saved);
     } catch {
       // fallback
@@ -88,7 +90,7 @@ export default function App() {
 
   const [siteContent, setSiteContent] = useState<SiteContent>(() => {
     try {
-      const saved = localStorage.getItem('printmax_site_content');
+      const saved = localStorage.getItem('lumesa_site_content');
       if (saved) return JSON.parse(saved);
     } catch {
       // fallback
@@ -98,7 +100,7 @@ export default function App() {
 
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => {
     try {
-      const saved = localStorage.getItem('printmax_current_admin');
+      const saved = localStorage.getItem('lumesa_current_admin');
       if (saved) return JSON.parse(saved);
     } catch {
       // fallback
@@ -108,22 +110,22 @@ export default function App() {
 
   // Sync state changes to LocalStorage
   useEffect(() => {
-    localStorage.setItem('printmax_products', JSON.stringify(products));
+    localStorage.setItem('lumesa_products', JSON.stringify(products));
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('printmax_orders', JSON.stringify(orders));
+    localStorage.setItem('lumesa_orders', JSON.stringify(orders));
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem('printmax_site_content', JSON.stringify(siteContent));
+    localStorage.setItem('lumesa_site_content', JSON.stringify(siteContent));
   }, [siteContent]);
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('printmax_current_admin', JSON.stringify(currentUser));
+      localStorage.setItem('lumesa_current_admin', JSON.stringify(currentUser));
     } else {
-      localStorage.removeItem('printmax_current_admin');
+      localStorage.removeItem('lumesa_current_admin');
     }
   }, [currentUser]);
 
@@ -316,10 +318,10 @@ export default function App() {
     setOrders(INITIAL_ORDERS);
     setSiteContent(INITIAL_SITE_CONTENT);
     setCurrentUser(INITIAL_ADMIN_USERS[0]);
-    localStorage.removeItem('printmax_products');
-    localStorage.removeItem('printmax_orders');
-    localStorage.removeItem('printmax_site_content');
-    localStorage.removeItem('printmax_current_admin');
+    localStorage.removeItem('lumesa_products');
+    localStorage.removeItem('lumesa_orders');
+    localStorage.removeItem('lumesa_site_content');
+    localStorage.removeItem('lumesa_current_admin');
   };
 
   const handleChangeAdminRole = (role: AdminRole) => {
@@ -340,48 +342,49 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-['Plus_Jakarta_Sans',sans-serif] selection:bg-black selection:text-white">
-      {/* Header (Black, responsive with logo, full clean navigation and cart) */}
-      <Header
-        activeSection={activeSection}
-        onSelectSection={navigateToSection}
-        cartItems={cartItems}
-        onOpenCart={() => setIsCartOpen(true)}
-        onOpenQuickQuote={() => navigateToSection('renta')}
-        onOpenAdmin={() => {
-          if (activeSection === 'admin') {
-            navigateToSection('inicio');
-          } else {
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-['Plus_Jakarta_Sans',sans-serif] selection:bg-[#F27C36] selection:text-white">
+      {/* LUMESA Splash Screen with clean un-encapsulated logo */}
+      <SplashScreen />
+
+      {/* Header (LUMESA Corporate Deep Navy #182F4F with #F27C36 accents and PWA button) - Only visible on public site */}
+      {activeSection !== 'admin' && (
+        <Header
+          activeSection={activeSection}
+          onSelectSection={navigateToSection}
+          cartItems={cartItems}
+          onOpenCart={() => setIsCartOpen(true)}
+          onOpenQuickQuote={() => navigateToSection('renta')}
+          onOpenAdmin={() => {
             navigateToSection('admin');
-          }
-        }}
-        onSelectRoleAndOpenAdmin={(role) => {
-          handleChangeAdminRole(role);
-          navigateToSection('admin');
-        }}
-        currentUser={currentUser}
-      />
+          }}
+          onSelectRoleAndOpenAdmin={(role) => {
+            handleChangeAdminRole(role);
+            navigateToSection('admin');
+          }}
+          currentUser={currentUser}
+        />
+      )}
 
       {/* Breadcrumb Navigation when viewing an internal separate section */}
       {activeSection !== 'inicio' && activeSection !== 'admin' && (
-        <div className="bg-neutral-950 text-white border-b border-neutral-800 py-3 px-4 sm:px-6 lg:px-8">
+        <div className="bg-[#182F4F] text-white border-b border-[#394B61] py-3 px-4 sm:px-6 lg:px-8 shadow-sm">
           <div className="max-w-7xl mx-auto flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-2 text-neutral-400">
+            <div className="flex items-center space-x-2 text-slate-300">
               <button 
                 onClick={() => navigateToSection('inicio')}
                 className="hover:text-white transition"
               >
                 Inicio
               </button>
-              <ChevronRight className="w-3.5 h-3.5 text-neutral-600" />
-              <span className="text-white font-bold">
+              <ChevronRight className="w-3.5 h-3.5 text-[#F27C36]" />
+              <span className="text-[#F27C36] font-bold">
                 {sectionTitles[activeSection]}
               </span>
             </div>
 
             <button
               onClick={() => navigateToSection('inicio')}
-              className="text-neutral-400 hover:text-white flex items-center space-x-1"
+              className="text-slate-300 hover:text-white flex items-center space-x-1"
             >
               <span>← Volver al Menú Principal</span>
             </button>
@@ -409,13 +412,13 @@ export default function App() {
             <section className="py-16 bg-white border-b border-slate-200">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-2xl mx-auto mb-12">
-                  <span className="text-xs font-bold uppercase tracking-wider text-blue-500 block mb-1">
-                    Plataforma Integral Printmax
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#F27C36] block mb-1">
+                    Plataforma Integral LUMESA
                   </span>
-                  <h3 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
+                  <h3 className="text-2xl sm:text-3xl font-black text-[#182F4F] tracking-tight">
                     Explora Nuestras Soluciones Documentales
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 mt-2">
+                  <p className="text-xs sm:text-sm text-[#394B61] mt-2">
                     Accede de forma directa e independiente a cada área de nuestro catálogo y servicios especializados.
                   </p>
                 </div>
@@ -424,132 +427,132 @@ export default function App() {
                   {/* Card 1: Tienda */}
                   <div 
                     onClick={() => navigateToSection('tienda')}
-                    className="p-6 rounded-3xl bg-black text-white border border-neutral-800 hover:border-neutral-700 hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
                   >
                     <div>
-                      <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-4">
-                        <Store className="w-6 h-6 text-blue-500" />
+                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                        <Store className="w-6 h-6 text-[#F27C36]" />
                       </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-blue-400 transition">
+                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
                         Tienda en Línea
                       </h4>
-                      <p className="text-xs text-neutral-400 leading-relaxed">
+                      <p className="text-xs text-slate-300 leading-relaxed">
                         Compra directa de multifuncionales, cartuchos de tóner genuino y kits con facturación CFDI 4.0 inmediata.
                       </p>
                     </div>
-                    <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-between text-xs font-bold text-blue-400">
+                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
                       <span>Ver Tienda</span>
-                      <ArrowRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
 
                   {/* Card 2: Hardware */}
                   <div 
                     onClick={() => navigateToSection('hardware')}
-                    className="p-6 rounded-3xl bg-black text-white border border-neutral-800 hover:border-neutral-700 hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
                   >
                     <div>
-                      <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-4">
-                        <Printer className="w-6 h-6 text-blue-500" />
+                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                        <Printer className="w-6 h-6 text-[#F27C36]" />
                       </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-blue-400 transition">
+                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
                         Hardware & Equipos
                       </h4>
-                      <p className="text-xs text-neutral-400 leading-relaxed">
+                      <p className="text-xs text-slate-300 leading-relaxed">
                         Multifuncionales A3, A4, impresoras láser ECOSYS y prensas de producción TASKalfa con comparador técnico.
                       </p>
                     </div>
-                    <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-between text-xs font-bold text-blue-400">
+                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
                       <span>Ver Catálogo</span>
-                      <ArrowRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
 
                   {/* Card 3: Renta */}
                   <div 
                     onClick={() => navigateToSection('renta')}
-                    className="p-6 rounded-3xl bg-black text-white border border-neutral-800 hover:border-neutral-700 hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
                   >
                     <div>
-                      <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-4">
-                        <Calculator className="w-6 h-6 text-blue-500" />
+                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                        <Calculator className="w-6 h-6 text-[#F27C36]" />
                       </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-blue-400 transition">
+                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
                         Renta de Equipos
                       </h4>
-                      <p className="text-xs text-neutral-400 leading-relaxed">
-                        Arrendamiento 100% deducible de impuestos con tóner original, refacciones y soporte en menos de 24h incluidos.
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Arrendamiento 100% deducible con tóner original, refacciones y soporte en menos de 24h garantizados por LUMESA.
                       </p>
                     </div>
-                    <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-between text-xs font-bold text-blue-400">
+                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
                       <span>Simulador de Renta</span>
-                      <ArrowRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
 
                   {/* Card 4: Software */}
                   <div 
                     onClick={() => navigateToSection('software')}
-                    className="p-6 rounded-3xl bg-black text-white border border-neutral-800 hover:border-neutral-700 hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
                   >
                     <div>
-                      <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-4">
-                        <Cpu className="w-6 h-6 text-blue-500" />
+                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                        <Cpu className="w-6 h-6 text-[#F27C36]" />
                       </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-blue-400 transition">
+                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
                         Software Kyocera
                       </h4>
-                      <p className="text-xs text-neutral-400 leading-relaxed">
+                      <p className="text-xs text-slate-300 leading-relaxed">
                         Control de costos MyQ, Net Manager, automatización DMConnect y monitoreo proactivo Fleet Services.
                       </p>
                     </div>
-                    <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-between text-xs font-bold text-blue-400">
+                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
                       <span>Ver Software</span>
-                      <ArrowRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
 
                   {/* Card 5: Soporte Técnico */}
                   <div 
                     onClick={() => navigateToSection('soporte')}
-                    className="p-6 rounded-3xl bg-black text-white border border-neutral-800 hover:border-neutral-700 hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
                   >
                     <div>
-                      <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-4">
-                        <Clock className="w-6 h-6 text-blue-500" />
+                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                        <Clock className="w-6 h-6 text-[#F27C36]" />
                       </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-blue-400 transition">
+                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
                         Soporte & Pólizas
                       </h4>
-                      <p className="text-xs text-neutral-400 leading-relaxed">
+                      <p className="text-xs text-slate-300 leading-relaxed">
                         Asistencia en sitio en &lt; 24h, ingenieros certificados y pólizas anuales con 15% de descuento en refacciones.
                       </p>
                     </div>
-                    <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-between text-xs font-bold text-blue-400">
+                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
                       <span>Planes de Soporte</span>
-                      <ArrowRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
 
                   {/* Card 6: Nosotros */}
                   <div 
                     onClick={() => navigateToSection('nosotros')}
-                    className="p-6 rounded-3xl bg-black text-white border border-neutral-800 hover:border-neutral-700 hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
                   >
                     <div>
-                      <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-4">
-                        <Building2 className="w-6 h-6 text-blue-500" />
+                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                        <Building2 className="w-6 h-6 text-[#F27C36]" />
                       </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-blue-400 transition">
+                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
                         Sobre Nosotros
                       </h4>
-                      <p className="text-xs text-neutral-400 leading-relaxed">
-                        Centro de distribución oficial de Kyocera Japón con sede en San Luis Potosí y cobertura en todo México.
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        LUMESA: Centro de distribución oficial de Kyocera Japón con sede en San Luis Potosí y cobertura en todo México.
                       </p>
                     </div>
-                    <div className="mt-6 pt-4 border-t border-neutral-800 flex items-center justify-between text-xs font-bold text-blue-400">
+                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
                       <span>Conocer Más</span>
-                      <ArrowRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 </div>
@@ -745,20 +748,25 @@ export default function App() {
         onUpdateStatus={handleUpdateOrderStatus}
       />
 
+      {/* Floating PWA Installation prompt on bottom-left for visitors */}
+      {activeSection !== 'admin' && (
+        <PWAInstallButton variant="floating" />
+      )}
+
       {/* Floating Shopping Cart Button (Always accessible on public sections) */}
       {activeSection !== 'admin' && (
         <aside aria-label="Carrito flotante" className="fixed bottom-22 right-6 z-40">
           <button
             onClick={() => setIsCartOpen(true)}
-            className="group relative flex items-center space-x-2 bg-black hover:bg-neutral-900 active:bg-neutral-950 text-white p-3.5 sm:px-4 sm:py-3 rounded-full border border-neutral-700 hover:border-blue-500 shadow-2xl transition transform hover:scale-105"
-            title="Ver Carrito de Compras"
+            className="group relative flex items-center space-x-2 bg-[#182F4F] hover:bg-[#394B61] active:bg-[#000000] text-white p-3.5 sm:px-4 sm:py-3 rounded-full border border-[#394B61] hover:border-[#F27C36] shadow-2xl transition transform hover:scale-105"
+            title="Ver Carrito de Compras LUMESA"
           >
-            <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 shrink-0" />
+            <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-[#F27C36] shrink-0" />
             <span className="hidden sm:inline text-xs font-bold tracking-wide">
               Carrito ({cartItems.reduce((acc, it) => acc + it.quantity, 0)})
             </span>
             {cartItems.reduce((acc, it) => acc + it.quantity, 0) > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-blue-600/50 animate-bounce">
+              <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-[#F27C36] text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-[#F27C36]/50 animate-bounce">
                 {cartItems.reduce((acc, it) => acc + it.quantity, 0)}
               </span>
             )}
@@ -770,15 +778,15 @@ export default function App() {
       {activeSection !== 'admin' && (
         <aside aria-label="Contacto rápido" className="fixed bottom-6 right-6 z-40">
           <a
-            href={`https://wa.me/${siteContent.contact.whatsapp}?text=Hola,%20me%20comunico%20desde%20la%20pagina%20web%20de%20PrintMax%20Kyocera%20para%20solicitar%20asesoria.`}
+            href={`https://wa.me/${siteContent.contact.whatsapp}?text=Hola,%20me%20comunico%20desde%20la%20pagina%20web%20de%20LUMESA%20Kyocera%20para%20solicitar%20asesoria.`}
             target="_blank"
             rel="noreferrer"
             className="group flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-2xl shadow-emerald-600/40 transition transform hover:scale-105"
-            title="Atención directa por WhatsApp"
+            title="Atención directa por WhatsApp LUMESA"
           >
             <MessageCircle className="w-6 h-6 shrink-0" />
             <span className="hidden sm:inline text-xs font-bold tracking-wide">
-              WhatsApp Asesor Kyocera
+              WhatsApp Asesor LUMESA
             </span>
           </a>
         </aside>

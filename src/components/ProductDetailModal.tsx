@@ -45,16 +45,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full flex flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden border border-slate-200 z-10 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header - Sticky */}
-        <div className="shrink-0 bg-slate-900 text-white px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between border-b border-slate-800">
+        <div className="shrink-0 bg-[#182F4F] text-white px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between border-b border-[#394B61]">
           <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-            <span className="px-2.5 py-0.5 rounded text-[11px] font-black uppercase tracking-wider bg-blue-600 text-white shrink-0">
+            <span className="px-2.5 py-0.5 rounded text-[11px] font-black uppercase tracking-wider bg-[#F27C36] text-white shrink-0">
               {product.categoryLabel}
             </span>
-            <span className="text-xs sm:text-sm font-mono text-slate-400 truncate">SKU: {product.code}</span>
+            <span className="text-xs sm:text-sm font-mono text-slate-300 truncate">SKU: {product.code}</span>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition shrink-0 ml-2"
+            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-[#394B61] transition shrink-0 ml-2"
             aria-label="Cerrar modal"
           >
             <X className="w-5 h-5" />
@@ -177,7 +177,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   {product.rentalPriceMonthly && (
                     <div className="mt-2 sm:mt-0 text-left sm:text-right">
                       <span className="text-xs text-blue-600 font-bold block">Opción de Renta Empresarial</span>
-                      <span className="text-xl font-black text-blue-600">
+                      <span className="text-xl font-black text-[#F27C36]">
                         ${product.rentalPriceMonthly.toLocaleString('es-MX')} <span className="text-xs text-slate-600 font-normal">MXN / mes</span>
                       </span>
                     </div>
@@ -190,9 +190,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       onAddToCart(product, 'compra');
                       onClose();
                     }}
-                    className="py-3 px-4 rounded-xl bg-black hover:bg-neutral-900 text-white font-bold text-xs sm:text-sm border border-neutral-700 hover:border-blue-500 transition flex items-center justify-center space-x-2 shadow-md"
+                    className="py-3 px-4 rounded-xl bg-[#182F4F] hover:bg-[#394B61] text-white font-bold text-xs sm:text-sm border border-[#394B61] hover:border-[#F27C36] transition flex items-center justify-center space-x-2 shadow-md cursor-pointer"
                   >
-                    <ShoppingCart className="w-4 h-4 text-blue-500" />
+                    <ShoppingCart className="w-4 h-4 text-[#F27C36]" />
                     <span>Añadir a Carrito</span>
                   </button>
 
@@ -202,7 +202,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                         onAddToCart(product, 'renta');
                         onClose();
                       }}
-                      className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition text-center"
+                      className="py-3 px-4 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm transition text-center shadow-md shadow-[#F27C36]/20 cursor-pointer"
                     >
                       Rentar Equipo
                     </button>
@@ -210,13 +210,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
                   <button
                     onClick={() => onToggleCompare(product)}
-                    className={`py-3 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
+                    className={`py-3 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer ${
                       isCompared
-                        ? 'bg-blue-50 text-blue-700 border-blue-400'
+                        ? 'bg-[#182F4F] text-[#F27C36] border-[#F27C36]'
                         : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    {isCompared ? <Check className="w-3.5 h-3.5" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+                    {isCompared ? <Check className="w-3.5 h-3.5 text-[#F27C36]" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
                     <span>{isCompared ? 'En Comparador' : 'Comparar'}</span>
                   </button>
                 </div>

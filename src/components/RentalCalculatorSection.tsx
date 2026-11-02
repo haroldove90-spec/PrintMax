@@ -58,30 +58,30 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider mb-3">
-            <Calculator className="w-4 h-4 text-blue-600" />
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#182F4F] text-white border border-[#394B61] text-xs font-bold uppercase tracking-wider mb-3">
+            <Calculator className="w-4 h-4 text-[#F27C36]" />
             <span>Servicios de Renta de Equipos Kyocera</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#182F4F] tracking-tight">
             Arrendamiento Inteligente 100% Deducible
           </h2>
-          <p className="mt-4 text-slate-600 text-base sm:text-lg leading-relaxed">
+          <p className="mt-4 text-[#394B61] text-base sm:text-lg leading-relaxed">
             El servicio de renta de impresoras Kyocera ofrece una solución integral con seguimiento de asesoría y servicio al cliente por más de 30 años de experiencia. Obtenga equipos de última generación con gran ahorro y máxima productividad.
           </p>
         </div>
 
-        {/* 4 Benefits Cards with Black Background and Blue Icons */}
+        {/* 4 Benefits Cards with Black Background and LUMESA Accents */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {RENTAL_PERKS.map((perk, i) => {
             const Icon = perkIcons[perk.icon] || CheckCircle2;
             return (
               <div 
                 key={i} 
-                className="p-6 rounded-2xl bg-black text-white border border-neutral-800 hover:border-neutral-700 hover:shadow-xl transition flex flex-col justify-between"
+                className="p-6 rounded-2xl bg-[#000000] text-white border border-neutral-800 hover:border-[#F27C36]/60 hover:shadow-xl transition flex flex-col justify-between"
               >
                 <div>
-                  <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 text-blue-500 flex items-center justify-center mb-4">
-                    <Icon className="w-6 h-6 text-blue-500" />
+                  <div className="w-12 h-12 rounded-2xl bg-[#182F4F] border border-[#394B61] text-[#F27C36] flex items-center justify-center mb-4">
+                    <Icon className="w-6 h-6 text-[#F27C36]" />
                   </div>
                   <h4 className="text-base font-bold text-white mb-2">
                     {perk.title}
@@ -96,11 +96,11 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
         </div>
 
         {/* Interactive Rental Simulator Box */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 rounded-3xl text-white p-6 sm:p-10 shadow-2xl border border-slate-800 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-[#182F4F] via-[#182F4F] to-[#000000] rounded-3xl text-white p-6 sm:p-10 shadow-2xl border border-[#394B61] relative overflow-hidden">
           <div className="max-w-4xl mx-auto">
             
             <div className="text-center mb-10">
-              <span className="text-blue-400 text-xs font-bold uppercase tracking-widest block mb-1">
+              <span className="text-[#F27C36] text-xs font-bold uppercase tracking-widest block mb-1">
                 Simulador Dinámico de Renta
               </span>
               <h3 className="text-2xl sm:text-3xl font-black">
@@ -126,8 +126,8 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
                       onClick={() => setFormat('A3')}
                       className={`p-3.5 rounded-xl border text-left transition ${
                         format === 'A3'
-                          ? 'bg-blue-600 border-blue-500 text-white font-bold ring-2 ring-blue-400/50'
-                          : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800'
+                          ? 'bg-[#F27C36] border-[#F27C36] text-white font-bold ring-2 ring-[#F27C36]/50'
+                          : 'bg-[#394B61]/50 border-[#394B61] text-slate-200 hover:bg-[#394B61]'
                       }`}
                     >
                       <div className="text-sm">Formato A3</div>
@@ -139,8 +139,8 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
                       onClick={() => setFormat('A4')}
                       className={`p-3.5 rounded-xl border text-left transition ${
                         format === 'A4'
-                          ? 'bg-blue-600 border-blue-500 text-white font-bold ring-2 ring-blue-400/50'
-                          : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800'
+                          ? 'bg-[#F27C36] border-[#F27C36] text-white font-bold ring-2 ring-[#F27C36]/50'
+                          : 'bg-[#394B61]/50 border-[#394B61] text-slate-200 hover:bg-[#394B61]'
                       }`}
                     >
                       <div className="text-sm">Formato A4</div>
@@ -160,8 +160,8 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
                       onClick={() => setMode('color')}
                       className={`p-3.5 rounded-xl border text-left transition ${
                         mode === 'color'
-                          ? 'bg-blue-600 border-blue-500 text-white font-bold ring-2 ring-blue-400/50'
-                          : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800'
+                          ? 'bg-[#F27C36] border-[#F27C36] text-white font-bold ring-2 ring-[#F27C36]/50'
+                          : 'bg-[#394B61]/50 border-[#394B61] text-slate-200 hover:bg-[#394B61]'
                       }`}
                     >
                       <div className="text-sm">Color + B&N</div>
@@ -173,8 +173,8 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
                       onClick={() => setMode('mono')}
                       className={`p-3.5 rounded-xl border text-left transition ${
                         mode === 'mono'
-                          ? 'bg-blue-600 border-blue-500 text-white font-bold ring-2 ring-blue-400/50'
-                          : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800'
+                          ? 'bg-[#F27C36] border-[#F27C36] text-white font-bold ring-2 ring-[#F27C36]/50'
+                          : 'bg-[#394B61]/50 border-[#394B61] text-slate-200 hover:bg-[#394B61]'
                       }`}
                     >
                       <div className="text-sm">Solo Monocromático</div>
@@ -189,7 +189,7 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                       3. Volumen Mensual Estimado
                     </label>
-                    <span className="text-sm font-bold text-blue-400 font-mono">
+                    <span className="text-sm font-bold text-[#F27C36] font-mono">
                       {volume.toLocaleString('es-MX')} impresiones / mes
                     </span>
                   </div>
@@ -200,7 +200,7 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
                     step="1000"
                     value={volume}
                     onChange={(e) => setVolume(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    className="w-full h-2 bg-[#394B61] rounded-lg appearance-none cursor-pointer accent-[#F27C36]"
                   />
                   <div className="flex justify-between text-[10px] text-slate-400 mt-1">
                     <span>1,000 págs</span>
@@ -222,8 +222,8 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
                         onClick={() => setContractTerm(months)}
                         className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition ${
                           contractTerm === months
-                            ? 'bg-white text-slate-900 border-white'
-                            : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                            ? 'bg-[#F27C36] text-white border-[#F27C36]'
+                            : 'bg-[#394B61]/50 text-slate-200 border-[#394B61] hover:bg-[#394B61]'
                         }`}
                       >
                         {months} Meses {months === 36 && '⭐'}
@@ -234,7 +234,7 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
               </div>
 
               {/* Estimate Display Card */}
-              <div className="lg:col-span-5 bg-slate-800/90 rounded-2xl p-6 border border-slate-700 flex flex-col justify-between">
+              <div className="lg:col-span-5 bg-[#000000]/70 rounded-2xl p-6 border border-[#394B61] flex flex-col justify-between">
                 <div>
                   <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">
                     Cuota Mensual Estimada
@@ -248,28 +248,28 @@ export const RentalCalculatorSection: React.FC<RentalCalculatorSectionProps> = (
 
                   <div className="mt-6 space-y-2 text-xs text-slate-300">
                     <div className="flex items-center space-x-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-[#F27C36] shrink-0" />
                       <span>Equipo Kyocera nuevo de última generación</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-[#F27C36] shrink-0" />
                       <span>Tóner original para {volume.toLocaleString()} págs</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-[#F27C36] shrink-0" />
                       <span>Soporte técnico y refacciones sin costo extra</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-[#F27C36] shrink-0" />
                       <span>Asistencia en sitio en menos de 24 horas</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-8 pt-4 border-t border-slate-700">
+                <div className="mt-8 pt-4 border-t border-[#394B61]">
                   <button
                     onClick={handleSendToQuote}
-                    className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm tracking-wide shadow-xl shadow-blue-600/30 transition flex items-center justify-center space-x-2"
+                    className="w-full py-3.5 px-4 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm tracking-wide shadow-xl shadow-[#F27C36]/30 transition flex items-center justify-center space-x-2 cursor-pointer"
                   >
                     <span>Solicitar Propuesta Formal</span>
                     <ArrowRight className="w-4 h-4" />

@@ -54,7 +54,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       cancelado: 'ha sido cancelado.'
     };
 
-    const text = `Hola ${order.customerName}, le informamos de Printmax Kyocera México que su pedido con folio ${order.orderId} ${statusTextMap[selectedStatus]} Total: $${order.total.toLocaleString('es-MX')} MXN. Estamos a sus órdenes.`;
+    const text = `Hola ${order.customerName}, le informamos de LUMESA Kyocera México que su pedido con folio ${order.orderId} ${statusTextMap[selectedStatus]} Total: $${order.total.toLocaleString('es-MX')} MXN. Estamos a sus órdenes.`;
     return `https://wa.me/52${order.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
   };
 

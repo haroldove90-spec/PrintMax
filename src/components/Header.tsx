@@ -17,6 +17,7 @@ import {
   KeyRound
 } from 'lucide-react';
 import { AppSection, CartItem, AdminUser, AdminRole } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   activeSection: AppSection;
@@ -56,30 +57,52 @@ export const Header: React.FC<HeaderProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-black text-white border-b border-neutral-800 shadow-2xl font-['Plus_Jakarta_Sans',sans-serif]">
+    <header className="sticky top-0 z-50 bg-[#182F4F] text-white border-b border-[#394B61] shadow-xl font-['Plus_Jakarta_Sans',sans-serif]">
+      {/* Top micro bar in #000000 for corporate contact & PWA notice */}
+      <div className="bg-[#000000] text-slate-300 text-[11px] py-1.5 px-4 sm:px-6 lg:px-8 border-b border-[#182F4F]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <span className="inline-flex items-center space-x-1.5 font-semibold text-white">
+              <span className="w-2 h-2 rounded-full bg-[#F27C36] animate-pulse" />
+              <span>LUMESA • Distribuidor Oficial Kyocera Japón</span>
+            </span>
+            <span className="hidden sm:inline text-slate-400">|</span>
+            <span className="hidden sm:inline text-slate-400">Soporte Certificado &lt; 24h en México</span>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <a href="tel:4448123000" className="hover:text-white transition flex items-center space-x-1">
+              <span>Tel: (444) 812-3000</span>
+            </a>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span className="hidden sm:inline text-[#F27C36] font-semibold">01 800 KYOCERA</span>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-3">
           
-          {/* Logo (Always visible, clean, shrink-0) */}
+          {/* Logo (Clean, completely un-encapsulated: no box, no border, no background) */}
           <div className="shrink-0 flex items-center">
             <button
               onClick={() => onSelectSection('inicio')}
-              className="flex items-center group focus:outline-none"
-              title="Ir a Inicio - Printmax"
+              className="flex items-center group focus:outline-none p-0 bg-transparent border-0"
+              title="Ir a Inicio - LUMESA"
             >
               <img
-                src="/printmaxlogo.png"
-                alt="Printmax"
-                className="h-9 sm:h-11 w-auto object-contain transition duration-200 group-hover:opacity-90"
+                src="/lumesalogo.png"
+                alt="LUMESA"
+                className="h-10 sm:h-12 w-auto object-contain transition duration-200 group-hover:opacity-90 drop-shadow-sm select-none"
                 onError={(e) => {
-                  e.currentTarget.src = "https://appdesignproyectos.com/printmaxlogo.png";
+                  e.currentTarget.src = "https://appdesignproyectos.com/lumesalogo.png";
                 }}
               />
             </button>
           </div>
 
-          {/* Complete Desktop Navigation Menu (NO SCROLLBAR, FULLY VISIBLE) */}
-          <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
+          {/* Complete Desktop Navigation Menu */}
+          <nav className="hidden lg:flex items-center space-x-1 xl:space-x-1.5">
             {navLinks.map((link) => {
               const isActive = activeSection === link.id;
               return (
@@ -88,11 +111,11 @@ export const Header: React.FC<HeaderProps> = ({
                   onClick={() => onSelectSection(link.id)}
                   className={`px-3 py-2 text-xs xl:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-200 ${
                     isActive
-                      ? 'bg-neutral-900 text-white border border-neutral-700 shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+                      ? 'bg-[#394B61] text-white border border-[#F27C36]/60 shadow-sm'
+                      : 'text-slate-200 hover:text-white hover:bg-[#394B61]/50'
                   }`}
                 >
-                  <span className={isActive ? 'text-blue-400 font-bold' : ''}>
+                  <span className={isActive ? 'text-[#F27C36] font-bold' : ''}>
                     {link.name}
                   </span>
                 </button>
@@ -100,30 +123,33 @@ export const Header: React.FC<HeaderProps> = ({
             })}
           </nav>
 
-          {/* Action Buttons: Only Cart (Icon + Badge) & Cotizar Renta */}
-          <div className="flex items-center space-x-3 shrink-0">
+          {/* Action Buttons: PWA Install, Cart, Cotizar Renta, Admin */}
+          <div className="flex items-center space-x-2.5 shrink-0">
+            {/* In-App PWA Install Button */}
+            <PWAInstallButton variant="header" />
+
             {/* Cart Button: ONLY ICON AND NUMBER INDICATOR */}
             <button
               onClick={onOpenCart}
-              className="relative p-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white border border-neutral-800 hover:border-neutral-700 transition flex items-center justify-center shadow-sm"
+              className="relative p-2.5 rounded-xl bg-[#394B61] hover:bg-[#000000] text-white border border-[#394B61] hover:border-[#F27C36] transition flex items-center justify-center shadow-sm"
               aria-label={`Carrito de compras con ${totalCartCount} productos`}
               title="Ver Carrito de Compras"
             >
-              <ShoppingCart className="w-5 h-5 text-blue-500" />
+              <ShoppingCart className="w-5 h-5 text-white" />
               {totalCartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center shadow-lg shadow-blue-600/50 animate-pulse">
+                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#F27C36] text-white text-[11px] font-bold flex items-center justify-center shadow-lg shadow-[#F27C36]/50 animate-pulse">
                   {totalCartCount}
                 </span>
               )}
             </button>
 
-            {/* Cotizar Renta Button: Sleek Black with Blue Accent */}
+            {/* Cotizar Renta Button: LUMESA Vibrant Orange Accent */}
             <button
               onClick={onOpenQuickQuote}
-              className="hidden sm:inline-flex items-center space-x-1.5 bg-neutral-900 hover:bg-black text-white px-3.5 py-2.5 rounded-xl text-xs font-bold tracking-wide uppercase border border-neutral-700 hover:border-blue-500 transition shadow-sm"
+              className="hidden sm:inline-flex items-center space-x-1.5 bg-[#F27C36] hover:bg-[#d96624] active:bg-[#c2591b] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold tracking-wide uppercase transition shadow-md"
             >
               <span>Cotizar Renta</span>
-              <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
             {/* Admin Portal Button: Prominent & clear */}
@@ -131,17 +157,17 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onOpenAdmin}
               className={`px-3 py-2 rounded-xl border transition flex items-center space-x-2 shadow-sm ${
                 activeSection === 'admin'
-                  ? 'bg-blue-600 text-white border-blue-500 shadow-blue-500/20 ring-1 ring-blue-500'
-                  : 'bg-neutral-900 hover:bg-neutral-850 text-neutral-200 hover:text-white border-neutral-700 hover:border-blue-500'
+                  ? 'bg-[#F27C36] text-white border-[#F27C36] shadow-[#F27C36]/20 ring-1 ring-[#F27C36]'
+                  : 'bg-[#000000]/60 hover:bg-[#000000] text-slate-200 hover:text-white border-[#394B61] hover:border-[#F27C36]'
               }`}
-              title="Panel Autoadministrable: Admin Web (CMS) y Admin Tienda en Línea"
+              title="Panel Autoadministrable LUMESA: Admin Web (CMS) y Admin Tienda en Línea"
             >
-              <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-[#F27C36] shrink-0" />
               <div className="flex flex-col text-left leading-none">
                 <span className="text-xs font-bold text-white tracking-wide">
                   {activeSection === 'admin' ? 'Salir Admin' : 'Panel Admin'}
                 </span>
-                <span className="text-[9px] text-blue-400 font-semibold hidden md:inline">
+                <span className="text-[9px] text-[#F27C36] font-semibold hidden md:inline">
                   Web & Tienda
                 </span>
               </div>
@@ -150,7 +176,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Mobile Hamburger Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-neutral-300 hover:text-white bg-neutral-900 border border-neutral-800 transition"
+              className="lg:hidden p-2 rounded-xl text-slate-200 hover:text-white bg-[#394B61] border border-[#394B61] transition"
               aria-label="Abrir menú"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -161,8 +187,8 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-black border-t border-neutral-800 px-4 pt-3 pb-6 space-y-3">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 px-3 py-1">
+        <div className="lg:hidden bg-[#182F4F] border-t border-[#394B61] px-4 pt-3 pb-6 space-y-3">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300 px-3 py-1">
             Secciones Públicas
           </div>
 
@@ -179,12 +205,12 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                   className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-semibold flex items-center space-x-3 transition ${
                     isActive
-                      ? 'bg-neutral-900 text-white border border-neutral-700'
-                      : 'text-neutral-300 hover:bg-neutral-900/60 hover:text-white'
+                      ? 'bg-[#394B61] text-white border border-[#F27C36]'
+                      : 'text-slate-200 hover:bg-[#394B61]/60 hover:text-white'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-neutral-400'}`} />
-                  <span className={isActive ? 'text-blue-400 font-bold' : ''}>
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#F27C36]' : 'text-slate-400'}`} />
+                  <span className={isActive ? 'text-[#F27C36] font-bold' : ''}>
                     {link.name}
                   </span>
                 </button>
@@ -193,8 +219,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Dedicated Admin Roles in Mobile Menu */}
-          <div className="pt-3 border-t border-neutral-800 space-y-2">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-blue-400 px-1">
+          <div className="pt-3 border-t border-[#394B61] space-y-2">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-[#F27C36] px-1">
               Acceso a Roles de Administración
             </div>
 
@@ -208,13 +234,13 @@ export const Header: React.FC<HeaderProps> = ({
                 }
                 setMobileMenuOpen(false);
               }}
-              className="w-full py-2.5 px-3 bg-purple-950/40 hover:bg-purple-900/60 text-purple-200 rounded-xl text-xs font-bold border border-purple-500/40 text-left flex items-center justify-between transition"
+              className="w-full py-2.5 px-3 bg-[#394B61]/70 hover:bg-[#394B61] text-white rounded-xl text-xs font-bold border border-[#F27C36]/40 text-left flex items-center justify-between transition"
             >
               <div className="flex items-center space-x-2">
-                <Globe className="w-4 h-4 text-purple-400" />
+                <Globe className="w-4 h-4 text-[#F27C36]" />
                 <span>Admin Página Web (CMS)</span>
               </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F27C36]/20 text-[#F27C36] font-mono">
                 Slider & Textos
               </span>
             </button>
@@ -229,7 +255,7 @@ export const Header: React.FC<HeaderProps> = ({
                 }
                 setMobileMenuOpen(false);
               }}
-              className="w-full py-2.5 px-3 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-200 rounded-xl text-xs font-bold border border-emerald-500/40 text-left flex items-center justify-between transition"
+              className="w-full py-2.5 px-3 bg-[#394B61]/70 hover:bg-[#394B61] text-white rounded-xl text-xs font-bold border border-emerald-500/40 text-left flex items-center justify-between transition"
             >
               <div className="flex items-center space-x-2">
                 <Store className="w-4 h-4 text-emerald-400" />
@@ -250,13 +276,13 @@ export const Header: React.FC<HeaderProps> = ({
                 }
                 setMobileMenuOpen(false);
               }}
-              className="w-full py-2.5 px-3 bg-neutral-900 hover:bg-neutral-850 text-white rounded-xl text-xs font-bold border border-neutral-700 text-left flex items-center justify-between transition"
+              className="w-full py-2.5 px-3 bg-[#000000] hover:bg-[#394B61] text-white rounded-xl text-xs font-bold border border-[#394B61] text-left flex items-center justify-between transition"
             >
               <div className="flex items-center space-x-2">
-                <KeyRound className="w-4 h-4 text-blue-400" />
+                <KeyRound className="w-4 h-4 text-[#F27C36]" />
                 <span>Super Administrador (Total)</span>
               </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F27C36]/20 text-[#F27C36] font-mono">
                 Full Access
               </span>
             </button>
@@ -266,10 +292,10 @@ export const Header: React.FC<HeaderProps> = ({
                 onSelectSection('renta');
                 setMobileMenuOpen(false);
               }}
-              className="w-full mt-2 py-2.5 bg-neutral-950 text-white rounded-xl text-xs font-bold uppercase tracking-wider border border-neutral-800 text-center flex items-center justify-center space-x-1.5"
+              className="w-full mt-2 py-2.5 bg-[#F27C36] hover:bg-[#d96624] text-white rounded-xl text-xs font-bold uppercase tracking-wider text-center flex items-center justify-center space-x-1.5 transition shadow"
             >
               <span>Cotizar Renta de Equipos</span>
-              <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -277,3 +303,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+
