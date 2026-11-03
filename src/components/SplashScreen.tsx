@@ -32,11 +32,14 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
       style={{ backgroundColor: '#ffffff' }}
     >
       <div className="flex flex-col items-center px-6 max-w-md w-full text-center">
-        {/* Clean, un-encapsulated LUMESA logo */}
+        {/* Clean, un-encapsulated LUMESA logo directly on white background */}
         <img
-          src="/lumesalogo.png"
+          src="https://appdesignproyectos.com/lumesalogo.png"
           alt="LUMESA"
-          className="w-auto h-16 sm:h-20 object-contain drop-shadow-sm select-none animate-in zoom-in-95 duration-500"
+          className="w-auto max-w-[260px] sm:max-w-xs h-16 sm:h-20 object-contain select-none drop-shadow-sm animate-in zoom-in-95 duration-500"
+          onError={(e) => {
+            e.currentTarget.src = "/lumesalogo.png";
+          }}
         />
 
         {/* Brand progress bar in #182F4F and #F27C36 */}
