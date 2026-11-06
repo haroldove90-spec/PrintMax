@@ -124,6 +124,37 @@ export interface ContentVisibility {
   showSoftwareHighlights?: boolean;
 }
 
+export interface PillarItem {
+  id: string;
+  title: string;
+  description: string;
+  icon?: string;
+}
+
+export interface SoftwareModuleItem {
+  id: string;
+  title: string;
+  tagline: string;
+  activeModule?: string;
+  description: string;
+  icon: string;
+  benefits: string[];
+}
+
+export interface HardwareCategoryInfo {
+  id: 'a3' | 'a4' | 'impresoras' | 'produccion' | string;
+  name: string;
+  subtitle: string;
+  description: string;
+}
+
+export interface WhatsAppButtonConfig {
+  label?: string;
+  phone?: string;
+  defaultMessage?: string;
+  enabled?: boolean;
+}
+
 export interface SiteContent {
   slides: HeroSlide[];
   showTrustMetrics?: boolean;
@@ -138,13 +169,34 @@ export interface SiteContent {
     subheadline: string;
     queHacemosTitle: string;
     queHacemosText: string;
+    queHacemosBullets?: string[];
+    queHacemosChips?: string[];
     sobreNosotrosTitle: string;
     sobreNosotrosText1: string;
     sobreNosotrosText2: string;
     clientsCount: string;
     experienceYears: string;
+    pillars?: PillarItem[];
   };
+  hardwareSection?: {
+    tag?: string;
+    title?: string;
+    subtitle?: string;
+    categories?: HardwareCategoryInfo[];
+  };
+  softwareSection?: {
+    tag?: string;
+    title?: string;
+    subtitle?: string;
+    solutions?: SoftwareModuleItem[];
+  };
+  whatsappButton?: WhatsAppButtonConfig;
   contact: {
+    tag?: string;
+    title?: string;
+    subtitle?: string;
+    cardTitle?: string;
+    cardSubtitle?: string;
     phone: string;
     tollFree: string;
     salesEmail: string;
@@ -152,6 +204,7 @@ export interface SiteContent {
     address: string;
     schedule: string;
     whatsapp: string;
+    formButtonText?: string;
   };
   support: {
     annualPolicyPrice: number;

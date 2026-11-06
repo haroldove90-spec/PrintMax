@@ -12,15 +12,23 @@ import {
   Laptop
 } from 'lucide-react';
 import { SOFTWARE_SOLUTIONS } from '../data/mockData';
+import { SiteContent } from '../types';
+import { FormattedText } from './FormattedText';
 
 interface SoftwareSolutionsSectionProps {
   onOpenConsultation: (solutionName: string) => void;
+  content?: SiteContent['softwareSection'];
 }
 
 export const SoftwareSolutionsSection: React.FC<SoftwareSolutionsSectionProps> = ({
-  onOpenConsultation
+  onOpenConsultation,
+  content
 }) => {
-  const [activeSolutionId, setActiveSolutionId] = useState(SOFTWARE_SOLUTIONS[1].id);
+  const solutions = content?.solutions && content.solutions.length > 0
+    ? content.solutions
+    : SOFTWARE_SOLUTIONS;
+
+  const [activeSolutionId, setActiveSolutionId] = useState(solutions[0]?.id || 'software-impresion');
 
   const iconMap: Record<string, React.ElementType> = {
     Printer,
@@ -30,7 +38,11 @@ export const SoftwareSolutionsSection: React.FC<SoftwareSolutionsSectionProps> =
     Cpu: Workflow
   };
 
-  const selectedSolution = SOFTWARE_SOLUTIONS.find((s) => s.id === activeSolutionId) || SOFTWARE_SOLUTIONS[0];
+  const selectedSolution = solutions.find((s) => s.id === activeSolutionId) || solutions[0];
+
+  const tag = content?.tag || "Gestión Digital & Flujos Inteligentes";
+  const title = content?.title || "Software: Soluciones Inteligentes para tu Negocio";
+  const subtitle = content?.subtitle || "Optimice y asegure cada etapa del ciclo de vida de sus documentos. Transforme sus equipos multifuncionales Kyocera en centros neurálgicos de digitalización y ahorro corporativo.";
 
   return (
     <section id="software" className="py-20 bg-[#182F4F] text-white relative overflow-hidden">
@@ -44,14 +56,16 @@ export const SoftwareSolutionsSection: React.FC<SoftwareSolutionsSectionProps> =
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#000000]/50 border border-[#394B61] text-[#F27C36] text-xs font-bold uppercase tracking-wider mb-3">
             <Cpu className="w-4 h-4 text-[#F27C36]" />
-            <span>Gestión Digital & Flujos Inteligentes</span>
+            <span>
+              <FormattedText text={tag} />
+            </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Software: Soluciones Inteligentes para tu Negocio
+            <FormattedText text={title} />
           </h2>
-          <p className="mt-4 text-slate-200 text-base sm:text-lg leading-relaxed">
-            Optimice y asegure cada etapa del ciclo de vida de sus documentos. Transforme sus equipos multifuncionales Kyocera en centros neurálgicos de digitalización y ahorro corporativo.
-          </p>
+          <div className="mt-4 text-slate-200 text-base sm:text-lg leading-relaxed">
+            <FormattedText text={subtitle} />
+          </div>
         </div>
 
         {/* 2-Column Interactive Software Navigator */}
@@ -59,7 +73,7 @@ export const SoftwareSolutionsSection: React.FC<SoftwareSolutionsSectionProps> =
           
           {/* Left Column: Solution Selector Tabs */}
           <div className="lg:col-span-5 space-y-3">
-            {SOFTWARE_SOLUTIONS.map((sol) => {
+            {solutions.map((sol) => {
               const Icon = iconMap[sol.icon] || Cpu;
               const isSelected = sol.id === activeSolutionId;
 
@@ -82,14 +96,14 @@ export const SoftwareSolutionsSection: React.FC<SoftwareSolutionsSectionProps> =
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="text-base font-bold text-white tracking-tight">
-                        {sol.title}
+                        <FormattedText text={sol.title} />
                       </h3>
                       {isSelected && <ArrowRight className="w-4 h-4 text-white shrink-0 ml-2" />}
                     </div>
                     <span className={`text-xs block mt-0.5 font-medium ${
                       isSelected ? 'text-white/90' : 'text-slate-400'
                     }`}>
-                      {sol.tagline}
+                      <FormattedText text={sol.tagline} />
                     </span>
                   </div>
                 </button>
@@ -109,12 +123,12 @@ export const SoftwareSolutionsSection: React.FC<SoftwareSolutionsSectionProps> =
             </div>
 
             <h3 className="text-2xl sm:text-3xl font-black text-white mb-4">
-              {selectedSolution.title}
+              <FormattedText text={selectedSolution.title} />
             </h3>
 
-            <p className="text-slate-300 text-base leading-relaxed mb-6">
-              {selectedSolution.description}
-            </p>
+            <div className="text-slate-300 text-base leading-relaxed mb-6 font-normal">
+              <FormattedText text={selectedSolution.description} />
+            </div>
 
             <div className="bg-[#182F4F]/60 rounded-2xl p-5 border border-[#394B61] mb-8">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] mb-4 flex items-center space-x-2">
@@ -122,10 +136,12 @@ export const SoftwareSolutionsSection: React.FC<SoftwareSolutionsSectionProps> =
                 <span>Beneficios Directos para su Empresa</span>
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {selectedSolution.benefits.map((ben, i) => (
+                {selectedSolution.benefits && selectedSolution.benefits.map((ben, i) => (
                   <div key={i} className="flex items-start space-x-2.5 text-xs text-slate-200">
                     <CheckCircle2 className="w-4 h-4 text-[#F27C36] shrink-0 mt-0.5" />
-                    <span className="leading-snug">{ben}</span>
+                    <span className="leading-snug">
+                      <FormattedText text={ben} />
+                    </span>
                   </div>
                 ))}
               </div>

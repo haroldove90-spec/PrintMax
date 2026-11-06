@@ -29,9 +29,57 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ content, visibility,
   const clientsCount = content?.clientsCount || "+2,000";
   const experienceYears = content?.experienceYears || "+30";
 
-  const showQueHacemos = visibility?.showQueHacemos ?? true;
-  const showSobreNosotros = visibility?.showSobreNosotros ?? true;
-  const showAboutStats = visibility?.showAboutStats ?? true;
+  const showQueHacemos = visibility?.showQueHacemos !== false;
+  const showSobreNosotros = visibility?.showSobreNosotros !== false;
+  const showAboutStats = visibility?.showAboutStats !== false;
+  const showCoverageMap = visibility?.showCoverageMap !== false;
+
+  const defaultPillars = [
+    {
+      id: "certificacion",
+      title: "Certificación Directa Japón",
+      description: "Garantía oficial LUMESA y soporte avalado por la fábrica con personal en constante actualización.",
+      icon: "Award"
+    },
+    {
+      id: "ceramicos",
+      title: "Componentes Cerámicos ECOSYS",
+      description: "Cilindros de silicio amorfo de larga duración que reducen costos drásticamente.",
+      icon: "Cpu"
+    },
+    {
+      id: "hub",
+      title: "Hub San Luis Potosí",
+      description: "Envío exprés y distribución ágil de consumibles y piezas a todo el país.",
+      icon: "MapPin"
+    }
+  ];
+
+  const bullets = content?.queHacemosBullets && content.queHacemosBullets.length > 0
+    ? content.queHacemosBullets
+    : [
+        "Ingenieros certificados directamente por Kyocera y un amplio stock de refacciones y consumibles originales.",
+        "Garantía de respuesta y asistencia técnica en menos de 24 horas a partir de su llamada."
+      ];
+
+  const chips = content?.queHacemosChips && content.queHacemosChips.length > 0
+    ? content.queHacemosChips
+    : [
+        "Renta Dedicada",
+        "Venta de Hardware A3 / A4",
+        "Tóner Original Certificado",
+        "Pólizas Preventivas"
+      ];
+
+  const pillars = content?.pillars && content.pillars.length > 0 ? content.pillars : defaultPillars;
+
+  const pillarIconMap: Record<string, React.ElementType> = {
+    Award,
+    Cpu,
+    MapPin,
+    ShieldCheck,
+    Clock
+  };
 
   return (
     <section id="nosotros" className="py-20 bg-white text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
@@ -71,41 +119,32 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ content, visibility,
                     Sección 2 • Propuesta de Valor
                   </div>
                   <h3 className="text-2xl font-black text-white mb-4">
-                    Qué Hacemos
+                    {content?.queHacemosTitle || 'Qué Hacemos'}
                   </h3>
                   <div className="text-slate-200 leading-relaxed mb-6 font-normal text-sm sm:text-base">
                     <FormattedText text={queHacemosText} />
                   </div>
                   
+                  {/* Viñetas Dinámicas Editables de Qué Hacemos */}
                   <div className="p-5 rounded-2xl bg-[#182F4F]/60 border border-[#394B61] text-xs sm:text-sm text-slate-300 mb-6 space-y-3">
-                    <div className="flex items-start space-x-3">
-                      <ShieldCheck className="w-5 h-5 text-[#F27C36] shrink-0 mt-0.5" />
-                      <span>
-                        <strong className="text-white">Ingenieros certificados directamente por Kyocera</strong> y un amplio stock de refacciones y consumibles originales.
-                      </span>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <Clock className="w-5 h-5 text-[#F27C36] shrink-0 mt-0.5" />
-                      <span>
-                        Garantía de respuesta y asistencia técnica en <strong className="text-white">menos de 24 horas</strong> a partir de su llamada.
-                      </span>
-                    </div>
+                    {bullets.map((bullet, bIdx) => (
+                      <div key={bIdx} className="flex items-start space-x-3">
+                        <ShieldCheck className="w-5 h-5 text-[#F27C36] shrink-0 mt-0.5" />
+                        <span>
+                          <FormattedText text={bullet} />
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
+                {/* Etiquetas / Chips de Servicios */}
                 <div className="flex flex-wrap gap-2 pt-4 border-t border-[#394B61]">
-                  <span className="px-3 py-1 rounded-lg bg-[#182F4F] text-xs font-semibold text-slate-200 border border-[#394B61]">
-                    Renta Dedicada
-                  </span>
-                  <span className="px-3 py-1 rounded-lg bg-[#182F4F] text-xs font-semibold text-slate-200 border border-[#394B61]">
-                    Venta de Hardware A3 / A4
-                  </span>
-                  <span className="px-3 py-1 rounded-lg bg-[#182F4F] text-xs font-semibold text-slate-200 border border-[#394B61]">
-                    Tóner Original Certificado
-                  </span>
-                  <span className="px-3 py-1 rounded-lg bg-[#182F4F] text-xs font-semibold text-slate-200 border border-[#394B61]">
-                    Pólizas Preventivas
-                  </span>
+                  {chips.map((chip, cIdx) => (
+                    <span key={cIdx} className="px-3 py-1 rounded-lg bg-[#182F4F] text-xs font-semibold text-slate-200 border border-[#394B61]">
+                      {chip}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
@@ -122,7 +161,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ content, visibility,
                     Sección 3 • Nuestra Identidad
                   </div>
                   <h3 className="text-2xl font-black text-white mb-4">
-                    Sobre Nosotros
+                    {content?.sobreNosotrosTitle || 'Sobre Nosotros'}
                   </h3>
                   <div className="text-slate-200 leading-relaxed mb-6 font-normal text-sm sm:text-base">
                     <FormattedText text={sobreNosotrosText1} />
@@ -166,43 +205,29 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ content, visibility,
           </div>
         )}
 
-        {/* 3 Pillars in Black Background with Orange/Blue Icons */}
+        {/* 3 Pilares Dinámicos Editables en el CMS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 rounded-2xl bg-[#182F4F] text-white border border-[#394B61] shadow-md flex items-start space-x-4">
-            <div className="p-3 rounded-xl bg-[#000000]/50 border border-[#394B61] shrink-0">
-              <Award className="w-6 h-6 text-[#F27C36]" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white">Certificación Directa Japón</h4>
-              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Garantía oficial LUMESA y soporte avalado por la fábrica con personal en constante actualización.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-black text-white border border-neutral-800 shadow-md flex items-start space-x-4">
-            <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 shrink-0">
-              <Cpu className="w-6 h-6 text-blue-500" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white">Componentes Cerámicos ECOSYS</h4>
-              <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-                Cilindros de silicio amorfo de larga duración que reducen costos drásticamente.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-black text-white border border-neutral-800 shadow-md flex items-start space-x-4">
-            <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 shrink-0">
-              <MapPin className="w-6 h-6 text-blue-500" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white">Hub San Luis Potosí</h4>
-              <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-                Envío exprés y distribución ágil de consumibles y piezas a todo el país.
-              </p>
-            </div>
-          </div>
+          {pillars.map((pillar, pIdx) => {
+            const Icon = pillarIconMap[pillar.icon || ''] || (pIdx === 0 ? Award : pIdx === 1 ? Cpu : MapPin);
+            return (
+              <div 
+                key={pillar.id || pIdx} 
+                className="p-6 rounded-2xl bg-[#182F4F] text-white border border-[#394B61] shadow-md flex items-start space-x-4"
+              >
+                <div className="p-3 rounded-xl bg-[#000000]/50 border border-[#394B61] shrink-0">
+                  <Icon className="w-6 h-6 text-[#F27C36]" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">
+                    <FormattedText text={pillar.title} />
+                  </h4>
+                  <div className="text-xs text-slate-300 mt-1 leading-relaxed">
+                    <FormattedText text={pillar.description} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
       </div>

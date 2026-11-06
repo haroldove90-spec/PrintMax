@@ -108,6 +108,26 @@ export default function App() {
         return {
           ...INITIAL_SITE_CONTENT,
           ...parsed,
+          about: {
+            ...INITIAL_SITE_CONTENT.about,
+            ...(parsed.about || {})
+          },
+          hardwareSection: {
+            ...INITIAL_SITE_CONTENT.hardwareSection,
+            ...(parsed.hardwareSection || {})
+          },
+          softwareSection: {
+            ...INITIAL_SITE_CONTENT.softwareSection,
+            ...(parsed.softwareSection || {})
+          },
+          whatsappButton: {
+            ...INITIAL_SITE_CONTENT.whatsappButton,
+            ...(parsed.whatsappButton || {})
+          },
+          contact: {
+            ...INITIAL_SITE_CONTENT.contact,
+            ...(parsed.contact || {})
+          },
           showTrustMetrics: visibility.showTrustMetrics,
           visibility
         };
@@ -169,6 +189,26 @@ export default function App() {
           setSiteContent({
             ...INITIAL_SITE_CONTENT,
             ...cloudContent,
+            about: {
+              ...INITIAL_SITE_CONTENT.about,
+              ...(cloudContent.about || {})
+            },
+            hardwareSection: {
+              ...INITIAL_SITE_CONTENT.hardwareSection,
+              ...(cloudContent.hardwareSection || {})
+            },
+            softwareSection: {
+              ...INITIAL_SITE_CONTENT.softwareSection,
+              ...(cloudContent.softwareSection || {})
+            },
+            whatsappButton: {
+              ...INITIAL_SITE_CONTENT.whatsappButton,
+              ...(cloudContent.whatsappButton || {})
+            },
+            contact: {
+              ...INITIAL_SITE_CONTENT.contact,
+              ...(cloudContent.contact || {})
+            },
             showTrustMetrics: mergedVisibility.showTrustMetrics,
             visibility: mergedVisibility
           });
@@ -606,6 +646,7 @@ export default function App() {
             comparedProducts={comparedProducts}
             onToggleCompare={handleToggleCompare}
             onOpenComparator={() => setIsComparatorOpen(true)}
+            content={siteContent.hardwareSection}
           />
         )}
 
@@ -615,6 +656,7 @@ export default function App() {
         {activeSection === 'software' && (
           <SoftwareSolutionsSection
             onOpenConsultation={handleConsultation}
+            content={siteContent.softwareSection}
           />
         )}
 
@@ -780,18 +822,18 @@ export default function App() {
       )}
 
       {/* Floating WhatsApp Action Button */}
-      {activeSection !== 'admin' && (
+      {activeSection !== 'admin' && siteContent.whatsappButton?.enabled !== false && (
         <aside aria-label="Contacto rápido" className="fixed bottom-6 right-6 z-40">
           <a
-            href={`https://wa.me/${siteContent.contact.whatsapp}?text=Hola,%20me%20comunico%20desde%20la%20pagina%20web%20de%20LUMESA%20Kyocera%20para%20solicitar%20asesoria.`}
+            href={`https://wa.me/${(siteContent.whatsappButton?.phone || siteContent.contact.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(siteContent.whatsappButton?.defaultMessage || 'Hola LUMESA, me comunico desde la página web para solicitar cotización y asesoría.')}`}
             target="_blank"
             rel="noreferrer"
-            className="group flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-2xl shadow-emerald-600/40 transition transform hover:scale-105"
+            className="group flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-2xl shadow-emerald-600/40 transition transform hover:scale-105 cursor-pointer"
             title="Atención directa por WhatsApp LUMESA"
           >
             <MessageCircle className="w-6 h-6 shrink-0" />
             <span className="hidden sm:inline text-xs font-bold tracking-wide">
-              WhatsApp Asesor LUMESA
+              {siteContent.whatsappButton?.label || 'WhatsApp Asesor LUMESA'}
             </span>
           </a>
         </aside>

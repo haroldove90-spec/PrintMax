@@ -39,7 +39,14 @@ import {
   Sliders,
   Award,
   Layers,
-  LayoutGrid
+  LayoutGrid,
+  Printer,
+  Cpu,
+  MessageCircle,
+  MessageSquare,
+  Tag,
+  Laptop,
+  Zap
 } from 'lucide-react';
 import { LUMESA_SUPABASE_SQL } from '../../data/supabaseSql';
 import { 
@@ -60,7 +67,7 @@ import {
   OrderStatus,
   ContentVisibility
 } from '../../types';
-import { DEFAULT_VISIBILITY } from '../../data/initialContent';
+import { DEFAULT_VISIBILITY, INITIAL_SITE_CONTENT } from '../../data/initialContent';
 import { FormattedText } from '../FormattedText';
 
 interface AdminDashboardProps {
@@ -129,6 +136,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [cmsSaveNotice, setCmsSaveNotice] = useState(false);
   const [activeSlideEditor, setActiveSlideEditor] = useState<number>(0);
   const [newBulletInput, setNewBulletInput] = useState('');
+  const [activeSoftwareIndex, setActiveSoftwareIndex] = useState<number>(0);
+  const [activeHardwareCategoryIndex, setActiveHardwareCategoryIndex] = useState<number>(0);
+  const [newQueBulletInput, setNewQueBulletInput] = useState('');
+  const [newChipInput, setNewChipInput] = useState('');
+  const [newSoftwareBenefitInput, setNewSoftwareBenefitInput] = useState('');
 
   // Supabase state
   const [supabaseStatus, setSupabaseStatus] = useState<{
@@ -193,6 +205,94 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       ctaSecondaryAction: 'contacto'
     };
     setEditableContent({ ...editableContent, slides: updatedSlides });
+  };
+
+  const handleAddQueBullet = () => {
+    if (!newQueBulletInput.trim()) return;
+    const currentBullets = editableContent.about.queHacemosBullets || INITIAL_SITE_CONTENT.about.queHacemosBullets || [];
+    setEditableContent({
+      ...editableContent,
+      about: {
+        ...editableContent.about,
+        queHacemosBullets: [...currentBullets, newQueBulletInput.trim()]
+      }
+    });
+    setNewQueBulletInput('');
+  };
+
+  const handleRemoveQueBullet = (idx: number) => {
+    const currentBullets = editableContent.about.queHacemosBullets || INITIAL_SITE_CONTENT.about.queHacemosBullets || [];
+    setEditableContent({
+      ...editableContent,
+      about: {
+        ...editableContent.about,
+        queHacemosBullets: currentBullets.filter((_, i) => i !== idx)
+      }
+    });
+  };
+
+  const handleAddChip = () => {
+    if (!newChipInput.trim()) return;
+    const currentChips = editableContent.about.queHacemosChips || INITIAL_SITE_CONTENT.about.queHacemosChips || [];
+    setEditableContent({
+      ...editableContent,
+      about: {
+        ...editableContent.about,
+        queHacemosChips: [...currentChips, newChipInput.trim()]
+      }
+    });
+    setNewChipInput('');
+  };
+
+  const handleRemoveChip = (idx: number) => {
+    const currentChips = editableContent.about.queHacemosChips || INITIAL_SITE_CONTENT.about.queHacemosChips || [];
+    setEditableContent({
+      ...editableContent,
+      about: {
+        ...editableContent.about,
+        queHacemosChips: currentChips.filter((_, i) => i !== idx)
+      }
+    });
+  };
+
+  const handleAddSoftwareBenefit = (solIndex: number) => {
+    if (!newSoftwareBenefitInput.trim()) return;
+    const currentSection = editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection!;
+    const currentSolutions = [...(currentSection.solutions || INITIAL_SITE_CONTENT.softwareSection!.solutions || [])];
+    const targetSol = currentSolutions[solIndex];
+    if (targetSol) {
+      currentSolutions[solIndex] = {
+        ...targetSol,
+        benefits: [...targetSol.benefits, newSoftwareBenefitInput.trim()]
+      };
+      setEditableContent({
+        ...editableContent,
+        softwareSection: {
+          ...currentSection,
+          solutions: currentSolutions
+        }
+      });
+      setNewSoftwareBenefitInput('');
+    }
+  };
+
+  const handleRemoveSoftwareBenefit = (solIndex: number, benefitIndex: number) => {
+    const currentSection = editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection!;
+    const currentSolutions = [...(currentSection.solutions || INITIAL_SITE_CONTENT.softwareSection!.solutions || [])];
+    const targetSol = currentSolutions[solIndex];
+    if (targetSol) {
+      currentSolutions[solIndex] = {
+        ...targetSol,
+        benefits: targetSol.benefits.filter((_, i) => i !== benefitIndex)
+      };
+      setEditableContent({
+        ...editableContent,
+        softwareSection: {
+          ...currentSection,
+          solutions: currentSolutions
+        }
+      });
+    }
   };
 
   const handleTestSupabase = async () => {
@@ -279,7 +379,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const contentToSave: SiteContent = {
       ...editableContent,
       showTrustMetrics: finalVis.showTrustMetrics,
-      visibility: finalVis
+      visibility: finalVis,
+      about: {
+        ...INITIAL_SITE_CONTENT.about,
+        ...editableContent.about,
+        pillars: editableContent.about.pillars || INITIAL_SITE_CONTENT.about.pillars,
+        queHacemosBullets: editableContent.about.queHacemosBullets || INITIAL_SITE_CONTENT.about.queHacemosBullets,
+        queHacemosChips: editableContent.about.queHacemosChips || INITIAL_SITE_CONTENT.about.queHacemosChips
+      },
+      hardwareSection: editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection,
+      softwareSection: editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection,
+      whatsappButton: editableContent.whatsappButton || INITIAL_SITE_CONTENT.whatsappButton,
+      contact: {
+        ...INITIAL_SITE_CONTENT.contact,
+        ...editableContent.contact
+      }
     };
     onSaveSiteContent(contentToSave);
     setCmsSaveNotice(true);
@@ -1873,16 +1987,854 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                   </div>
                 </div>
+
+                {/* Sub-bloque A: Viñetas Destacadas de Qué Hacemos (Viñetas con Palomita / Check) */}
+                <div className="p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-[#394B61] pb-2">
+                    <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#F27C36]" />
+                      <span>Viñetas Destacadas de "Qué Hacemos"</span>
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      (Ingenieros certificados Kyocera, respuesta técnica &lt; 24h, etc.)
+                    </span>
+                  </div>
+
+                  {/* Lista de viñetas actuales */}
+                  <div className="space-y-2">
+                    {(editableContent.about.queHacemosBullets || INITIAL_SITE_CONTENT.about.queHacemosBullets || []).map((bullet, bIdx) => (
+                      <div key={bIdx} className="flex items-center space-x-2 bg-[#182F4F] p-2.5 rounded-xl border border-[#394B61]">
+                        <CheckCircle2 className="w-4 h-4 text-[#F27C36] shrink-0" />
+                        <input
+                          type="text"
+                          value={bullet}
+                          onChange={(e) => {
+                            const current = [...(editableContent.about.queHacemosBullets || INITIAL_SITE_CONTENT.about.queHacemosBullets || [])];
+                            current[bIdx] = e.target.value;
+                            setEditableContent({
+                              ...editableContent,
+                              about: { ...editableContent.about, queHacemosBullets: current }
+                            });
+                          }}
+                          className="flex-1 text-xs bg-transparent text-white focus:outline-none font-medium"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveQueBullet(bIdx)}
+                          className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-950 transition cursor-pointer"
+                          title="Eliminar esta viñeta"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Input para agregar nueva viñeta */}
+                  <div className="flex items-center space-x-2 pt-1">
+                    <input
+                      type="text"
+                      value={newQueBulletInput}
+                      onChange={(e) => setNewQueBulletInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddQueBullet();
+                        }
+                      }}
+                      placeholder="Nueva viñeta para Qué Hacemos..."
+                      className="flex-1 text-xs bg-[#000000] text-white px-3 py-2 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddQueBullet}
+                      className="px-3.5 py-2 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold transition flex items-center space-x-1 cursor-pointer shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Agregar</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sub-bloque B: Chips / Etiquetas de Servicios */}
+                <div className="p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-[#394B61] pb-2">
+                    <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                      <Tag className="w-4 h-4 text-[#F27C36]" />
+                      <span>Etiquetas de Servicios (Chips debajo de Qué Hacemos)</span>
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      (Renta Dedicada, Venta Hardware, Tóner Original, etc.)
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {(editableContent.about.queHacemosChips || INITIAL_SITE_CONTENT.about.queHacemosChips || []).map((chip, cIdx) => (
+                      <span
+                        key={cIdx}
+                        className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#182F4F] border border-[#394B61] text-xs text-white"
+                      >
+                        <span>{chip}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveChip(cIdx)}
+                          className="hover:text-rose-400 transition cursor-pointer ml-1"
+                          title="Eliminar etiqueta"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-1">
+                    <input
+                      type="text"
+                      value={newChipInput}
+                      onChange={(e) => setNewChipInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddChip();
+                        }
+                      }}
+                      placeholder="Nueva etiqueta (ej: Arrendamiento Puro)..."
+                      className="flex-1 text-xs bg-[#000000] text-white px-3 py-2 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddChip}
+                      className="px-3.5 py-2 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold transition flex items-center space-x-1 cursor-pointer shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Agregar Etiqueta</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sub-bloque C: 3 Tarjetas de Pilares Corporativos */}
+                <div className="p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
+                  <div className="border-b border-[#394B61] pb-2">
+                    <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                      <ShieldCheck className="w-4 h-4 text-[#F27C36]" />
+                      <span>3 Tarjetas de Pilares Corporativos (Parte Inferior de la Sección)</span>
+                    </span>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Edite los títulos y descripciones de las 3 tarjetas: Certificación Japón, Cerámicos ECOSYS y Hub San Luis Potosí.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {(editableContent.about.pillars || INITIAL_SITE_CONTENT.about.pillars || []).map((pillar, pIdx) => (
+                      <div key={pIdx} className="p-3.5 rounded-2xl bg-[#182F4F] border border-[#394B61] space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#F27C36]">
+                            Pilar {pIdx + 1}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {pillar.icon === 'award' ? 'Certificación' : pillar.icon === 'cpu' ? 'Tecnología' : 'Logística'}
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] text-slate-300 font-bold mb-1">
+                            Título del Pilar:
+                          </label>
+                          <input
+                            type="text"
+                            value={pillar.title}
+                            onChange={(e) => {
+                              const currentPillars = [...(editableContent.about.pillars || INITIAL_SITE_CONTENT.about.pillars || [])];
+                              currentPillars[pIdx] = { ...currentPillars[pIdx], title: e.target.value };
+                              setEditableContent({
+                                ...editableContent,
+                                about: { ...editableContent.about, pillars: currentPillars }
+                              });
+                            }}
+                            className="w-full text-xs font-bold bg-[#000000] text-white px-2.5 py-2 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] text-slate-300 font-bold mb-1">
+                            Descripción:
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={pillar.description}
+                            onChange={(e) => {
+                              const currentPillars = [...(editableContent.about.pillars || INITIAL_SITE_CONTENT.about.pillars || [])];
+                              currentPillars[pIdx] = { ...currentPillars[pIdx], description: e.target.value };
+                              setEditableContent({
+                                ...editableContent,
+                                about: { ...editableContent.about, pillars: currentPillars }
+                              });
+                            }}
+                            className="w-full text-xs bg-[#000000] text-slate-200 px-2.5 py-2 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36] leading-relaxed"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Contact Information CMS */}
-            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-4 text-white">
-              <h3 className="text-base font-bold text-white border-b border-[#394B61] pb-3 flex items-center space-x-2">
-                <Phone className="w-5 h-5 text-[#F27C36]" />
-                <span>Datos Corporativos de Contacto & San Luis Potosí</span>
-              </h3>
+            {/* ========================================================= */}
+            {/* SECCIÓN CMS: RENTA Y VENTA (CATÁLOGO DE HARDWARE) */}
+            {/* ========================================================= */}
+            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-6 text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-3 gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                    <Printer className="w-5 h-5 text-[#F27C36]" />
+                    <span>Editor de Sección: Renta / Venta de Multifuncionales (Hardware)</span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Edite el tag superior, título, subtítulo y la descripción de cada categoría de equipos (A3, A4, Impresoras, Producción).
+                  </p>
+                </div>
+              </div>
 
+              {/* Cabecera general de la sección Renta y Venta */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61]">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Tag / Etiqueta Superior
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.hardwareSection?.tag || INITIAL_SITE_CONTENT.hardwareSection?.tag || ''}
+                    onChange={(e) => {
+                      const cur = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
+                      setEditableContent({
+                        ...editableContent,
+                        hardwareSection: { ...cur, tag: e.target.value }
+                      });
+                    }}
+                    placeholder="Catálogo Oficial: Renta / Venta de Multifuncionales"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Título Principal de la Sección
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.hardwareSection?.title || INITIAL_SITE_CONTENT.hardwareSection?.title || ''}
+                    onChange={(e) => {
+                      const cur = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
+                      setEditableContent({
+                        ...editableContent,
+                        hardwareSection: { ...cur, title: e.target.value }
+                      });
+                    }}
+                    placeholder="Equipos Kyocera en Renta y Venta Directa"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Subtítulo / Descripción
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editableContent.hardwareSection?.subtitle || INITIAL_SITE_CONTENT.hardwareSection?.subtitle || ''}
+                    onChange={(e) => {
+                      const cur = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
+                      setEditableContent({
+                        ...editableContent,
+                        hardwareSection: { ...cur, subtitle: e.target.value }
+                      });
+                    }}
+                    placeholder="Adquiera su multifuncional mediante compra definitiva o arrendamiento 100% deducible..."
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+              </div>
+
+              {/* Selector de las 4 Categorías de Hardware */}
+              <div className="p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#394B61] pb-2">
+                  <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                    <Sliders className="w-4 h-4 text-[#F27C36]" />
+                    <span>Configuración de las 4 Categorías de Equipos</span>
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(editableContent.hardwareSection?.categories || INITIAL_SITE_CONTENT.hardwareSection?.categories || []).map((cat, cIdx) => (
+                      <button
+                        key={cIdx}
+                        type="button"
+                        onClick={() => setActiveHardwareCategoryIndex(cIdx)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                          activeHardwareCategoryIndex === cIdx
+                            ? 'bg-[#F27C36] text-white border-[#F27C36]'
+                            : 'bg-[#182F4F] text-slate-300 border-[#394B61] hover:text-white'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Formulario para la categoría seleccionada */}
+                {(() => {
+                  const cats = editableContent.hardwareSection?.categories || INITIAL_SITE_CONTENT.hardwareSection?.categories || [];
+                  const cat = cats[activeHardwareCategoryIndex];
+                  if (!cat) return null;
+                  return (
+                    <div className="space-y-3 pt-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-300 mb-1">
+                            Nombre de la Categoría:
+                          </label>
+                          <input
+                            type="text"
+                            value={cat.name}
+                            onChange={(e) => {
+                              const updatedCats = [...cats];
+                              updatedCats[activeHardwareCategoryIndex] = { ...cat, name: e.target.value };
+                              const curSec = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
+                              setEditableContent({
+                                ...editableContent,
+                                hardwareSection: { ...curSec, categories: updatedCats }
+                              });
+                            }}
+                            className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-300 mb-1">
+                            Subtítulo / Formatos Compatibles:
+                          </label>
+                          <input
+                            type="text"
+                            value={cat.subtitle}
+                            onChange={(e) => {
+                              const updatedCats = [...cats];
+                              updatedCats[activeHardwareCategoryIndex] = { ...cat, subtitle: e.target.value };
+                              const curSec = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
+                              setEditableContent({
+                                ...editableContent,
+                                hardwareSection: { ...curSec, categories: updatedCats }
+                              });
+                            }}
+                            placeholder="Carta, Oficio, Doble Carta | B&N y Color"
+                            className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs font-bold text-slate-300 mb-1">
+                            Descripción en el Banner de Categoría:
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={cat.description}
+                            onChange={(e) => {
+                              const updatedCats = [...cats];
+                              updatedCats[activeHardwareCategoryIndex] = { ...cat, description: e.target.value };
+                              const curSec = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
+                              setEditableContent({
+                                ...editableContent,
+                                hardwareSection: { ...curSec, categories: updatedCats }
+                              });
+                            }}
+                            className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* ========================================================= */}
+            {/* SECCIÓN CMS: SOFTWARE KYOCERA & SOLUCIONES INTELIGENTES */}
+            {/* ========================================================= */}
+            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-6 text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-3 gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                    <Cpu className="w-5 h-5 text-[#F27C36]" />
+                    <span>Editor de Sección: Software Kyocera & Soluciones Inteligentes</span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Edite el tag, título y el contenido detallado de los 5 módulos de software inteligente (MyQ, Fleet Services, etc.).
+                  </p>
+                </div>
+              </div>
+
+              {/* Cabecera general de la sección Software */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61]">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Tag / Etiqueta Superior
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.softwareSection?.tag || INITIAL_SITE_CONTENT.softwareSection?.tag || ''}
+                    onChange={(e) => {
+                      const cur = editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection!;
+                      setEditableContent({
+                        ...editableContent,
+                        softwareSection: { ...cur, tag: e.target.value }
+                      });
+                    }}
+                    placeholder="Gestión Digital & Flujos Inteligentes"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Título Principal de Software
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.softwareSection?.title || INITIAL_SITE_CONTENT.softwareSection?.title || ''}
+                    onChange={(e) => {
+                      const cur = editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection!;
+                      setEditableContent({
+                        ...editableContent,
+                        softwareSection: { ...cur, title: e.target.value }
+                      });
+                    }}
+                    placeholder="Software: Soluciones Inteligentes para tu Negocio"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Subtítulo / Descripción
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editableContent.softwareSection?.subtitle || INITIAL_SITE_CONTENT.softwareSection?.subtitle || ''}
+                    onChange={(e) => {
+                      const cur = editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection!;
+                      setEditableContent({
+                        ...editableContent,
+                        softwareSection: { ...cur, subtitle: e.target.value }
+                      });
+                    }}
+                    placeholder="Optimice y asegure cada etapa del ciclo de vida de sus documentos..."
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+              </div>
+
+              {/* Selector de los 5 Módulos de Software */}
+              <div className="p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#394B61] pb-2">
+                  <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                    <Laptop className="w-4 h-4 text-[#F27C36]" />
+                    <span>Seleccionar Módulo de Software para Editar:</span>
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(editableContent.softwareSection?.solutions || INITIAL_SITE_CONTENT.softwareSection?.solutions || []).map((sol, sIdx) => (
+                      <button
+                        key={sIdx}
+                        type="button"
+                        onClick={() => setActiveSoftwareIndex(sIdx)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                          activeSoftwareIndex === sIdx
+                            ? 'bg-[#F27C36] text-white border-[#F27C36]'
+                            : 'bg-[#182F4F] text-slate-300 border-[#394B61] hover:text-white'
+                        }`}
+                      >
+                        {sol.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Formulario del módulo activo */}
+                {(() => {
+                  const solutions = editableContent.softwareSection?.solutions || INITIAL_SITE_CONTENT.softwareSection?.solutions || [];
+                  const sol = solutions[activeSoftwareIndex];
+                  if (!sol) return null;
+                  return (
+                    <div className="space-y-4 pt-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-300 mb-1">
+                            Título del Módulo:
+                          </label>
+                          <input
+                            type="text"
+                            value={sol.title}
+                            onChange={(e) => {
+                              const updated = [...solutions];
+                              updated[activeSoftwareIndex] = { ...sol, title: e.target.value };
+                              const curSec = editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection!;
+                              setEditableContent({
+                                ...editableContent,
+                                softwareSection: { ...curSec, solutions: updated }
+                              });
+                            }}
+                            className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-300 mb-1">
+                            Tagline / Subtítulo Breve:
+                          </label>
+                          <input
+                            type="text"
+                            value={sol.tagline}
+                            onChange={(e) => {
+                              const updated = [...solutions];
+                              updated[activeSoftwareIndex] = { ...sol, tagline: e.target.value };
+                              const curSec = editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection!;
+                              setEditableContent({
+                                ...editableContent,
+                                softwareSection: { ...curSec, solutions: updated }
+                              });
+                            }}
+                            className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-300 mb-1">
+                            Tecnología / Módulo Activo:
+                          </label>
+                          <input
+                            type="text"
+                            value={sol.activeModule}
+                            onChange={(e) => {
+                              const updated = [...solutions];
+                              updated[activeSoftwareIndex] = { ...sol, activeModule: e.target.value };
+                              const curSec = editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection!;
+                              setEditableContent({
+                                ...editableContent,
+                                softwareSection: { ...curSec, solutions: updated }
+                              });
+                            }}
+                            placeholder="Ej: KYOCERA Net Manager y MyQ"
+                            className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-3">
+                          <label className="block text-xs font-bold text-slate-300 mb-1">
+                            Descripción Completa del Software:
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={sol.description}
+                            onChange={(e) => {
+                              const updated = [...solutions];
+                              updated[activeSoftwareIndex] = { ...sol, description: e.target.value };
+                              const curSec = editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection!;
+                              setEditableContent({
+                                ...editableContent,
+                                softwareSection: { ...curSec, solutions: updated }
+                              });
+                            }}
+                            className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36] leading-relaxed"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Beneficios clave del módulo */}
+                      <div className="space-y-2 pt-2 border-t border-[#394B61]">
+                        <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                          Beneficios Clave del Módulo ({sol.benefits.length}):
+                        </label>
+                        <div className="space-y-1.5">
+                          {sol.benefits.map((benefit, benIdx) => (
+                            <div key={benIdx} className="flex items-center space-x-2 bg-[#182F4F] p-2 rounded-xl border border-[#394B61]">
+                              <Zap className="w-3.5 h-3.5 text-[#F27C36] shrink-0" />
+                              <input
+                                type="text"
+                                value={benefit}
+                                onChange={(e) => {
+                                  const updatedBenefits = [...sol.benefits];
+                                  updatedBenefits[benIdx] = e.target.value;
+                                  const updated = [...solutions];
+                                  updated[activeSoftwareIndex] = { ...sol, benefits: updatedBenefits };
+                                  const curSec = editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection!;
+                                  setEditableContent({
+                                    ...editableContent,
+                                    softwareSection: { ...curSec, solutions: updated }
+                                  });
+                                }}
+                                className="flex-1 text-xs bg-transparent text-white focus:outline-none font-medium"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveSoftwareBenefit(activeSoftwareIndex, benIdx)}
+                                className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-950 transition cursor-pointer"
+                                title="Eliminar beneficio"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center space-x-2 pt-1">
+                          <input
+                            type="text"
+                            value={newSoftwareBenefitInput}
+                            onChange={(e) => setNewSoftwareBenefitInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddSoftwareBenefit(activeSoftwareIndex);
+                              }
+                            }}
+                            placeholder="Nuevo beneficio clave..."
+                            className="flex-1 text-xs bg-[#000000] text-white px-3 py-2 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleAddSoftwareBenefit(activeSoftwareIndex)}
+                            className="px-3.5 py-2 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold transition flex items-center space-x-1 cursor-pointer shrink-0"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Agregar Beneficio</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* ========================================================= */}
+            {/* SECCIÓN CMS: BOTÓN FLOTANTE DE WHATSAPP */}
+            {/* ========================================================= */}
+            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-6 text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-3 gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                    <MessageCircle className="w-5 h-5 text-emerald-400" />
+                    <span>Editor del Botón Flotante de WhatsApp</span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Personalice el botón verde flotante que acompaña al usuario en toda la navegación web.
+                  </p>
+                </div>
+
+                {/* Switch de activación del botón de WhatsApp */}
+                <div className="flex items-center space-x-3 bg-[#000000]/70 px-4 py-2 rounded-2xl border border-[#394B61] shrink-0">
+                  <span className="text-xs font-bold text-white">
+                    {editableContent.whatsappButton?.enabled !== false ? 'Botón Activo' : 'Botón Oculto'}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={editableContent.whatsappButton?.enabled !== false}
+                    onClick={() => {
+                      const cur = editableContent.whatsappButton || INITIAL_SITE_CONTENT.whatsappButton!;
+                      setEditableContent({
+                        ...editableContent,
+                        whatsappButton: { ...cur, enabled: cur.enabled === false ? true : false }
+                      });
+                    }}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                      editableContent.whatsappButton?.enabled !== false ? 'bg-emerald-500' : 'bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        editableContent.whatsappButton?.enabled !== false ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Texto / Etiqueta del Botón
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.whatsappButton?.label || INITIAL_SITE_CONTENT.whatsappButton?.label || ''}
+                    onChange={(e) => {
+                      const cur = editableContent.whatsappButton || INITIAL_SITE_CONTENT.whatsappButton!;
+                      setEditableContent({
+                        ...editableContent,
+                        whatsappButton: { ...cur, label: e.target.value }
+                      });
+                    }}
+                    placeholder="WhatsApp Asesor LUMESA"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Número WhatsApp (con código 52)
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.whatsappButton?.phone || INITIAL_SITE_CONTENT.whatsappButton?.phone || ''}
+                    onChange={(e) => {
+                      const cur = editableContent.whatsappButton || INITIAL_SITE_CONTENT.whatsappButton!;
+                      setEditableContent({
+                        ...editableContent,
+                        whatsappButton: { ...cur, phone: e.target.value }
+                      });
+                    }}
+                    placeholder="524448123000"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36] font-mono"
+                  />
+                </div>
+
+                <div className="sm:col-span-3">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Mensaje Predeterminado al Abrir Chat
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editableContent.whatsappButton?.defaultMessage || INITIAL_SITE_CONTENT.whatsappButton?.defaultMessage || ''}
+                    onChange={(e) => {
+                      const cur = editableContent.whatsappButton || INITIAL_SITE_CONTENT.whatsappButton!;
+                      setEditableContent({
+                        ...editableContent,
+                        whatsappButton: { ...cur, defaultMessage: e.target.value }
+                      });
+                    }}
+                    placeholder="Hola LUMESA, me comunico desde la página web para solicitar cotización y asesoría."
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ========================================================= */}
+            {/* SECCIÓN CMS: CONTACTO EXTENDIDO & SEDE SAN LUIS POTOSÍ */}
+            {/* ========================================================= */}
+            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-6 text-white">
+              <div className="border-b border-[#394B61] pb-3">
+                <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                  <Phone className="w-5 h-5 text-[#F27C36]" />
+                  <span>Editor de Sección: Contacto, Tarjeta Corporativa & Formulario</span>
+                </h3>
+                <p className="text-xs text-slate-300 mt-1">
+                  Configure los encabezados, la tarjeta informativa de LUMESA México, el botón del formulario de cotización y los canales de atención directa.
+                </p>
+              </div>
+
+              {/* Cabecera de Contacto */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61]">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Tag / Etiqueta Superior
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.contact.tag || INITIAL_SITE_CONTENT.contact.tag || ''}
+                    onChange={(e) => setEditableContent({
+                      ...editableContent,
+                      contact: { ...editableContent.contact, tag: e.target.value }
+                    })}
+                    placeholder="Atención Personalizada Inmediata"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Título Principal de Contacto
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.contact.title || INITIAL_SITE_CONTENT.contact.title || ''}
+                    onChange={(e) => setEditableContent({
+                      ...editableContent,
+                      contact: { ...editableContent.contact, title: e.target.value }
+                    })}
+                    placeholder="Contacto: ¿En qué podemos ayudarte?"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Subtítulo de la Sección de Contacto
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editableContent.contact.subtitle || INITIAL_SITE_CONTENT.contact.subtitle || ''}
+                    onChange={(e) => setEditableContent({
+                      ...editableContent,
+                      contact: { ...editableContent.contact, subtitle: e.target.value }
+                    })}
+                    placeholder="Estamos listos para impulsar la productividad de su negocio con tecnología Kyocera..."
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+              </div>
+
+              {/* Tarjeta de Sede LUMESA México y Botón del Formulario */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61]">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Título Tarjeta LUMESA México (Izquierda)
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.contact.cardTitle || INITIAL_SITE_CONTENT.contact.cardTitle || ''}
+                    onChange={(e) => setEditableContent({
+                      ...editableContent,
+                      contact: { ...editableContent.contact, cardTitle: e.target.value }
+                    })}
+                    placeholder="Centro de Atención a Clientes y Empresas"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Texto del Botón Enviar Formulario
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.contact.formButtonText || INITIAL_SITE_CONTENT.contact.formButtonText || ''}
+                    onChange={(e) => setEditableContent({
+                      ...editableContent,
+                      contact: { ...editableContent.contact, formButtonText: e.target.value }
+                    })}
+                    placeholder="Enviar Solicitud a un Asesor LUMESA"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Subtítulo Tarjeta LUMESA México
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editableContent.contact.cardSubtitle || INITIAL_SITE_CONTENT.contact.cardSubtitle || ''}
+                    onChange={(e) => setEditableContent({
+                      ...editableContent,
+                      contact: { ...editableContent.contact, cardSubtitle: e.target.value }
+                    })}
+                    placeholder="Distribuidores autorizados de Kyocera Japón con soporte técnico garantizado..."
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+              </div>
+
+              {/* Canales de Contacto Directo */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
@@ -1924,6 +2876,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     onChange={(e) => setEditableContent({
                       ...editableContent,
                       contact: { ...editableContent.contact, tollFree: e.target.value }
+                    })}
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Horario de Atención
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.contact.schedule || 'Lunes a Viernes de 09:00 a 18:00 hrs'}
+                    onChange={(e) => setEditableContent({
+                      ...editableContent,
+                      contact: { ...editableContent.contact, schedule: e.target.value }
                     })}
                     className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61]"
                   />
@@ -1981,7 +2948,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   className="px-6 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm flex items-center space-x-2 shadow-lg transition cursor-pointer"
                 >
                   <Save className="w-4 h-4 text-white" />
-                  <span>Guardar y Aplicar Cambios</span>
+                  <span>Guardar y Aplicar Todos los Cambios</span>
                 </button>
               </div>
             </div>

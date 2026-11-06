@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { SiteContent } from '../types';
+import { FormattedText } from './FormattedText';
 
 interface ContactSectionProps {
   prefilledSubject?: string;
@@ -22,10 +23,17 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   prefilledSubject = '',
   contactInfo
 }) => {
+  const tag = contactInfo?.tag || "Atención Personalizada Inmediata";
+  const title = contactInfo?.title || "Contacto: ¿En qué podemos ayudarte?";
+  const subtitle = contactInfo?.subtitle || "Estamos listos para impulsar la productividad de su negocio con tecnología Kyocera y servicio LUMESA. Si necesita asesoría para elegir el equipo ideal, cotizar un servicio de renta o venta, o requiere soporte técnico especializado, póngase en contacto con nosotros.";
+  const cardTitle = contactInfo?.cardTitle || "Centro de Atención a Clientes y Empresas";
+  const cardSubtitle = contactInfo?.cardSubtitle || "Distribuidores autorizados de Kyocera Japón con soporte técnico garantizado en menos de 24 horas.";
+  const formButtonText = contactInfo?.formButtonText || "Enviar Solicitud a un Asesor LUMESA";
+
   const phone = contactInfo?.phone || "(444) 812-3000";
   const tollFree = contactInfo?.tollFree || "01 800 KYOCERA";
-  const salesEmail = contactInfo?.salesEmail || "ventas@lumesa.com.mx";
-  const supportEmail = contactInfo?.supportEmail || "soporte@lumesa.com.mx";
+  const salesEmail = contactInfo?.salesEmail || "ventas@lumesa.mx";
+  const supportEmail = contactInfo?.supportEmail || "soporte@lumesa.mx";
   const address = contactInfo?.address || "Av. Venustiano Carranza #1450, Col. Tequisquiapan, San Luis Potosí, S.L.P. C.P. 78230";
   const schedule = contactInfo?.schedule || "Lunes a Viernes de 09:00 a 18:00 hrs";
   const whatsapp = contactInfo?.whatsapp || "524448123000";
@@ -61,7 +69,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
 
   const getWhatsAppDirectLink = () => {
     const text = `Hola, mi nombre es ${formData.name || 'un cliente'} de la empresa ${formData.company || 'mi empresa'}. Me interesa información sobre ${formData.interest === 'renta' ? 'Renta de Equipos' : formData.interest === 'venta' ? 'Venta de Multifuncionales' : formData.interest === 'soporte' ? 'Soporte Técnico Especializado' : 'Consumibles y Tóner Original'}. ${formData.message}`;
-    return `https://wa.me/524448123000?text=${encodeURIComponent(text)}`;
+    return `https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
   };
 
   return (
@@ -72,14 +80,16 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#182F4F] text-[#F27C36] text-xs font-bold uppercase tracking-wider mb-3">
             <MessageSquare className="w-4 h-4 text-[#F27C36]" />
-            <span>Atención Personalizada Inmediata</span>
+            <span>
+              <FormattedText text={tag} />
+            </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#182F4F] tracking-tight">
-            Contacto: ¿En qué podemos ayudarte?
+            <FormattedText text={title} />
           </h2>
-          <p className="mt-4 text-[#394B61] text-base sm:text-lg leading-relaxed">
-            Estamos listos para impulsar la productividad de su negocio con tecnología Kyocera y servicio LUMESA. Si necesita asesoría para elegir el equipo ideal, cotizar un servicio de renta o venta, o requiere soporte técnico especializado, póngase en contacto con nosotros.
-          </p>
+          <div className="mt-4 text-[#394B61] text-base sm:text-lg leading-relaxed">
+            <FormattedText text={subtitle} />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -92,11 +102,11 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   LUMESA México
                 </span>
                 <h3 className="text-2xl font-black text-white">
-                  Centro de Atención a Clientes y Empresas
+                  <FormattedText text={cardTitle} />
                 </h3>
-                <p className="text-xs text-slate-300 mt-2 font-light">
-                  Distribuidores autorizados de Kyocera Japón con soporte técnico garantizado en menos de 24 horas.
-                </p>
+                <div className="text-xs text-slate-300 mt-2 font-light">
+                  <FormattedText text={cardSubtitle} />
+                </div>
               </div>
 
               <div className="space-y-4 pt-2">
@@ -296,10 +306,10 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto px-7 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm tracking-wide shadow-xl shadow-blue-600/30 transition flex items-center justify-center space-x-2 disabled:opacity-50"
+                    className="w-full sm:w-auto px-7 py-3 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm tracking-wide shadow-xl shadow-[#F27C36]/30 transition flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
                   >
                     <Send className="w-4 h-4" />
-                    <span>{isSubmitting ? 'Enviando...' : 'Enviar Solicitud'}</span>
+                    <span>{isSubmitting ? 'Enviando...' : formButtonText}</span>
                   </button>
                 </div>
               </form>

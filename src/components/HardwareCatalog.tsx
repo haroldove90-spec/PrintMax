@@ -8,7 +8,8 @@ import {
   ShoppingCart,
   Zap
 } from 'lucide-react';
-import { Product } from '../types';
+import { Product, SiteContent } from '../types';
+import { FormattedText } from './FormattedText';
 
 interface HardwareCatalogProps {
   products: Product[];
@@ -17,6 +18,7 @@ interface HardwareCatalogProps {
   comparedProducts: Product[];
   onToggleCompare: (product: Product) => void;
   onOpenComparator: () => void;
+  content?: SiteContent['hardwareSection'];
 }
 
 export const HardwareCatalog: React.FC<HardwareCatalogProps> = ({
@@ -25,11 +27,12 @@ export const HardwareCatalog: React.FC<HardwareCatalogProps> = ({
   onOpenProductDetail,
   comparedProducts,
   onToggleCompare,
-  onOpenComparator
+  onOpenComparator,
+  content
 }) => {
   const [activeTab, setActiveTab] = useState<'a3' | 'a4' | 'impresoras' | 'produccion'>('a3');
 
-  const categories = [
+  const defaultCategories = [
     {
       id: 'a3' as const,
       name: 'Multifuncionales A3',
@@ -60,8 +63,23 @@ export const HardwareCatalog: React.FC<HardwareCatalogProps> = ({
     }
   ];
 
+  const categories = defaultCategories.map((defCat) => {
+    const customCat = content?.categories?.find((c) => c.id === defCat.id);
+    if (!customCat) return defCat;
+    return {
+      ...defCat,
+      name: customCat.name || defCat.name,
+      subtitle: customCat.subtitle || defCat.subtitle,
+      description: customCat.description || defCat.description
+    };
+  });
+
   const currentCategory = categories.find((c) => c.id === activeTab)!;
   const filteredProducts = products.filter(currentCategory.filter);
+
+  const sectionTag = content?.tag || 'Catálogo Oficial: Renta / Venta de Multifuncionales';
+  const sectionTitle = content?.title || 'Equipos Kyocera en Renta y Venta Directa';
+  const sectionSubtitle = content?.subtitle || 'Adquiera su multifuncional mediante compra definitiva o arrendamiento 100% deducible con tóner original y garantía directa LUMESA.';
 
   return (
     <section id="hardware" className="py-20 bg-slate-50 border-t border-b border-slate-200">
@@ -72,14 +90,16 @@ export const HardwareCatalog: React.FC<HardwareCatalogProps> = ({
           <div>
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#182F4F] text-white border border-[#394B61] text-xs font-bold uppercase tracking-wider mb-3">
               <Printer className="w-3.5 h-3.5 text-[#F27C36]" />
-              <span>Catálogo Oficial: Renta / Venta de Multifuncionales</span>
+              <span>
+                <FormattedText text={sectionTag} />
+              </span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#182F4F] tracking-tight">
-              Equipos Kyocera en Renta y Venta Directa
+              <FormattedText text={sectionTitle} />
             </h2>
-            <p className="mt-3 text-[#394B61] max-w-2xl text-base">
-              Adquiera su multifuncional mediante compra definitiva o arrendamiento 100% deducible con tóner original y garantía directa LUMESA.
-            </p>
+            <div className="mt-3 text-[#394B61] max-w-2xl text-base">
+              <FormattedText text={sectionSubtitle} />
+            </div>
           </div>
 
           {/* Comparator Trigger */}
@@ -130,11 +150,11 @@ export const HardwareCatalog: React.FC<HardwareCatalogProps> = ({
             </div>
             <div>
               <span className="text-xs font-bold text-[#F27C36] uppercase tracking-wider block">
-                {currentCategory.subtitle}
+                <FormattedText text={currentCategory.subtitle} />
               </span>
-              <p className="text-xs sm:text-sm text-slate-200 font-normal">
-                {currentCategory.description}
-              </p>
+              <div className="text-xs sm:text-sm text-slate-200 font-normal">
+                <FormattedText text={currentCategory.description} />
+              </div>
             </div>
           </div>
           <div className="shrink-0 text-xs text-slate-300 font-mono bg-[#000000] px-3 py-1.5 rounded-lg border border-[#394B61]">
