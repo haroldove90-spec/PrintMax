@@ -98,7 +98,20 @@ export default function App() {
   const [siteContent, setSiteContent] = useState<SiteContent>(() => {
     try {
       const saved = localStorage.getItem('lumesa_site_content');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const visibility = {
+          ...INITIAL_SITE_CONTENT.visibility,
+          ...(parsed.visibility || {}),
+          showTrustMetrics: parsed.showTrustMetrics ?? parsed.visibility?.showTrustMetrics ?? false
+        };
+        return {
+          ...INITIAL_SITE_CONTENT,
+          ...parsed,
+          showTrustMetrics: visibility.showTrustMetrics,
+          visibility
+        };
+      }
     } catch {
       // fallback
     }
@@ -148,7 +161,17 @@ export default function App() {
         ]);
         if (!isMounted) return;
         if (cloudContent) {
-          setSiteContent(cloudContent);
+          const mergedVisibility = {
+            ...INITIAL_SITE_CONTENT.visibility,
+            ...(cloudContent.visibility || {}),
+            showTrustMetrics: cloudContent.showTrustMetrics ?? cloudContent.visibility?.showTrustMetrics ?? false
+          };
+          setSiteContent({
+            ...INITIAL_SITE_CONTENT,
+            ...cloudContent,
+            showTrustMetrics: mergedVisibility.showTrustMetrics,
+            visibility: mergedVisibility
+          });
         }
         if (cloudProducts && cloudProducts.length > 0) {
           setProducts(cloudProducts);
@@ -441,117 +464,122 @@ export default function App() {
             <HeroSlider 
               onNavigate={navigateToSection} 
               slides={siteContent.slides}
+              showImages={siteContent.visibility?.showSlideImages ?? true}
             />
 
-            {/* Métricas de Experiencia dinámicas */}
-            <TrustStats metrics={siteContent.trustMetrics} />
+            {/* Métricas de Experiencia dinámicas (activables/desactivables desde el CMS) */}
+            {(siteContent.visibility?.showTrustMetrics ?? siteContent.showTrustMetrics ?? false) && (
+              <TrustStats metrics={siteContent.trustMetrics} />
+            )}
 
-            {/* Portales Rápidos a las Secciones Separadas */}
-            <section className="py-16 bg-white border-b border-slate-200">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-2xl mx-auto mb-12">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#F27C36] block mb-1">
-                    Plataforma Integral LUMESA
-                  </span>
-                  <h3 className="text-2xl sm:text-3xl font-black text-[#182F4F] tracking-tight">
-                    Explora Nuestras Soluciones Documentales
-                  </h3>
-                  <p className="text-xs sm:text-sm text-[#394B61] mt-2">
-                    Accede de forma directa e independiente a cada área de nuestro catálogo y servicios especializados.
-                  </p>
+            {/* Portales Rápidos a las Secciones Separadas (Activable/Desactivable desde CMS) */}
+            {(siteContent.visibility?.showQuickPortals ?? true) && (
+              <section className="py-16 bg-white border-b border-slate-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="text-center max-w-2xl mx-auto mb-12">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#F27C36] block mb-1">
+                      Plataforma Integral LUMESA
+                    </span>
+                    <h3 className="text-2xl sm:text-3xl font-black text-[#182F4F] tracking-tight">
+                      Explora Nuestras Soluciones Documentales
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#394B61] mt-2">
+                      Accede de forma directa e independiente a cada área de nuestro catálogo y servicios especializados.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {/* Card 1: Tienda */}
+                    <div 
+                      onClick={() => navigateToSection('tienda')}
+                      className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                          <Store className="w-6 h-6 text-[#F27C36]" />
+                        </div>
+                        <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
+                          Tienda en Línea
+                        </h4>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          Compra directa de multifuncionales, cartuchos de tóner genuino y kits con facturación CFDI 4.0 inmediata.
+                        </p>
+                      </div>
+                      <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
+                        <span>Ver Tienda</span>
+                        <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+
+                    {/* Card 2: Renta / Venta */}
+                    <div 
+                      onClick={() => navigateToSection('renta_venta')}
+                      className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                          <Printer className="w-6 h-6 text-[#F27C36]" />
+                        </div>
+                        <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
+                          Renta / Venta de Equipos
+                        </h4>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          Multifuncionales A3, A4 y prensas Kyocera en opciones de arrendamiento mensual deducible o compra directa.
+                        </p>
+                      </div>
+                      <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
+                        <span>Ver Equipos</span>
+                        <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+
+                    {/* Card 3: Software */}
+                    <div 
+                      onClick={() => navigateToSection('software')}
+                      className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                          <Cpu className="w-6 h-6 text-[#F27C36]" />
+                        </div>
+                        <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
+                          Software Kyocera
+                        </h4>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          Control de costos MyQ, Net Manager, automatización DMConnect y monitoreo proactivo Fleet Services.
+                        </p>
+                      </div>
+                      <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
+                        <span>Ver Software</span>
+                        <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+
+                    {/* Card 4: Nosotros */}
+                    <div 
+                      onClick={() => navigateToSection('nosotros')}
+                      className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                          <Building2 className="w-6 h-6 text-[#F27C36]" />
+                        </div>
+                        <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
+                          Sobre Nosotros
+                        </h4>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          LUMESA: Centro de distribución oficial de Kyocera Japón con sede en San Luis Potosí y cobertura en todo México.
+                        </p>
+                      </div>
+                      <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
+                        <span>Conocer Más</span>
+                        <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {/* Card 1: Tienda */}
-                  <div 
-                    onClick={() => navigateToSection('tienda')}
-                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
-                        <Store className="w-6 h-6 text-[#F27C36]" />
-                      </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
-                        Tienda en Línea
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        Compra directa de multifuncionales, cartuchos de tóner genuino y kits con facturación CFDI 4.0 inmediata.
-                      </p>
-                    </div>
-                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
-                      <span>Ver Tienda</span>
-                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-
-                  {/* Card 2: Renta / Venta */}
-                  <div 
-                    onClick={() => navigateToSection('renta_venta')}
-                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
-                        <Printer className="w-6 h-6 text-[#F27C36]" />
-                      </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
-                        Renta / Venta de Equipos
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        Multifuncionales A3, A4 y prensas Kyocera en opciones de arrendamiento mensual deducible o compra directa.
-                      </p>
-                    </div>
-                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
-                      <span>Ver Equipos</span>
-                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-
-                  {/* Card 3: Software */}
-                  <div 
-                    onClick={() => navigateToSection('software')}
-                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
-                        <Cpu className="w-6 h-6 text-[#F27C36]" />
-                      </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
-                        Software Kyocera
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        Control de costos MyQ, Net Manager, automatización DMConnect y monitoreo proactivo Fleet Services.
-                      </p>
-                    </div>
-                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
-                      <span>Ver Software</span>
-                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-
-                  {/* Card 4: Nosotros */}
-                  <div 
-                    onClick={() => navigateToSection('nosotros')}
-                    className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
-                        <Building2 className="w-6 h-6 text-[#F27C36]" />
-                      </div>
-                      <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
-                        Sobre Nosotros
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        LUMESA: Centro de distribución oficial de Kyocera Japón con sede en San Luis Potosí y cobertura en todo México.
-                      </p>
-                    </div>
-                    <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
-                      <span>Conocer Más</span>
-                      <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
+              </section>
+            )}
           </div>
         )}
 
@@ -597,9 +625,10 @@ export default function App() {
           <div>
             <AboutSection 
               content={siteContent.about} 
+              visibility={siteContent.visibility}
               onNavigate={navigateToSection}
             />
-            <CoverageMapSection />
+            {(siteContent.visibility?.showCoverageMap ?? true) && <CoverageMapSection />}
           </div>
         )}
 
@@ -612,7 +641,7 @@ export default function App() {
               prefilledSubject={prefilledContactSubject} 
               contactInfo={siteContent.contact}
             />
-            <CoverageMapSection />
+            {(siteContent.visibility?.showCoverageMap ?? true) && <CoverageMapSection />}
           </div>
         )}
 

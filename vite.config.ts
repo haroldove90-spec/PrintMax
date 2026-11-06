@@ -19,10 +19,9 @@ export default defineConfig(() => {
       include: ['react', 'react-dom', 'lucide-react'],
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
+      // HMR websocket is not supported in the Cloud Run preview proxy.
+      // Setting hmr: false prevents the '[vite] failed to connect to websocket' red error.
+      hmr: false,
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };

@@ -156,6 +156,17 @@ VALUES (
         ]
       }
     ],
+    "showTrustMetrics": false,
+    "visibility": {
+      "showTrustMetrics": false,
+      "showQuickPortals": true,
+      "showQueHacemos": true,
+      "showSobreNosotros": true,
+      "showAboutStats": true,
+      "showSlideImages": true,
+      "showCoverageMap": true,
+      "showSoftwareHighlights": true
+    },
     "trustMetrics": [
       {
         "value": "+30",

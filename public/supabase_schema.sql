@@ -157,6 +157,7 @@ VALUES (
         ]
       }
     ],
+    "showTrustMetrics": false,
     "trustMetrics": [
       {
         "value": "+30",

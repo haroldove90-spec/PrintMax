@@ -1,8 +1,21 @@
-import { SiteContent, OrderDetails, AdminUser } from '../types';
+import { SiteContent, OrderDetails, AdminUser, ContentVisibility } from '../types';
 import { HERO_SLIDES, TRUST_METRICS, PRODUCTS } from './mockData';
+
+export const DEFAULT_VISIBILITY: ContentVisibility = {
+  showTrustMetrics: false,
+  showQuickPortals: true,
+  showQueHacemos: true,
+  showSobreNosotros: true,
+  showAboutStats: true,
+  showSlideImages: true,
+  showCoverageMap: true,
+  showSoftwareHighlights: true
+};
 
 export const INITIAL_SITE_CONTENT: SiteContent = {
   slides: HERO_SLIDES,
+  showTrustMetrics: false,
+  visibility: DEFAULT_VISIBILITY,
   trustMetrics: TRUST_METRICS,
   about: {
     headline: "Tres Décadas de Liderazgo en Gestión Documental",

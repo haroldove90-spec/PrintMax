@@ -113,8 +113,21 @@ export interface AdminUser {
   roleLabel: string;
 }
 
+export interface ContentVisibility {
+  showTrustMetrics?: boolean;
+  showQuickPortals?: boolean;
+  showQueHacemos?: boolean;
+  showSobreNosotros?: boolean;
+  showAboutStats?: boolean;
+  showSlideImages?: boolean;
+  showCoverageMap?: boolean;
+  showSoftwareHighlights?: boolean;
+}
+
 export interface SiteContent {
   slides: HeroSlide[];
+  showTrustMetrics?: boolean;
+  visibility?: ContentVisibility;
   trustMetrics: {
     value: string;
     label: string;

@@ -2,13 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 import { AppSection, HeroSlide } from '../types';
 import { HERO_SLIDES } from '../data/mockData';
+import { FormattedText } from './FormattedText';
 
 interface HeroSliderProps {
   onNavigate: (section: AppSection) => void;
   slides?: HeroSlide[];
+  showImages?: boolean;
 }
 
-export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) => {
+export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides, showImages = true }) => {
   const activeSlides = slides && slides.length > 0 ? slides : HERO_SLIDES;
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -66,12 +68,21 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) =>
                 isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
               }`}
             >
-              <img
-                src={slide.imageUrl}
-                alt={slide.title}
-                className="w-full h-full object-cover object-center scale-105 transition-transform duration-10000"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#000000] via-[#182F4F]/80 to-[#000000]/60" />
+              {showImages ? (
+                <>
+                  <img
+                    src={slide.imageUrl}
+                    alt={slide.title}
+                    className="w-full h-full object-cover object-center scale-105 transition-transform duration-10000"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#000000] via-[#182F4F]/80 to-[#000000]/60" />
+                </>
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-[#000000] via-[#182F4F] to-[#0b1626] relative">
+                  <div className="absolute inset-0 bg-[radial-gradient(#F27C36_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#000000] via-transparent to-[#000000]/80" />
+                </div>
+              )}
             </div>
           );
         })}
@@ -89,20 +100,22 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) =>
 
             {/* Slide Title */}
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black text-white tracking-tight leading-[1.12] mb-6">
-              {current.title}
+              <FormattedText text={current.title} />
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base sm:text-lg lg:text-xl text-slate-200 leading-relaxed font-normal mb-8 max-w-2xl">
-              {current.subtitle}
-            </p>
+            <div className="text-base sm:text-lg lg:text-xl text-slate-200 leading-relaxed font-normal mb-8 max-w-2xl">
+              <FormattedText text={current.subtitle} />
+            </div>
 
             {/* Feature Bullets */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
               {current.features && current.features.map((feat: string, idx: number) => (
                 <div key={idx} className="flex items-start space-x-2.5 bg-black/40 backdrop-blur-sm p-2 rounded-xl border border-white/5">
                   <CheckCircle2 className="w-5 h-5 text-[#F27C36] shrink-0 mt-0.5" />
-                  <span className="text-xs sm:text-sm text-slate-100 font-medium leading-snug">{feat}</span>
+                  <span className="text-xs sm:text-sm text-slate-100 font-medium leading-snug">
+                    <FormattedText text={feat} />
+                  </span>
                 </div>
               ))}
             </div>
