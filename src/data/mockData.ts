@@ -22,17 +22,17 @@ export const HERO_SLIDES: HeroSlide[] = [
     id: 2,
     tag: "Hardware y Equipos Kyocera",
     title: "Equipos de Impresión de Alto Rendimiento",
-    subtitle: "Venta de multifuncionales A3 y A4, tecnología ECOSYS y TASKalfa. Optimiza tu espacio de trabajo con equipos confiables.",
+    subtitle: "Venta de multifuncionales A3 y A4, tecnología ECOSYS y TASKalfa. Optimiza tu espacio de trabajo con tecnología eficiente y confiable.",
     ctaPrimaryText: "Ver Catálogo de Equipos",
-    ctaPrimaryAction: "#hardware",
-    ctaSecondaryText: "Software Kyocera",
-    ctaSecondaryAction: "#software",
+    ctaPrimaryAction: "hardware",
+    ctaSecondaryText: "Calculadora de Renta",
+    ctaSecondaryAction: "contacto",
     badgeText: "Tecnología ECOSYS y TASKalfa",
     imageUrl: "https://images.unsplash.com/photo-1542744094-3a31f272c490?auto=format&fit=crop&w=1920&q=80",
     features: [
       "Multifuncionales A3 (hasta 11\" x 17\") y A4 compactos",
-      "Facturación CFDI 4.0 inmediata ante el SAT",
-      "Garantía oficial directa y consumibles originales"
+      "Renta 100% deducible de impuestos",
+      "Mantenimiento y tóner original incluidos"
     ]
   },
   {

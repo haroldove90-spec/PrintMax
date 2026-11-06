@@ -30,20 +30,33 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) =>
   }, [nextSlide, isPaused]);
 
   // Route target for slide buttons
-  const getSlideNavigationTarget = (slideIndex: number, isPrimary: boolean): AppSection => {
-    if (slideIndex === 0) return isPrimary ? 'tienda' : 'hardware';
-    if (slideIndex === 1) return isPrimary ? 'hardware' : 'software';
-    return isPrimary ? 'software' : 'contacto';
+  const getSlideNavigationTarget = (action?: string, fallback: AppSection = 'tienda'): AppSection => {
+    if (!action) return fallback;
+    const cleanAction = action.replace('#', '').toLowerCase();
+    const validSections: AppSection[] = [
+      'inicio', 
+      'nosotros', 
+      'renta_venta', 
+      'hardware', 
+      'software', 
+      'tienda', 
+      'contacto',
+      'admin'
+    ];
+    if (cleanAction === 'equipos' || cleanAction === 'renta' || cleanAction === 'venta') return 'renta_venta';
+    return (validSections.includes(cleanAction as AppSection) ? cleanAction : fallback) as AppSection;
   };
+
+  const current = activeSlides[currentSlide];
 
   return (
     <section 
-      className="relative bg-black overflow-hidden text-white"
+      className="relative bg-[#000000] overflow-hidden text-white font-['Plus_Jakarta_Sans',sans-serif]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Slide Images & Overlays */}
-      <div className="relative min-h-[560px] lg:min-h-[620px] flex items-center">
+      <div className="relative min-h-[580px] lg:min-h-[640px] flex items-center">
         {activeSlides.map((slide: HeroSlide, index: number) => {
           const isActive = index === currentSlide;
           return (
@@ -58,7 +71,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) =>
                 alt={slide.title}
                 className="w-full h-full object-cover object-center scale-105 transition-transform duration-10000"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-black/60" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#000000] via-[#182F4F]/80 to-[#000000]/60" />
             </div>
           );
         })}
@@ -67,29 +80,29 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) =>
         <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 w-full">
           <div className="max-w-3xl">
             {/* Tag / Category Badge */}
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-neutral-900/90 border border-neutral-700 text-neutral-200 text-xs sm:text-sm font-semibold mb-6 backdrop-blur-md">
-              <Sparkles className="w-4 h-4 text-blue-500" />
-              <span>{activeSlides[currentSlide].tag}</span>
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#182F4F]/90 border border-[#394B61] text-slate-200 text-xs sm:text-sm font-semibold mb-6 backdrop-blur-md">
+              <Sparkles className="w-4 h-4 text-[#F27C36]" />
+              <span>{current.tag}</span>
               <span className="text-white/30">•</span>
-              <span className="text-blue-400 font-normal">{activeSlides[currentSlide].badgeText}</span>
+              <span className="text-[#F27C36] font-medium">{current.badgeText}</span>
             </div>
 
             {/* Slide Title */}
-            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white tracking-tight leading-[1.12] mb-6">
-              {activeSlides[currentSlide].title}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black text-white tracking-tight leading-[1.12] mb-6">
+              {current.title}
             </h1>
 
             {/* Subtitle */}
-            <p className="text-lg sm:text-xl text-neutral-300 leading-relaxed font-light mb-8 max-w-2xl">
-              {activeSlides[currentSlide].subtitle}
+            <p className="text-base sm:text-lg lg:text-xl text-slate-200 leading-relaxed font-normal mb-8 max-w-2xl">
+              {current.subtitle}
             </p>
 
             {/* Feature Bullets */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
-              {activeSlides[currentSlide].features.map((feat: string, idx: number) => (
-                <div key={idx} className="flex items-start space-x-2.5">
-                  <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                  <span className="text-sm text-neutral-200 font-medium">{feat}</span>
+              {current.features && current.features.map((feat: string, idx: number) => (
+                <div key={idx} className="flex items-start space-x-2.5 bg-black/40 backdrop-blur-sm p-2 rounded-xl border border-white/5">
+                  <CheckCircle2 className="w-5 h-5 text-[#F27C36] shrink-0 mt-0.5" />
+                  <span className="text-xs sm:text-sm text-slate-100 font-medium leading-snug">{feat}</span>
                 </div>
               ))}
             </div>
@@ -97,18 +110,18 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) =>
             {/* Action Buttons: Navigate directly to separate section */}
             <div className="flex flex-wrap items-center gap-4">
               <button
-                onClick={() => onNavigate(getSlideNavigationTarget(currentSlide, true))}
-                className="inline-flex items-center space-x-2.5 bg-black hover:bg-neutral-900 text-white px-7 py-3.5 rounded-xl font-bold text-sm tracking-wide border border-neutral-700 hover:border-blue-500 transition shadow-xl transform hover:-translate-y-0.5"
+                onClick={() => onNavigate(getSlideNavigationTarget(current.ctaPrimaryAction, 'renta_venta'))}
+                className="inline-flex items-center space-x-2.5 bg-[#F27C36] hover:bg-[#d96624] text-white px-7 py-3.5 rounded-xl font-black text-xs sm:text-sm tracking-wider uppercase transition shadow-xl transform hover:-translate-y-0.5 cursor-pointer"
               >
-                <span>{activeSlides[currentSlide].ctaPrimaryText}</span>
-                <ArrowRight className="w-4 h-4 text-blue-500" />
+                <span>{current.ctaPrimaryText || 'Ver Catálogo de Equipos'}</span>
+                <ArrowRight className="w-4 h-4 text-white" />
               </button>
 
               <button
-                onClick={() => onNavigate(getSlideNavigationTarget(currentSlide, false))}
-                className="inline-flex items-center space-x-2 bg-neutral-900/90 hover:bg-black text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700 px-6 py-3.5 rounded-xl font-semibold text-sm transition"
+                onClick={() => onNavigate(getSlideNavigationTarget(current.ctaSecondaryAction, 'contacto'))}
+                className="inline-flex items-center space-x-2 bg-[#182F4F]/90 hover:bg-[#182F4F] text-slate-100 hover:text-white border border-[#394B61] hover:border-[#F27C36] px-6 py-3.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer"
               >
-                <span>{activeSlides[currentSlide].ctaSecondaryText}</span>
+                <span>{current.ctaSecondaryText || 'Calculadora de Renta'}</span>
               </button>
             </div>
           </div>
@@ -117,18 +130,18 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) =>
         {/* Navigation Arrows */}
         <button
           onClick={prevSlide}
-          className="absolute left-4 z-30 p-3 rounded-full bg-black/80 hover:bg-black text-white border border-neutral-800 hover:border-blue-500 transition shadow-lg hidden md:flex items-center justify-center group"
+          className="absolute left-4 z-30 p-3 rounded-full bg-black/80 hover:bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] transition shadow-lg hidden md:flex items-center justify-center group cursor-pointer"
           aria-label="Diapositiva anterior"
         >
-          <ChevronLeft className="w-6 h-6 text-neutral-300 group-hover:text-blue-400 group-hover:-translate-x-0.5 transition" />
+          <ChevronLeft className="w-6 h-6 text-slate-300 group-hover:text-[#F27C36] group-hover:-translate-x-0.5 transition" />
         </button>
 
         <button
           onClick={nextSlide}
-          className="absolute right-4 z-30 p-3 rounded-full bg-black/80 hover:bg-black text-white border border-neutral-800 hover:border-blue-500 transition shadow-lg hidden md:flex items-center justify-center group"
+          className="absolute right-4 z-30 p-3 rounded-full bg-black/80 hover:bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] transition shadow-lg hidden md:flex items-center justify-center group cursor-pointer"
           aria-label="Siguiente diapositiva"
         >
-          <ChevronRight className="w-6 h-6 text-neutral-300 group-hover:text-blue-400 group-hover:translate-x-0.5 transition" />
+          <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-[#F27C36] group-hover:translate-x-0.5 transition" />
         </button>
 
         {/* Bottom Slide Indicators */}
@@ -137,13 +150,13 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides }) =>
             <button
               key={slide.id}
               onClick={() => setCurrentSlide(index)}
-              className={`group flex items-center space-x-2 py-2 px-3 rounded-full transition-all border ${
+              className={`group flex items-center space-x-2 py-2 px-3.5 rounded-full transition-all border cursor-pointer ${
                 index === currentSlide 
-                  ? 'bg-black text-white font-bold border-blue-500/80 shadow-md' 
-                  : 'bg-black/70 text-neutral-400 hover:text-white border-neutral-800'
+                  ? 'bg-[#182F4F] text-white font-bold border-[#F27C36] shadow-md ring-1 ring-[#F27C36]' 
+                  : 'bg-black/80 text-slate-400 hover:text-white border-[#394B61]'
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${index === currentSlide ? 'bg-blue-500' : 'bg-neutral-600'}`} />
+              <span className={`w-2 h-2 rounded-full ${index === currentSlide ? 'bg-[#F27C36]' : 'bg-slate-500'}`} />
               <span className="text-xs hidden sm:inline">0{index + 1}</span>
             </button>
           ))}

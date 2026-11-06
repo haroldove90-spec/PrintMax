@@ -22,6 +22,16 @@ import { PWAInstallButton } from './components/PWAInstallButton';
 import { PRODUCTS } from './data/mockData';
 import { INITIAL_SITE_CONTENT, INITIAL_ADMIN_USERS, INITIAL_ORDERS } from './data/initialContent';
 import { 
+  fetchSiteContentFromSupabase, 
+  saveSiteContentToSupabase,
+  fetchProductsFromSupabase,
+  saveProductToSupabase,
+  deleteProductFromSupabase,
+  fetchOrdersFromSupabase,
+  saveOrderToSupabase,
+  updateOrderStatusInSupabase
+} from './lib/supabase';
+import { 
   AppSection, 
   CartItem, 
   Product, 
@@ -126,6 +136,34 @@ export default function App() {
     }
   }, [currentUser]);
 
+  // Initial Sync from Supabase Cloud (with local fallback)
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCloudData() {
+      try {
+        const [cloudContent, cloudProducts, cloudOrders] = await Promise.all([
+          fetchSiteContentFromSupabase(),
+          fetchProductsFromSupabase(),
+          fetchOrdersFromSupabase()
+        ]);
+        if (!isMounted) return;
+        if (cloudContent) {
+          setSiteContent(cloudContent);
+        }
+        if (cloudProducts && cloudProducts.length > 0) {
+          setProducts(cloudProducts);
+        }
+        if (cloudOrders && cloudOrders.length > 0) {
+          setOrders(cloudOrders);
+        }
+      } catch (err) {
+        console.warn('Supabase initial fetch skipped:', err);
+      }
+    }
+    loadCloudData();
+    return () => { isMounted = false; };
+  }, []);
+
   // Cart state
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
@@ -229,9 +267,10 @@ export default function App() {
     setIsCheckoutOpen(true);
   };
 
-  // When customer completes checkout, register order into Admin Dashboard
+  // When customer completes checkout, register order into Admin Dashboard & Supabase
   const handleOrderCreated = (newOrder: OrderDetails) => {
     setOrders((prev) => [newOrder, ...prev]);
+    saveOrderToSupabase(newOrder).catch((e) => console.warn('Supabase saveOrder error:', e));
   };
 
   // Comparator Handlers
@@ -270,7 +309,7 @@ export default function App() {
   };
 
   // ==========================================
-  // ADMIN DASHBOARD CRUD ACTIONS
+  // ADMIN DASHBOARD CRUD ACTIONS (SYNCED TO LOCAL + SUPABASE)
   // ==========================================
   const handleSaveProduct = (product: Product) => {
     setProducts((prev) => {
@@ -284,10 +323,12 @@ export default function App() {
     });
     setIsProductFormOpen(false);
     setProductToEdit(null);
+    saveProductToSupabase(product).catch((e) => console.warn('Supabase saveProduct error:', e));
   };
 
   const handleDeleteProduct = (productId: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== productId));
+    deleteProductFromSupabase(productId).catch((e) => console.warn('Supabase deleteProduct error:', e));
   };
 
   const handleUpdateOrderStatus = (orderId: string, status: OrderStatus, trackingNumber?: string) => {
@@ -303,10 +344,12 @@ export default function App() {
         return ord;
       })
     );
+    updateOrderStatusInSupabase(orderId, status, trackingNumber).catch((e) => console.warn('Supabase updateOrderStatus error:', e));
   };
 
   const handleSaveSiteContent = (newContent: SiteContent) => {
     setSiteContent(newContent);
+    saveSiteContentToSupabase(newContent).catch((e) => console.warn('Supabase saveSiteContent error:', e));
   };
 
   const handleResetFactoryData = () => {

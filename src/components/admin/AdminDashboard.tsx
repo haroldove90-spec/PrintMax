@@ -27,8 +27,27 @@ import {
   Phone,
   Mail,
   MapPin,
-  CheckCircle2
+  CheckCircle2,
+  Database,
+  Code2,
+  Download,
+  ExternalLink,
+  RefreshCw,
+  AlertCircle,
+  ListPlus,
+  Sliders,
+  Award
 } from 'lucide-react';
+import { LUMESA_SUPABASE_SQL } from '../../data/supabaseSql';
+import { 
+  testSupabaseConnection, 
+  saveSiteContentToSupabase, 
+  saveProductToSupabase, 
+  saveOrderToSupabase, 
+  SUPABASE_PROJECT_ID, 
+  SUPABASE_URL, 
+  SUPABASE_ANON_KEY 
+} from '../../lib/supabase';
 import { 
   AdminUser, 
   AdminRole, 
@@ -87,6 +106,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           { id: 'cms', label: 'Editor Web (CMS)', icon: Globe }
         ]
       : []),
+    ...(currentUser.role === 'super_admin'
+      ? [
+          { id: 'supabase', label: 'Supabase & Base de Datos', icon: Database }
+        ]
+      : []),
     { id: 'roles', label: 'Roles y Configuración', icon: KeyRound }
   ];
 
@@ -98,11 +122,113 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [editableContent, setEditableContent] = useState<SiteContent>(siteContent);
   const [cmsSaveNotice, setCmsSaveNotice] = useState(false);
   const [activeSlideEditor, setActiveSlideEditor] = useState<number>(0);
+  const [newBulletInput, setNewBulletInput] = useState('');
+
+  // Supabase state
+  const [supabaseStatus, setSupabaseStatus] = useState<{
+    tested: boolean;
+    loading: boolean;
+    success: boolean;
+    message: string;
+    tables: string[];
+  }>({
+    tested: false,
+    loading: false,
+    success: false,
+    message: '',
+    tables: []
+  });
+  const [syncingSupabase, setSyncingSupabase] = useState(false);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
+  const [copiedSQL, setCopiedSQL] = useState(false);
 
   // Sync if prop updates
   React.useEffect(() => {
     setEditableContent(siteContent);
   }, [siteContent]);
+
+  const handleAddFeatureToSlide = () => {
+    if (!newBulletInput.trim()) return;
+    const currentSlide = editableContent.slides[activeSlideEditor];
+    const currentFeatures = currentSlide.features || [];
+    const updatedSlides = [...editableContent.slides];
+    updatedSlides[activeSlideEditor] = {
+      ...currentSlide,
+      features: [...currentFeatures, newBulletInput.trim()]
+    };
+    setEditableContent({ ...editableContent, slides: updatedSlides });
+    setNewBulletInput('');
+  };
+
+  const handleRemoveFeatureFromSlide = (index: number) => {
+    const currentSlide = editableContent.slides[activeSlideEditor];
+    const updatedFeatures = (currentSlide.features || []).filter((_, i) => i !== index);
+    const updatedSlides = [...editableContent.slides];
+    updatedSlides[activeSlideEditor] = {
+      ...currentSlide,
+      features: updatedFeatures
+    };
+    setEditableContent({ ...editableContent, slides: updatedSlides });
+  };
+
+  const handleSetImageFeaturesPreset = () => {
+    const currentSlide = editableContent.slides[activeSlideEditor];
+    const updatedSlides = [...editableContent.slides];
+    updatedSlides[activeSlideEditor] = {
+      ...currentSlide,
+      features: [
+        'Multifuncionales A3 (hasta 11" x 17") y A4 compactos',
+        'Renta 100% deducible de impuestos',
+        'Mantenimiento y tóner original incluidos'
+      ],
+      ctaPrimaryText: 'Ver Catálogo de Equipos',
+      ctaPrimaryAction: 'hardware',
+      ctaSecondaryText: 'Calculadora de Renta',
+      ctaSecondaryAction: 'contacto'
+    };
+    setEditableContent({ ...editableContent, slides: updatedSlides });
+  };
+
+  const handleTestSupabase = async () => {
+    setSupabaseStatus({ tested: true, loading: true, success: false, message: 'Probando conexión con Supabase Cloud...', tables: [] });
+    const res = await testSupabaseConnection();
+    setSupabaseStatus({ tested: true, loading: false, success: res.success, message: res.message, tables: res.tables });
+  };
+
+  const handleSyncAllToSupabase = async () => {
+    setSyncingSupabase(true);
+    setSyncNotice('Iniciando sincronización con Supabase Cloud...');
+    try {
+      const contentOk = await saveSiteContentToSupabase(editableContent);
+      let productsCount = 0;
+      for (const p of products) {
+        const ok = await saveProductToSupabase(p);
+        if (ok) productsCount++;
+      }
+      let ordersCount = 0;
+      for (const ord of orders) {
+        const ok = await saveOrderToSupabase(ord);
+        if (ok) ordersCount++;
+      }
+      if (contentOk || productsCount > 0) {
+        setSyncNotice(`¡Sincronización exitosa! Se subieron ${productsCount} productos, ${ordersCount} pedidos y el contenido CMS completo a Supabase.`);
+      } else {
+        setSyncNotice('Las tablas aún no existen en Supabase. Primero copia el script SQL y córrelo en el editor SQL de Supabase.');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setSyncNotice(`Error al sincronizar: ${msg}`);
+    } finally {
+      setSyncingSupabase(false);
+      setTimeout(() => setSyncNotice(null), 6000);
+    }
+  };
+
+  const handleCopySQL = () => {
+    navigator.clipboard.writeText(LUMESA_SUPABASE_SQL);
+    setCopiedSQL(true);
+    setTimeout(() => setCopiedSQL(false), 3000);
+  };
 
   // Statistics
   const totalSalesRevenue = orders.reduce((sum, o) => o.status !== 'cancelado' ? sum + o.total : sum, 0);
@@ -814,14 +940,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             )}
 
             {/* Slider CMS Section */}
-            <div className="p-6 rounded-3xl bg-neutral-950 border border-neutral-800 shadow-xl space-y-6">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-6 text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-4 gap-3">
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center space-x-2">
-                    <ImageIcon className="w-4 h-4 text-blue-500" />
-                    <span>Editor del Slider Principal (3 Imágenes)</span>
+                    <ImageIcon className="w-5 h-5 text-[#F27C36]" />
+                    <span>Editor del Slider Principal (3 Diapositivas Oficiales)</span>
                   </h3>
-                  <span className="text-xs text-neutral-400">Edite los textos de cada una de las 3 diapositivas oficiales</span>
+                  <span className="text-xs text-slate-300">
+                    Edite textos, títulos, viñetas con palomita y los botones de acción ("Ver catálogo", "Calculadora de renta", etc.)
+                  </span>
                 </div>
 
                 <div className="flex space-x-2">
@@ -830,10 +958,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       key={idx}
                       type="button"
                       onClick={() => setActiveSlideEditor(idx)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                         activeSlideEditor === idx
-                          ? 'bg-neutral-900 text-white border-blue-500/80 shadow-sm'
-                          : 'bg-black text-neutral-400 border-neutral-800'
+                          ? 'bg-[#F27C36] text-white border-[#F27C36] shadow-sm'
+                          : 'bg-[#000000] text-slate-300 border-[#394B61] hover:border-slate-300'
                       }`}
                     >
                       Diapositiva {idx + 1}
@@ -844,8 +972,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               {/* Slide Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                     Etiqueta / Tag Superior
                   </label>
                   <input
@@ -856,13 +984,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       updatedSlides[activeSlideEditor].tag = e.target.value;
                       setEditableContent({ ...editableContent, slides: updatedSlides });
                     }}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Badge / Resaltado
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.slides[activeSlideEditor].badgeText || ''}
+                    onChange={(e) => {
+                      const updatedSlides = [...editableContent.slides];
+                      updatedSlides[activeSlideEditor].badgeText = e.target.value;
+                      setEditableContent({ ...editableContent, slides: updatedSlides });
+                    }}
+                    placeholder="Ej: Tecnología ECOSYS y TASKalfa"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">
-                    Título de la Diapositiva
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Título Principal de la Diapositiva
                   </label>
                   <input
                     type="text"
@@ -872,13 +1017,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       updatedSlides[activeSlideEditor].title = e.target.value;
                       setEditableContent({ ...editableContent, slides: updatedSlides });
                     }}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">
-                    Subtítulo de la Diapositiva
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Subtítulo / Descripción
                   </label>
                   <textarea
                     rows={2}
@@ -888,12 +1033,186 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       updatedSlides[activeSlideEditor].subtitle = e.target.value;
                       setEditableContent({ ...editableContent, slides: updatedSlides });
                     }}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                   />
                 </div>
 
+                {/* BOTONES DE ACCIÓN (CTA 1 & CTA 2) */}
+                <div className="sm:col-span-2 p-4 rounded-2xl bg-[#000000]/70 border border-[#394B61] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                      <Sliders className="w-4 h-4 text-[#F27C36]" />
+                      <span>Configurar Botones del Slider (Acciones y Textos)</span>
+                    </h4>
+                    <span className="text-[11px] text-slate-400">Edite el texto y la sección a la que dirigen</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Botón 1 (Principal - Naranja) */}
+                    <div className="space-y-2 p-3 rounded-xl bg-[#182F4F]/60 border border-[#394B61]">
+                      <div className="text-xs font-bold text-white flex items-center space-x-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#F27C36]" />
+                        <span>Botón Principal (Ej. Ver Catálogo de Equipos)</span>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-slate-300 mb-1">Texto del Botón:</label>
+                        <input
+                          type="text"
+                          value={editableContent.slides[activeSlideEditor].ctaPrimaryText || ''}
+                          onChange={(e) => {
+                            const updatedSlides = [...editableContent.slides];
+                            updatedSlides[activeSlideEditor].ctaPrimaryText = e.target.value;
+                            setEditableContent({ ...editableContent, slides: updatedSlides });
+                          }}
+                          placeholder="Ver Catálogo de Equipos"
+                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-slate-300 mb-1">Destino al hacer clic:</label>
+                        <select
+                          value={editableContent.slides[activeSlideEditor].ctaPrimaryAction || 'hardware'}
+                          onChange={(e) => {
+                            const updatedSlides = [...editableContent.slides];
+                            updatedSlides[activeSlideEditor].ctaPrimaryAction = e.target.value;
+                            setEditableContent({ ...editableContent, slides: updatedSlides });
+                          }}
+                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                        >
+                          <option value="hardware">Renta / Venta de Equipos Kyocera</option>
+                          <option value="tienda">Tienda en Línea</option>
+                          <option value="software">Software y Soluciones Documentales</option>
+                          <option value="contacto">Contacto & Cotización Inmediata</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Botón 2 (Secundario - Azul Marino) */}
+                    <div className="space-y-2 p-3 rounded-xl bg-[#182F4F]/60 border border-[#394B61]">
+                      <div className="text-xs font-bold text-white flex items-center space-x-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
+                        <span>Botón Secundario (Ej. Calculadora de Renta)</span>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-slate-300 mb-1">Texto del Botón:</label>
+                        <input
+                          type="text"
+                          value={editableContent.slides[activeSlideEditor].ctaSecondaryText || ''}
+                          onChange={(e) => {
+                            const updatedSlides = [...editableContent.slides];
+                            updatedSlides[activeSlideEditor].ctaSecondaryText = e.target.value;
+                            setEditableContent({ ...editableContent, slides: updatedSlides });
+                          }}
+                          placeholder="Calculadora de Renta"
+                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-slate-300 mb-1">Destino al hacer clic:</label>
+                        <select
+                          value={editableContent.slides[activeSlideEditor].ctaSecondaryAction || 'contacto'}
+                          onChange={(e) => {
+                            const updatedSlides = [...editableContent.slides];
+                            updatedSlides[activeSlideEditor].ctaSecondaryAction = e.target.value;
+                            setEditableContent({ ...editableContent, slides: updatedSlides });
+                          }}
+                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                        >
+                          <option value="contacto">Contacto & Calculadora de Renta</option>
+                          <option value="hardware">Renta / Venta de Equipos</option>
+                          <option value="tienda">Tienda en Línea</option>
+                          <option value="software">Software Kyocera</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* VIÑETAS / PUNTOS DESTACADOS (FEATURES CON PALOMITA) */}
+                <div className="sm:col-span-2 p-4 rounded-2xl bg-[#000000]/70 border border-[#394B61] space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                        <CheckCircle2 className="w-4 h-4 text-[#F27C36]" />
+                        <span>Puntos Destacados / Viñetas con Palomita (Features)</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-300 mt-0.5">
+                        Aquí puede editar o agregar viñetas como: "Multifuncionales A3", "Renta 100% deducible", "Mantenimiento y tóner original incluidos".
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSetImageFeaturesPreset}
+                      className="px-3 py-1.5 rounded-lg bg-[#394B61] hover:bg-[#F27C36] text-white text-[11px] font-bold transition flex items-center space-x-1.5 cursor-pointer shrink-0"
+                      title="Cargar las viñetas oficiales de la imagen compartida"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#F27C36]" />
+                      <span>Cargar Viñetas de la Imagen</span>
+                    </button>
+                  </div>
+
+                  {/* List of existing features */}
+                  <div className="space-y-2">
+                    {editableContent.slides[activeSlideEditor].features && editableContent.slides[activeSlideEditor].features.length > 0 ? (
+                      editableContent.slides[activeSlideEditor].features.map((feature, fIdx) => (
+                        <div key={fIdx} className="flex items-center space-x-2 bg-[#182F4F] p-2 rounded-xl border border-[#394B61]">
+                          <CheckCircle2 className="w-4 h-4 text-[#F27C36] shrink-0" />
+                          <input
+                            type="text"
+                            value={feature}
+                            onChange={(e) => {
+                              const updatedFeatures = [...(editableContent.slides[activeSlideEditor].features || [])];
+                              updatedFeatures[fIdx] = e.target.value;
+                              const updatedSlides = [...editableContent.slides];
+                              updatedSlides[activeSlideEditor].features = updatedFeatures;
+                              setEditableContent({ ...editableContent, slides: updatedSlides });
+                            }}
+                            className="flex-1 text-xs bg-transparent text-white focus:outline-none font-medium"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFeatureFromSlide(fIdx)}
+                            className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-950 transition cursor-pointer"
+                            title="Eliminar esta viñeta"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">No hay viñetas registradas para esta diapositiva.</p>
+                    )}
+                  </div>
+
+                  {/* Add new feature input */}
+                  <div className="flex items-center space-x-2 pt-2">
+                    <input
+                      type="text"
+                      value={newBulletInput}
+                      onChange={(e) => setNewBulletInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddFeatureToSlide();
+                        }
+                      }}
+                      placeholder="Escribir nueva viñeta (ej: Multifuncionales A3 compactos)..."
+                      className="flex-1 text-xs bg-[#000000] text-white px-3 py-2 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddFeatureToSlide}
+                      className="px-3.5 py-2 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold transition flex items-center space-x-1 cursor-pointer shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Agregar Viñeta</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                     URL de la Imagen de Fondo
                   </label>
                   <input
@@ -904,24 +1223,86 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       updatedSlides[activeSlideEditor].imageUrl = e.target.value;
                       setEditableContent({ ...editableContent, slides: updatedSlides });
                     }}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500 font-mono"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36] font-mono"
                   />
                 </div>
               </div>
             </div>
 
-            {/* About & Qué Hacemos CMS Section */}
-            <div className="p-6 rounded-3xl bg-neutral-950 border border-neutral-800 shadow-xl space-y-6">
-              <div className="border-b border-neutral-800 pb-3">
+            {/* Trust Metrics CMS Section (4 KPIs) */}
+            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-6 text-white">
+              <div className="border-b border-[#394B61] pb-3">
                 <h3 className="text-base font-bold text-white flex items-center space-x-2">
-                  <FileText className="w-4 h-4 text-blue-500" />
+                  <Award className="w-5 h-5 text-[#F27C36]" />
+                  <span>Editor de Métricas de Confianza (4 KPIs del Inicio)</span>
+                </h3>
+                <span className="text-xs text-slate-300">
+                  Actualice las cifras que respaldan la trayectoria de LUMESA (+30 Años, +2,000 Clientes, &lt; 24h Soporte, etc.)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {editableContent.trustMetrics && editableContent.trustMetrics.map((metric, mIdx) => (
+                  <div key={mIdx} className="p-3.5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#F27C36]">
+                      Métrica {mIdx + 1}
+                    </span>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-0.5">Cifra Destacada:</label>
+                      <input
+                        type="text"
+                        value={metric.value}
+                        onChange={(e) => {
+                          const updated = [...editableContent.trustMetrics];
+                          updated[mIdx].value = e.target.value;
+                          setEditableContent({ ...editableContent, trustMetrics: updated });
+                        }}
+                        className="w-full text-xs font-bold bg-[#000000] text-white px-2.5 py-1.5 rounded-lg border border-[#394B61]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-0.5">Título / Etiqueta:</label>
+                      <input
+                        type="text"
+                        value={metric.label}
+                        onChange={(e) => {
+                          const updated = [...editableContent.trustMetrics];
+                          updated[mIdx].label = e.target.value;
+                          setEditableContent({ ...editableContent, trustMetrics: updated });
+                        }}
+                        className="w-full text-xs bg-[#000000] text-white px-2.5 py-1.5 rounded-lg border border-[#394B61]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-0.5">Descripción Breve:</label>
+                      <textarea
+                        rows={2}
+                        value={metric.description}
+                        onChange={(e) => {
+                          const updated = [...editableContent.trustMetrics];
+                          updated[mIdx].description = e.target.value;
+                          setEditableContent({ ...editableContent, trustMetrics: updated });
+                        }}
+                        className="w-full text-[11px] bg-[#000000] text-slate-200 px-2.5 py-1.5 rounded-lg border border-[#394B61]"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* About & Qué Hacemos CMS Section */}
+            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-6 text-white">
+              <div className="border-b border-[#394B61] pb-3">
+                <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                  <FileText className="w-5 h-5 text-[#F27C36]" />
                   <span>Editor de Contenido: Qué Hacemos & Sobre Nosotros</span>
                 </h3>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                     Texto Oficial "Qué Hacemos"
                   </label>
                   <textarea
@@ -931,12 +1312,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       ...editableContent,
                       about: { ...editableContent.about, queHacemosText: e.target.value }
                     })}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                     Texto Oficial "Sobre Nosotros" (Párrafo 1)
                   </label>
                   <textarea
@@ -946,12 +1327,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       ...editableContent,
                       about: { ...editableContent.about, sobreNosotrosText1: e.target.value }
                     })}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                     Texto Oficial "Sobre Nosotros" (Párrafo 2)
                   </label>
                   <textarea
@@ -961,13 +1342,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       ...editableContent,
                       about: { ...editableContent.about, sobreNosotrosText2: e.target.value }
                     })}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                       Cifra de Clientes Satisfechos
                     </label>
                     <input
@@ -977,12 +1358,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         ...editableContent,
                         about: { ...editableContent.about, clientsCount: e.target.value }
                       })}
-                      className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                       Años de Trayectoria
                     </label>
                     <input
@@ -992,7 +1373,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         ...editableContent,
                         about: { ...editableContent.about, experienceYears: e.target.value }
                       })}
-                      className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                     />
                   </div>
                 </div>
@@ -1000,15 +1381,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* Contact Information CMS */}
-            <div className="p-6 rounded-3xl bg-neutral-950 border border-neutral-800 shadow-xl space-y-4">
-              <h3 className="text-base font-bold text-white border-b border-neutral-800 pb-3 flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-blue-500" />
+            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-4 text-white">
+              <h3 className="text-base font-bold text-white border-b border-[#394B61] pb-3 flex items-center space-x-2">
+                <Phone className="w-5 h-5 text-[#F27C36]" />
                 <span>Datos Corporativos de Contacto & San Luis Potosí</span>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
                     Teléfono Local Taller (SLP)
                   </label>
                   <input
@@ -1018,12 +1399,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       ...editableContent,
                       contact: { ...editableContent.contact, phone: e.target.value }
                     })}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
                     WhatsApp Oficial (sin signos, con código 52)
                   </label>
                   <input
@@ -1033,12 +1414,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       ...editableContent,
                       contact: { ...editableContent.contact, whatsapp: e.target.value }
                     })}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 font-mono"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Línea Gratuita 01 800
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.contact.tollFree || '01 800 KYOCERA'}
+                    onChange={(e) => setEditableContent({
+                      ...editableContent,
+                      contact: { ...editableContent.contact, tollFree: e.target.value }
+                    })}
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
                     Correo de Ventas
                   </label>
                   <input
@@ -1048,12 +1444,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       ...editableContent,
                       contact: { ...editableContent.contact, salesEmail: e.target.value }
                     })}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
                     Correo de Soporte Técnico
                   </label>
                   <input
@@ -1063,12 +1459,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       ...editableContent,
                       contact: { ...editableContent.contact, supportEmail: e.target.value }
                     })}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61]"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-neutral-400 mb-1">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
                     Dirección Física Sede Central
                   </label>
                   <input
@@ -1078,7 +1474,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       ...editableContent,
                       contact: { ...editableContent.contact, address: e.target.value }
                     })}
-                    className="w-full text-xs sm:text-sm bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800"
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61]"
                   />
                 </div>
               </div>
@@ -1086,14 +1482,179 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="pt-4 flex justify-end">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white border border-neutral-700 hover:border-blue-500 font-bold text-xs sm:text-sm flex items-center space-x-2 shadow-lg transition"
+                  className="px-6 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm flex items-center space-x-2 shadow-lg transition cursor-pointer"
                 >
-                  <Save className="w-4 h-4 text-blue-500" />
+                  <Save className="w-4 h-4 text-white" />
                   <span>Guardar y Aplicar Cambios</span>
                 </button>
               </div>
             </div>
           </form>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB: SUPABASE & BASE DE DATOS EN LA NUBE */}
+        {/* ========================================================= */}
+        {activeTab === 'supabase' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-white flex items-center space-x-2">
+                  <Database className="w-6 h-6 text-[#F27C36]" />
+                  <span>Configuración & Conexión Supabase</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                  Base de datos en la nube PostgreSQL para persistencia de contenidos del sitio web, productos, inventario y pedidos.
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleTestSupabase}
+                  disabled={supabaseStatus.loading}
+                  className="px-4 py-2.5 rounded-xl bg-[#182F4F] hover:bg-[#000000] text-white border border-[#394B61] hover:border-[#F27C36] font-bold text-xs flex items-center space-x-2 transition cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-[#F27C36] ${supabaseStatus.loading ? 'animate-spin' : ''}`} />
+                  <span>{supabaseStatus.loading ? 'Probando...' : 'Probar Conexión'}</span>
+                </button>
+
+                <button
+                  onClick={handleSyncAllToSupabase}
+                  disabled={syncingSupabase}
+                  className="px-4 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs flex items-center space-x-2 transition shadow-md cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${syncingSupabase ? 'animate-spin' : ''}`} />
+                  <span>{syncingSupabase ? 'Sincronizando...' : 'Sincronizar a Supabase Ahora'}</span>
+                </button>
+              </div>
+            </div>
+
+            {syncNotice && (
+              <div className="p-4 rounded-2xl bg-[#000000] border border-[#F27C36] text-white text-xs font-bold flex items-center space-x-2 animate-in fade-in">
+                <CheckCircle2 className="w-5 h-5 text-[#F27C36] shrink-0" />
+                <span>{syncNotice}</span>
+              </div>
+            )}
+
+            {/* Supabase Project Credentials Summary */}
+            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl text-white space-y-4">
+              <div className="flex items-center justify-between border-b border-[#394B61] pb-3">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                  Credenciales del Proyecto Supabase
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-mono font-bold">
+                  API REST v1 Activa
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="p-3.5 rounded-2xl bg-[#000000]/60 border border-[#394B61]">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Nombre del Proyecto:</span>
+                  <div className="font-mono text-white break-all">lumesa@appdesign.appdesignproyectos.com's Project</div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#000000]/60 border border-[#394B61]">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Project ID:</span>
+                  <div className="font-mono text-[#F27C36] font-bold">{SUPABASE_PROJECT_ID}</div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#000000]/60 border border-[#394B61]">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">URL Endpoint:</span>
+                  <div className="font-mono text-slate-200 break-all">{SUPABASE_URL}</div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#000000]/60 border border-[#394B61]">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">API Publishable Key (Anon):</span>
+                  <div className="font-mono text-slate-300 break-all">{SUPABASE_ANON_KEY.substring(0, 20)}...</div>
+                </div>
+              </div>
+
+              {/* Status report */}
+              {supabaseStatus.tested && (
+                <div className={`p-4 rounded-2xl border text-xs font-semibold flex items-start space-x-2.5 ${
+                  supabaseStatus.success 
+                    ? 'bg-emerald-950/80 border-emerald-600 text-emerald-200'
+                    : 'bg-amber-950/80 border-amber-600 text-amber-200'
+                }`}>
+                  {supabaseStatus.success ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <p>{supabaseStatus.message}</p>
+                    {!supabaseStatus.success && (
+                      <p className="mt-1 text-[11px] text-amber-300">
+                        Paso necesario: copia el código SQL de abajo y pégalo en el editor SQL de tu panel Supabase para crear las tablas con 1 clic.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* SQL Script Viewer and One-Click Copy */}
+            <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl text-white space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-3 gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                    <Code2 className="w-5 h-5 text-[#F27C36]" />
+                    <span>Script SQL Oficial para Supabase (Creación de Tablas & RLS)</span>
+                  </h3>
+                  <span className="text-xs text-slate-300">
+                    Copia y ejecuta este script en el Editor SQL de Supabase para inicializar las tablas public.site_content, public.products y public.orders.
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2 shrink-0">
+                  <button
+                    onClick={handleCopySQL}
+                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition cursor-pointer ${
+                      copiedSQL 
+                        ? 'bg-emerald-600 text-white' 
+                        : 'bg-[#F27C36] hover:bg-[#d96624] text-white shadow-md'
+                    }`}
+                  >
+                    {copiedSQL ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedSQL ? '¡Copiado al Portapapeles!' : 'Copiar Código SQL'}</span>
+                  </button>
+
+                  <a
+                    href={`https://supabase.com/dashboard/project/${SUPABASE_PROJECT_ID}/sql/new`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3.5 py-2 rounded-xl bg-[#000000] hover:bg-[#394B61] text-white border border-[#394B61] font-bold text-xs flex items-center space-x-1.5 transition"
+                  >
+                    <span>Abrir Supabase SQL Editor</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#F27C36]" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Instructions steps */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-[#000000]/60 border border-[#394B61]">
+                  <span className="w-5 h-5 rounded-full bg-[#F27C36] text-white font-bold text-[10px] inline-flex items-center justify-center mr-1.5">1</span>
+                  <span className="font-bold">Copia el SQL:</span> Presiona el botón naranja "Copiar Código SQL".
+                </div>
+                <div className="p-3 rounded-xl bg-[#000000]/60 border border-[#394B61]">
+                  <span className="w-5 h-5 rounded-full bg-[#F27C36] text-white font-bold text-[10px] inline-flex items-center justify-center mr-1.5">2</span>
+                  <span className="font-bold">Ve al SQL Editor:</span> Abre tu panel en Supabase en la sección SQL Editor.
+                </div>
+                <div className="p-3 rounded-xl bg-[#000000]/60 border border-[#394B61]">
+                  <span className="w-5 h-5 rounded-full bg-[#F27C36] text-white font-bold text-[10px] inline-flex items-center justify-center mr-1.5">3</span>
+                  <span className="font-bold">Haz clic en Run:</span> Pega el código y presiona "Run" para crear las 3 tablas y políticas.
+                </div>
+              </div>
+
+              {/* Code Pre Block */}
+              <div className="relative">
+                <pre className="p-4 rounded-2xl bg-[#000000] border border-[#394B61] text-emerald-400 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-96 select-all">
+                  {LUMESA_SUPABASE_SQL}
+                </pre>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ========================================================= */}
