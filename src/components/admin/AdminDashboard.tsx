@@ -46,7 +46,14 @@ import {
   MessageSquare,
   Tag,
   Laptop,
-  Zap
+  Zap,
+  CreditCard,
+  Percent,
+  Truck,
+  ToggleLeft,
+  ToggleRight,
+  FileSpreadsheet,
+  Building2
 } from 'lucide-react';
 import { LUMESA_SUPABASE_SQL } from '../../data/supabaseSql';
 import { 
@@ -65,7 +72,10 @@ import {
   OrderDetails, 
   SiteContent, 
   OrderStatus,
-  ContentVisibility
+  ContentVisibility,
+  StoreCategory,
+  PaymentConfig,
+  DiscountCoupon
 } from '../../types';
 import { DEFAULT_VISIBILITY, INITIAL_SITE_CONTENT } from '../../data/initialContent';
 import { FormattedText } from '../FormattedText';
@@ -78,7 +88,15 @@ interface AdminDashboardProps {
   onSaveProduct: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
   orders: OrderDetails[];
-  onUpdateOrderStatus: (orderId: string, status: OrderStatus, trackingNumber?: string) => void;
+  onUpdateOrderStatus: (
+    orderId: string, 
+    status: OrderStatus, 
+    trackingNumber?: string,
+    invoiceStatus?: 'pendiente' | 'emitida' | 'no_requerida',
+    invoicePdfUrl?: string,
+    invoiceXmlUrl?: string,
+    internalNotes?: string
+  ) => void;
   siteContent: SiteContent;
   onSaveSiteContent: (content: SiteContent) => void;
   onResetFactoryData: () => void;
@@ -111,7 +129,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     ...(currentUser.role === 'super_admin' || currentUser.role === 'admin_tienda'
       ? [
           { id: 'productos', label: 'Catálogo de Productos', icon: Package },
-          { id: 'pedidos', label: 'Pedidos Recibidos', icon: ShoppingBag }
+          { id: 'categorias', label: 'Categorías Tienda', icon: Tag },
+          { id: 'pedidos', label: 'Pedidos Recibidos', icon: ShoppingBag },
+          { id: 'pagos', label: 'Mercado Pago & Cobros', icon: CreditCard }
         ]
       : []),
     ...(currentUser.role === 'super_admin' || currentUser.role === 'admin_web'
@@ -431,6 +451,238 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
     }
   }, [currentUser.role, allowedTabs, activeTab]);
+
+  // ==========================================
+  // STORE CATEGORIES & PAYMENT / MERCADO PAGO / COUPONS
+  // ==========================================
+  const [categoriesList, setCategoriesList] = useState<StoreCategory[]>(
+    siteContent.storeCategories || INITIAL_SITE_CONTENT.storeCategories || []
+  );
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<StoreCategory | null>(null);
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    icon: 'Package',
+    active: true,
+    order: 10
+  });
+
+  const [paymentConfigState, setPaymentConfigState] = useState<PaymentConfig>(
+    siteContent.paymentConfig || INITIAL_SITE_CONTENT.paymentConfig!
+  );
+  const [showMpSecretToken, setShowMpSecretToken] = useState(false);
+  const [paymentsSaveNotice, setPaymentsSaveNotice] = useState(false);
+
+  const [couponsList, setCouponsList] = useState<DiscountCoupon[]>(
+    siteContent.coupons || INITIAL_SITE_CONTENT.coupons || []
+  );
+  const [isAddingCoupon, setIsAddingCoupon] = useState(false);
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    discountType: 'porcentaje' as 'porcentaje' | 'monto_fijo',
+    discountValue: 10,
+    minPurchase: 1000,
+    maxUses: 100,
+    expiryDate: '2026-12-31'
+  });
+
+  const [ordersSearch, setOrdersSearch] = useState('');
+  const [ordersStatusFilter, setOrdersStatusFilter] = useState<string>('todos');
+  const [ordersPaymentFilter, setOrdersPaymentFilter] = useState<string>('todos');
+
+  // Keep state in sync with siteContent
+  React.useEffect(() => {
+    if (siteContent.storeCategories) setCategoriesList(siteContent.storeCategories);
+    if (siteContent.paymentConfig) setPaymentConfigState(siteContent.paymentConfig);
+    if (siteContent.coupons) setCouponsList(siteContent.coupons);
+  }, [siteContent]);
+
+  // Categories Handlers
+  const handleSaveCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryForm.name.trim()) return;
+
+    let updatedList: StoreCategory[];
+    if (editingCategory) {
+      updatedList = categoriesList.map(c => c.id === editingCategory.id ? {
+        ...c,
+        name: categoryForm.name.trim(),
+        slug: categoryForm.slug.trim() || categoryForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        description: categoryForm.description.trim(),
+        icon: categoryForm.icon,
+        order: Number(categoryForm.order) || 10,
+        active: categoryForm.active
+      } : c);
+    } else {
+      const newCat: StoreCategory = {
+        id: `cat-${Date.now()}`,
+        name: categoryForm.name.trim(),
+        slug: categoryForm.slug.trim() || categoryForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        description: categoryForm.description.trim(),
+        icon: categoryForm.icon || 'Package',
+        order: Number(categoryForm.order) || (categoriesList.length + 1) * 10,
+        active: categoryForm.active
+      };
+      updatedList = [...categoriesList, newCat];
+    }
+
+    setCategoriesList(updatedList);
+    onSaveSiteContent({ ...editableContent, storeCategories: updatedList });
+    setIsAddingCategory(false);
+    setEditingCategory(null);
+    setCategoryForm({ name: '', slug: '', description: '', icon: 'Package', active: true, order: 10 });
+  };
+
+  const handleToggleCategoryActive = (catId: string) => {
+    const updated = categoriesList.map(c => c.id === catId ? { ...c, active: !c.active } : c);
+    setCategoriesList(updated);
+    onSaveSiteContent({ ...editableContent, storeCategories: updated });
+  };
+
+  const handleDeleteCategory = (catId: string) => {
+    if (confirm('¿Eliminar esta categoría? Los productos asociados permanecerán pero ya no tendrán este filtro.')) {
+      const updated = categoriesList.filter(c => c.id !== catId);
+      setCategoriesList(updated);
+      onSaveSiteContent({ ...editableContent, storeCategories: updated });
+    }
+  };
+
+  // Payments / Mercado Pago Handlers
+  const handleSavePaymentConfig = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    onSaveSiteContent({
+      ...editableContent,
+      paymentConfig: paymentConfigState
+    });
+    setPaymentsSaveNotice(true);
+    setTimeout(() => setPaymentsSaveNotice(false), 2500);
+  };
+
+  // Coupon Handlers
+  const handleSaveCoupon = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponForm.code.trim()) return;
+
+    const newCoupon: DiscountCoupon = {
+      id: `cpn-${Date.now()}`,
+      code: couponForm.code.trim().toUpperCase(),
+      discountType: couponForm.discountType,
+      discountValue: Number(couponForm.discountValue) || 10,
+      minPurchase: Number(couponForm.minPurchase) || 0,
+      maxUses: Number(couponForm.maxUses) || 50,
+      usesCount: 0,
+      active: true,
+      expiryDate: couponForm.expiryDate || '2026-12-31'
+    };
+
+    const updated = [newCoupon, ...couponsList];
+    setCouponsList(updated);
+    onSaveSiteContent({ ...editableContent, coupons: updated });
+    setIsAddingCoupon(false);
+    setCouponForm({ code: '', discountType: 'porcentaje', discountValue: 10, minPurchase: 1000, maxUses: 100, expiryDate: '2026-12-31' });
+  };
+
+  const handleToggleCoupon = (id: string) => {
+    const updated = couponsList.map(c => c.id === id ? { ...c, active: !c.active } : c);
+    setCouponsList(updated);
+    onSaveSiteContent({ ...editableContent, coupons: updated });
+  };
+
+  const handleDeleteCoupon = (id: string) => {
+    if (confirm('¿Eliminar este cupón de descuento?')) {
+      const updated = couponsList.filter(c => c.id !== id);
+      setCouponsList(updated);
+      onSaveSiteContent({ ...editableContent, coupons: updated });
+    }
+  };
+
+  // CSV Exporters
+  const handleExportProductsCsv = () => {
+    const headers = ['ID', 'Nombre', 'Código SKU', 'Categoría', 'Precio Venta', 'Renta Mensual', 'Stock SLP', 'Stock Mínimo Alerta', 'En Existencia', 'Ficha Técnica PDF'];
+    const rows = products.map(p => [
+      `"${p.id}"`,
+      `"${p.name.replace(/"/g, '""')}"`,
+      `"${p.code}"`,
+      `"${p.categoryLabel}"`,
+      p.price,
+      p.rentalPriceMonthly || 0,
+      p.stockQuantity ?? (p.inStock ? 5 : 0),
+      p.minStockAlert ?? 2,
+      p.inStock ? 'SI' : 'NO',
+      `"${p.datasheetUrl || ''}"`
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `lumesa_catalogo_productos_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportOrdersCsv = () => {
+    const headers = ['Folio Pedido', 'Fecha', 'Cliente', 'Empresa', 'RFC', 'Uso CFDI', 'Régimen Fiscal', 'Teléfono', 'Email', 'Ciudad', 'Estado', 'Método Pago', 'Estatus Factura', 'Estatus Pedido', 'Guía', 'Subtotal', 'Descuento Cupón', 'IVA', 'Envío', 'Total MXN'];
+    const rows = orders.map(o => [
+      `"${o.orderId}"`,
+      `"${o.date}"`,
+      `"${o.customerName.replace(/"/g, '""')}"`,
+      `"${(o.companyName || '').replace(/"/g, '""')}"`,
+      `"${o.rfc}"`,
+      `"${o.cfdiUse || ''}"`,
+      `"${o.taxRegime || ''}"`,
+      `"${o.phone}"`,
+      `"${o.email}"`,
+      `"${o.city}"`,
+      `"${o.state}"`,
+      `"${o.paymentMethod}"`,
+      `"${o.invoiceStatus || 'pendiente'}"`,
+      `"${o.status}"`,
+      `"${o.trackingNumber || ''}"`,
+      o.subtotal,
+      o.discountAmount || 0,
+      o.tax,
+      o.shipping,
+      o.total
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `lumesa_pedidos_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleQuickAdjustStock = (product: Product, delta: number) => {
+    const currentQty = product.stockQuantity ?? (product.inStock ? 5 : 0);
+    const newQty = Math.max(0, currentQty + delta);
+    onSaveProduct({
+      ...product,
+      stockQuantity: newQty,
+      inStock: newQty > 0
+    });
+  };
+
+  // Filtered Orders
+  const filteredOrders = orders.filter(o => {
+    if (ordersStatusFilter !== 'todos' && o.status !== ordersStatusFilter) return false;
+    if (ordersPaymentFilter !== 'todos' && o.paymentMethod !== ordersPaymentFilter) return false;
+    if (ordersSearch.trim()) {
+      const q = ordersSearch.toLowerCase();
+      const matchId = o.orderId.toLowerCase().includes(q);
+      const matchClient = o.customerName.toLowerCase().includes(q);
+      const matchRfc = o.rfc.toLowerCase().includes(q);
+      const matchCompany = (o.companyName || '').toLowerCase().includes(q);
+      if (!matchId && !matchClient && !matchRfc && !matchCompany) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
@@ -827,17 +1079,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Catálogo de Productos de la Tienda en Línea
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-                  Suba nuevos equipos, modifique precios con IVA, cuotas de renta y disponibilidad de stock.
+                  Suba nuevos equipos, controle stock físico en SLP, umbrales de alerta y enlaces a fichas técnicas PDF Kyocera.
                 </p>
               </div>
 
-              <button
-                onClick={onOpenNewProductModal}
-                className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white border border-neutral-700 hover:border-blue-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition"
-              >
-                <Plus className="w-4 h-4 text-blue-500" />
-                <span>+ Subir Nuevo Producto</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleExportProductsCsv}
+                  className="px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-700 hover:border-emerald-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition"
+                  title="Descargar catálogo completo en formato CSV para Excel"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                  <span>Exportar CSV</span>
+                </button>
+
+                <button
+                  onClick={onOpenNewProductModal}
+                  className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white border border-neutral-700 hover:border-blue-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition"
+                >
+                  <Plus className="w-4 h-4 text-blue-500" />
+                  <span>+ Subir Nuevo Producto</span>
+                </button>
+              </div>
             </div>
 
             {/* Filter Bar */}
@@ -856,15 +1119,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <select
                 value={productCategoryFilter}
                 onChange={(e) => setProductCategoryFilter(e.target.value)}
-                className="w-full sm:w-56 text-xs bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                className="w-full sm:w-64 text-xs bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
               >
-                <option value="todos">Todas las Categorías</option>
-                <option value="multifuncionales-a3">Multifuncionales A3</option>
-                <option value="multifuncionales-a4">Multifuncionales A4</option>
-                <option value="impresoras">Impresoras</option>
-                <option value="produccion">Producción</option>
-                <option value="consumibles">Tóner y Consumibles</option>
-                <option value="polizas">Pólizas de Servicio</option>
+                <option value="todos">Todas las Categorías ({products.length})</option>
+                {categoriesList.map(cat => (
+                  <option key={cat.id} value={cat.slug}>
+                    {cat.name} ({products.filter(p => p.category === cat.slug).length})
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -883,88 +1145,326 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-800/80">
-                    {filteredProducts.map((p) => (
-                      <tr key={p.id} className="hover:bg-neutral-900/50 transition">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center space-x-3">
-                            <img
-                              src={p.image}
-                              alt={p.name}
-                              className="w-11 h-11 object-contain rounded-xl bg-black border border-neutral-800 p-1 shrink-0"
-                            />
-                            <div>
-                              <div className="font-bold text-white">{p.name}</div>
-                              <div className="font-mono text-[10px] text-blue-400">{p.code}</div>
-                            </div>
-                          </div>
-                        </td>
+                    {filteredProducts.map((p) => {
+                      const stockCount = p.stockQuantity ?? (p.inStock ? 5 : 0);
+                      const isLowStock = stockCount <= (p.minStockAlert ?? 2) && stockCount > 0;
+                      const isOutOfStock = stockCount === 0 || !p.inStock;
 
+                      return (
+                        <tr key={p.id} className="hover:bg-neutral-900/50 transition">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-3">
+                              <img
+                                src={p.image}
+                                alt={p.name}
+                                className="w-11 h-11 object-contain rounded-xl bg-black border border-neutral-800 p-1 shrink-0"
+                              />
+                              <div>
+                                <div className="font-bold text-white flex items-center space-x-1.5">
+                                  <span>{p.name}</span>
+                                  {p.datasheetUrl && (
+                                    <span className="text-[10px] text-sky-400 bg-sky-950 px-1.5 py-0.2 rounded border border-sky-800" title="Cuenta con ficha técnica PDF">
+                                      PDF
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="font-mono text-[10px] text-blue-400">{p.code}</div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-900 text-neutral-300 border border-neutral-800">
+                              {p.categoryLabel}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4 font-mono font-bold text-white">
+                            ${p.price.toLocaleString('es-MX')} MXN
+                          </td>
+
+                          <td className="py-3 px-4 font-mono text-neutral-300">
+                            {p.rentalPriceMonthly 
+                              ? `$${p.rentalPriceMonthly.toLocaleString('es-MX')}/mes`
+                              : <span className="text-neutral-500">—</span>}
+                          </td>
+
+                          <td className="py-3 px-4 text-center">
+                            <div className="inline-flex items-center space-x-1.5 bg-neutral-900 p-1 rounded-xl border border-neutral-800">
+                              <button
+                                onClick={() => handleQuickAdjustStock(p, -1)}
+                                className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center transition"
+                                title="Reducir stock (-1)"
+                              >
+                                -
+                              </button>
+                              <span className={`px-2 py-0.5 rounded-md font-mono font-bold text-xs ${
+                                isOutOfStock 
+                                  ? 'bg-red-950 text-red-400 border border-red-800' 
+                                  : isLowStock 
+                                    ? 'bg-amber-950 text-amber-300 border border-amber-700 animate-pulse' 
+                                    : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                              }`}>
+                                {stockCount} pzas
+                              </span>
+                              <button
+                                onClick={() => handleQuickAdjustStock(p, 1)}
+                                className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center transition"
+                                title="Aumentar stock (+1)"
+                              >
+                                +
+                              </button>
+                            </div>
+                            {isLowStock && (
+                              <div className="text-[10px] text-amber-400 mt-1 font-bold">
+                                ⚠️ Stock bajo (Alerta: ≤{p.minStockAlert ?? 2})
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end space-x-1.5">
+                              <button
+                                onClick={() => onOpenEditProductModal(p)}
+                                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-blue-500 transition"
+                                title="Editar producto"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-blue-400" />
+                              </button>
+
+                              <button
+                                onClick={() => handleDuplicateProduct(p)}
+                                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 transition"
+                                title="Duplicar producto"
+                              >
+                                <Copy className="w-3.5 h-3.5 text-blue-400" />
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  if (confirm(`¿Eliminar definitivamente el producto ${p.name}?`)) {
+                                    onDeleteProduct(p.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-400 hover:text-red-400 border border-neutral-800 transition"
+                                title="Eliminar producto"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB: GESTIÓN DE CATEGORÍAS TIENDA (ADMIN TIENDA) */}
+        {/* ========================================================= */}
+        {activeTab === 'categorias' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-white">
+                  Categorías de la Tienda en Línea
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+                  Cree nuevas familias de productos (ej. Refacciones, Finisher, Consumibles), defina su slug URL y active o desactive su visibilidad.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setEditingCategory(null);
+                  setCategoryForm({ name: '', slug: '', description: '', icon: 'Tag', active: true, order: (categoriesList.length + 1) * 10 });
+                  setIsAddingCategory(true);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white border border-neutral-700 hover:border-blue-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition"
+              >
+                <Plus className="w-4 h-4 text-blue-500" />
+                <span>+ Nueva Categoría</span>
+              </button>
+            </div>
+
+            {/* Create/Edit Category Form Modal */}
+            {isAddingCategory && (
+              <form onSubmit={handleSaveCategory} className="p-6 rounded-3xl bg-neutral-950 border border-neutral-800 shadow-2xl space-y-4">
+                <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                  <Tag className="w-4 h-4 text-blue-400" />
+                  <span>{editingCategory ? 'Editar Categoría' : 'Dar de Alta Nueva Categoría'}</span>
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-xs text-neutral-400 mb-1">Nombre de la Categoría *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej. Refacciones & Kits de Mantenimiento"
+                      value={categoryForm.name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCategoryForm({
+                          ...categoryForm,
+                          name: val,
+                          slug: editingCategory ? categoryForm.slug : val.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-')
+                        });
+                      }}
+                      className="w-full text-xs bg-neutral-900 text-white p-2.5 rounded-xl border border-neutral-800 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-neutral-400 mb-1">Slug URL (Identificador) *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="ej. refacciones-kits"
+                      value={categoryForm.slug}
+                      onChange={(e) => setCategoryForm({ ...categoryForm, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                      className="w-full text-xs bg-neutral-900 text-white p-2.5 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-neutral-400 mb-1">Orden de Presentación</label>
+                    <input
+                      type="number"
+                      value={categoryForm.order}
+                      onChange={(e) => setCategoryForm({ ...categoryForm, order: Number(e.target.value) })}
+                      className="w-full text-xs bg-neutral-900 text-white p-2.5 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-neutral-400 mb-1">Estado de la Categoría</label>
+                    <select
+                      value={categoryForm.active ? 'true' : 'false'}
+                      onChange={(e) => setCategoryForm({ ...categoryForm, active: e.target.value === 'true' })}
+                      className="w-full text-xs bg-neutral-900 text-white p-2.5 rounded-xl border border-neutral-800 focus:border-blue-500"
+                    >
+                      <option value="true">Activa (Visible en tienda)</option>
+                      <option value="false">Inactiva (Oculta)</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-2 lg:col-span-4">
+                    <label className="block text-xs text-neutral-400 mb-1">Descripción Breve</label>
+                    <input
+                      type="text"
+                      placeholder="Breve reseña sobre los equipos o insumos de esta categoría..."
+                      value={categoryForm.description}
+                      onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                      className="w-full text-xs bg-neutral-900 text-white p-2.5 rounded-xl border border-neutral-800 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end space-x-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingCategory(false);
+                      setEditingCategory(null);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-neutral-900 text-neutral-400 hover:text-white text-xs font-bold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md"
+                  >
+                    {editingCategory ? 'Actualizar Categoría' : 'Guardar Categoría'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Categories Table */}
+            <div className="rounded-3xl border border-neutral-800 overflow-hidden bg-neutral-950 shadow-2xl">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-black border-b border-neutral-800 text-neutral-400 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-3.5 px-4">Orden</th>
+                    <th className="py-3.5 px-4">Nombre de Categoría</th>
+                    <th className="py-3.5 px-4">Slug URL</th>
+                    <th className="py-3.5 px-4">Productos Asociados</th>
+                    <th className="py-3.5 px-4 text-center">Estado</th>
+                    <th className="py-3.5 px-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-800/80">
+                  {categoriesList.sort((a, b) => a.order - b.order).map((cat) => {
+                    const count = products.filter(p => p.category === cat.slug).length;
+                    return (
+                      <tr key={cat.id} className="hover:bg-neutral-900/50 transition">
+                        <td className="py-3 px-4 font-mono text-neutral-500">
+                          #{cat.order}
+                        </td>
                         <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-900 text-neutral-300 border border-neutral-800">
-                            {p.categoryLabel}
+                          <div className="font-bold text-white">{cat.name}</div>
+                          {cat.description && <div className="text-[11px] text-neutral-400">{cat.description}</div>}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-blue-400 text-[11px]">
+                          /{cat.slug}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-neutral-900 text-neutral-300 border border-neutral-800">
+                            {count} {count === 1 ? 'producto' : 'productos'}
                           </span>
                         </td>
-
-                        <td className="py-3 px-4 font-mono font-bold text-white">
-                          ${p.price.toLocaleString('es-MX')} MXN
-                        </td>
-
-                        <td className="py-3 px-4 font-mono text-neutral-300">
-                          {p.rentalPriceMonthly 
-                            ? `$${p.rentalPriceMonthly.toLocaleString('es-MX')}/mes`
-                            : <span className="text-neutral-500">—</span>}
-                        </td>
-
                         <td className="py-3 px-4 text-center">
                           <button
-                            onClick={() => handleToggleProductStock(p)}
+                            onClick={() => handleToggleCategoryActive(cat.id)}
                             className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase transition ${
-                              p.inStock
+                              cat.active
                                 ? 'bg-emerald-950 text-emerald-400 border border-emerald-700'
-                                : 'bg-red-950 text-red-400 border border-red-700'
+                                : 'bg-neutral-900 text-neutral-500 border border-neutral-800'
                             }`}
-                            title="Clic para cambiar estado de stock"
                           >
-                            {p.inStock ? 'En Existencia' : 'Agotado'}
+                            {cat.active ? 'Activa' : 'Oculta'}
                           </button>
                         </td>
-
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end space-x-1.5">
                             <button
-                              onClick={() => onOpenEditProductModal(p)}
+                              onClick={() => {
+                                setEditingCategory(cat);
+                                setCategoryForm({
+                                  name: cat.name,
+                                  slug: cat.slug,
+                                  description: cat.description || '',
+                                  icon: cat.icon || 'Tag',
+                                  active: cat.active,
+                                  order: cat.order
+                                });
+                                setIsAddingCategory(true);
+                              }}
                               className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-blue-500 transition"
-                              title="Editar producto"
+                              title="Editar categoría"
                             >
                               <Edit3 className="w-3.5 h-3.5 text-blue-400" />
                             </button>
-
                             <button
-                              onClick={() => handleDuplicateProduct(p)}
-                              className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 transition"
-                              title="Duplicar producto"
-                            >
-                              <Copy className="w-3.5 h-3.5 text-blue-400" />
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                if (confirm(`¿Eliminar definitivamente el producto ${p.name}?`)) {
-                                  onDeleteProduct(p.id);
-                                }
-                              }}
+                              onClick={() => handleDeleteCategory(cat.id)}
                               className="p-1.5 rounded-lg bg-neutral-900 text-neutral-400 hover:text-red-400 border border-neutral-800 transition"
-                              title="Eliminar producto"
+                              title="Eliminar categoría"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -980,8 +1480,61 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Bandeja de Pedidos de la Tienda en Línea
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-                  Revise pedidos confirmados en checkout, asigne guías de paquetería y actualice estatus para sus clientes.
+                  Revise pedidos confirmados en checkout, asigne guías de paquetería, emita CFDI 4.0 y exporte reportes en CSV.
                 </p>
+              </div>
+
+              <button
+                onClick={handleExportOrdersCsv}
+                className="px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-700 hover:border-emerald-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition"
+                title="Descargar pedidos en formato CSV para Excel"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <span>Exportar Pedidos a CSV</span>
+              </button>
+            </div>
+
+            {/* Orders Filter Bar */}
+            <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 grid grid-cols-1 sm:grid-cols-12 gap-3">
+              <div className="sm:col-span-6 relative">
+                <input
+                  type="text"
+                  placeholder="Buscar por folio, cliente, empresa o RFC..."
+                  value={ordersSearch}
+                  onChange={(e) => setOrdersSearch(e.target.value)}
+                  className="w-full text-xs bg-neutral-900 text-white pl-8 pr-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                />
+                <Search className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-2.5" />
+              </div>
+
+              <div className="sm:col-span-3">
+                <select
+                  value={ordersStatusFilter}
+                  onChange={(e) => setOrdersStatusFilter(e.target.value)}
+                  className="w-full text-xs bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="todos">Todos los Estados</option>
+                  <option value="pendiente">Pendiente de Pago</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="en_proceso">En Almacén / Preparación</option>
+                  <option value="enviado">Enviado con Guía</option>
+                  <option value="entregado">Entregado</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-3">
+                <select
+                  value={ordersPaymentFilter}
+                  onChange={(e) => setOrdersPaymentFilter(e.target.value)}
+                  className="w-full text-xs bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="todos">Todos los Métodos</option>
+                  <option value="mercadopago">Mercado Pago</option>
+                  <option value="spei">Transferencia SPEI</option>
+                  <option value="tarjeta">Tarjeta</option>
+                  <option value="credito-empresarial">Orden de Compra / Renta</option>
+                </select>
               </div>
             </div>
 
@@ -994,6 +1547,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <th className="py-3.5 px-4">Folio / Fecha</th>
                       <th className="py-3.5 px-4">Cliente / Razón Social</th>
                       <th className="py-3.5 px-4">Método de Pago</th>
+                      <th className="py-3.5 px-4">CFDI 4.0</th>
                       <th className="py-3.5 px-4">Artículos</th>
                       <th className="py-3.5 px-4">Total</th>
                       <th className="py-3.5 px-4 text-center">Estado</th>
@@ -1001,60 +1555,606 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-800/80">
-                    {orders.map((order) => (
-                      <tr 
-                        key={order.orderId}
-                        className="hover:bg-neutral-900/50 transition cursor-pointer"
-                        onClick={() => onOpenOrderDetailModal(order)}
-                      >
-                        <td className="py-3 px-4">
-                          <span className="font-mono font-bold text-blue-400 block">{order.orderId}</span>
-                          <span className="text-[10px] text-neutral-500">{order.date}</span>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <div className="font-bold text-white">{order.customerName}</div>
-                          <div className="text-[10px] text-neutral-400 font-mono">RFC: {order.rfc}</div>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-neutral-900 text-neutral-300 border border-neutral-800">
-                            {order.paymentMethod === 'spei' ? 'SPEI' : order.paymentMethod === 'tarjeta' ? 'Tarjeta' : 'Crédito'}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4 text-neutral-300">
-                          {order.items.length} {order.items.length === 1 ? 'equipo' : 'equipos'}
-                        </td>
-
-                        <td className="py-3 px-4 font-mono font-black text-white">
-                          ${order.total.toLocaleString('es-MX')} MXN
-                        </td>
-
-                        <td className="py-3 px-4 text-center">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-neutral-900 text-blue-400 border border-neutral-800">
-                            {order.status}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenOrderDetailModal(order);
-                            }}
-                            className="px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-800 hover:border-blue-500 text-[11px] font-bold transition"
-                          >
-                            Gestionar
-                          </button>
+                    {filteredOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-8 text-center text-neutral-500">
+                          No se encontraron pedidos con los filtros especificados.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredOrders.map((order) => (
+                        <tr 
+                          key={order.orderId}
+                          className="hover:bg-neutral-900/50 transition cursor-pointer"
+                          onClick={() => onOpenOrderDetailModal(order)}
+                        >
+                          <td className="py-3 px-4">
+                            <span className="font-mono font-bold text-blue-400 block">{order.orderId}</span>
+                            <span className="text-[10px] text-neutral-500">{order.date}</span>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-white">{order.customerName}</div>
+                            <div className="text-[10px] text-neutral-400 font-mono">
+                              RFC: {order.rfc} {order.companyName ? `• ${order.companyName}` : ''}
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                              order.paymentMethod === 'mercadopago'
+                                ? 'bg-sky-950 text-sky-300 border-sky-800'
+                                : 'bg-neutral-900 text-neutral-300 border border-neutral-800'
+                            }`}>
+                              {order.paymentMethod === 'mercadopago' ? 'Mercado Pago' : order.paymentMethod === 'spei' ? 'SPEI' : order.paymentMethod === 'tarjeta' ? 'Tarjeta' : 'Crédito'}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              order.invoiceStatus === 'emitida'
+                                ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                                : order.invoiceStatus === 'no_requerida'
+                                  ? 'bg-neutral-900 text-neutral-500 border border-neutral-800'
+                                  : 'bg-amber-950 text-amber-300 border border-amber-800'
+                            }`}>
+                              {order.invoiceStatus === 'emitida' ? '✓ Emitida' : order.invoiceStatus === 'no_requerida' ? 'No Requerida' : '⏳ Pendiente'}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4 text-neutral-300">
+                            {order.items.length} {order.items.length === 1 ? 'artículo' : 'artículos'}
+                          </td>
+
+                          <td className="py-3 px-4 font-mono font-black text-white">
+                            ${order.total.toLocaleString('es-MX')} MXN
+                          </td>
+
+                          <td className="py-3 px-4 text-center">
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-neutral-900 text-blue-400 border border-neutral-800">
+                              {order.status}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenOrderDetailModal(order);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-800 hover:border-blue-500 text-[11px] font-bold transition"
+                            >
+                              Gestionar
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 4: MERCADO PAGO, PAGOS & LOGÍSTICA (ADMIN TIENDA) */}
+        {/* ========================================================= */}
+        {activeTab === 'pagos' && (
+          <form onSubmit={handleSavePaymentConfig} className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-white">
+                  Configuración de Pasarela de Pago & Logística
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+                  Ingrese las claves de su cuenta de Mercado Pago México, datos de transferencia BBVA, reglas de flete y cupones de descuento.
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-xl transition"
+              >
+                <Save className="w-4 h-4" />
+                <span>Guardar Configuración</span>
+              </button>
+            </div>
+
+            {paymentsSaveNotice && (
+              <div className="p-3 bg-emerald-950 border border-emerald-700 rounded-2xl text-emerald-300 text-xs font-bold flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>¡Configuración de pagos, logística y cupones guardada con éxito en LUMESA!</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Card 1: Mercado Pago Oficial México */}
+              <div className="p-6 rounded-3xl bg-neutral-950 border border-neutral-800 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-[#009EE3]/20 border border-[#009EE3]/40 flex items-center justify-center text-[#009EE3]">
+                      <CreditCard className="w-5 h-5 text-[#009EE3]" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Mercado Pago Oficial México</h3>
+                      <p className="text-[11px] text-neutral-400">Cobros con Tarjetas Visa, Mastercard, Amex, OXXO y SPEI</p>
+                    </div>
+                  </div>
+
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <span className="text-xs text-neutral-400">{paymentConfigState.mercadoPago.enabled ? 'Habilitado' : 'Deshabilitado'}</span>
+                    <input
+                      type="checkbox"
+                      checked={paymentConfigState.mercadoPago.enabled}
+                      onChange={(e) => setPaymentConfigState({
+                        ...paymentConfigState,
+                        mercadoPago: { ...paymentConfigState.mercadoPago, enabled: e.target.checked }
+                      })}
+                      className="w-4 h-4 text-blue-500 rounded"
+                    />
+                  </label>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="block text-neutral-400 mb-1">Modo de Operación:</label>
+                    <div className="flex items-center space-x-4 bg-neutral-900 p-2.5 rounded-xl border border-neutral-800">
+                      <label className="flex items-center space-x-2 cursor-pointer text-white">
+                        <input
+                          type="radio"
+                          name="mpSandboxMode"
+                          checked={paymentConfigState.mercadoPago.sandboxMode}
+                          onChange={() => setPaymentConfigState({
+                            ...paymentConfigState,
+                            mercadoPago: { ...paymentConfigState.mercadoPago, sandboxMode: true }
+                          })}
+                        />
+                        <span>Modo Pruebas (Sandbox)</span>
+                      </label>
+
+                      <label className="flex items-center space-x-2 cursor-pointer text-white">
+                        <input
+                          type="radio"
+                          name="mpSandboxMode"
+                          checked={!paymentConfigState.mercadoPago.sandboxMode}
+                          onChange={() => setPaymentConfigState({
+                            ...paymentConfigState,
+                            mercadoPago: { ...paymentConfigState.mercadoPago, sandboxMode: false }
+                          })}
+                        />
+                        <span>Modo Producción (En Vivo)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-400 mb-1">Clave Pública (Public Key):</label>
+                    <input
+                      type="text"
+                      placeholder="TEST-xxxx-xxxx o APP_USR-xxxx-xxxx"
+                      value={paymentConfigState.mercadoPago.publicKey}
+                      onChange={(e) => setPaymentConfigState({
+                        ...paymentConfigState,
+                        mercadoPago: { ...paymentConfigState.mercadoPago, publicKey: e.target.value.trim() }
+                      })}
+                      className="w-full bg-neutral-900 text-white px-3 py-2.5 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-neutral-400">Token de Acceso Privado (Access Token):</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowMpSecretToken(!showMpSecretToken)}
+                        className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center space-x-1"
+                      >
+                        {showMpSecretToken ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        <span>{showMpSecretToken ? 'Ocultar' : 'Mostrar'}</span>
+                      </button>
+                    </div>
+                    <input
+                      type={showMpSecretToken ? 'text' : 'password'}
+                      placeholder="TEST-xxxx o APP_USR-xxxx"
+                      value={paymentConfigState.mercadoPago.accessToken}
+                      onChange={(e) => setPaymentConfigState({
+                        ...paymentConfigState,
+                        mercadoPago: { ...paymentConfigState.mercadoPago, accessToken: e.target.value.trim() }
+                      })}
+                      className="w-full bg-neutral-900 text-white px-3 py-2.5 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-400 mb-1.5">Métodos de cobro aceptados en Checkout:</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="flex items-center space-x-2 bg-neutral-900 p-2 rounded-lg border border-neutral-800 cursor-pointer text-white">
+                        <input
+                          type="checkbox"
+                          checked={paymentConfigState.mercadoPago.acceptedMethods.creditCard}
+                          onChange={(e) => setPaymentConfigState({
+                            ...paymentConfigState,
+                            mercadoPago: {
+                              ...paymentConfigState.mercadoPago,
+                              acceptedMethods: {
+                                ...paymentConfigState.mercadoPago.acceptedMethods,
+                                creditCard: e.target.checked
+                              }
+                            }
+                          })}
+                          className="text-blue-500 rounded"
+                        />
+                        <span className="text-[11px]">Tarjeta de Crédito</span>
+                      </label>
+
+                      <label className="flex items-center space-x-2 bg-neutral-900 p-2 rounded-lg border border-neutral-800 cursor-pointer text-white">
+                        <input
+                          type="checkbox"
+                          checked={paymentConfigState.mercadoPago.acceptedMethods.debitCard}
+                          onChange={(e) => setPaymentConfigState({
+                            ...paymentConfigState,
+                            mercadoPago: {
+                              ...paymentConfigState.mercadoPago,
+                              acceptedMethods: {
+                                ...paymentConfigState.mercadoPago.acceptedMethods,
+                                debitCard: e.target.checked
+                              }
+                            }
+                          })}
+                          className="text-blue-500 rounded"
+                        />
+                        <span className="text-[11px]">Tarjeta de Débito</span>
+                      </label>
+
+                      <label className="flex items-center space-x-2 bg-neutral-900 p-2 rounded-lg border border-neutral-800 cursor-pointer text-white">
+                        <input
+                          type="checkbox"
+                          checked={paymentConfigState.mercadoPago.acceptedMethods.ticketOxxo}
+                          onChange={(e) => setPaymentConfigState({
+                            ...paymentConfigState,
+                            mercadoPago: {
+                              ...paymentConfigState.mercadoPago,
+                              acceptedMethods: {
+                                ...paymentConfigState.mercadoPago.acceptedMethods,
+                                ticketOxxo: e.target.checked
+                              }
+                            }
+                          })}
+                          className="text-blue-500 rounded"
+                        />
+                        <span className="text-[11px]">OXXO Pay en Efectivo</span>
+                      </label>
+
+                      <label className="flex items-center space-x-2 bg-neutral-900 p-2 rounded-lg border border-neutral-800 cursor-pointer text-white">
+                        <input
+                          type="checkbox"
+                          checked={paymentConfigState.mercadoPago.acceptedMethods.spei}
+                          onChange={(e) => setPaymentConfigState({
+                            ...paymentConfigState,
+                            mercadoPago: {
+                              ...paymentConfigState.mercadoPago,
+                              acceptedMethods: {
+                                ...paymentConfigState.mercadoPago.acceptedMethods,
+                                spei: e.target.checked
+                              }
+                            }
+                          })}
+                          className="text-blue-500 rounded"
+                        />
+                        <span className="text-[11px]">Transferencia SPEI</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Transferencia Bancaria Directa (SPEI BBVA) */}
+              <div className="p-6 rounded-3xl bg-neutral-950 border border-neutral-800 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                      <Building2 className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Transferencia Bancaria Directa SPEI</h3>
+                      <p className="text-[11px] text-neutral-400">Depósito interbancario a cuenta fiscal de LUMESA</p>
+                    </div>
+                  </div>
+
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <span className="text-xs text-neutral-400">{paymentConfigState.bankTransfer.enabled ? 'Habilitado' : 'Deshabilitado'}</span>
+                    <input
+                      type="checkbox"
+                      checked={paymentConfigState.bankTransfer.enabled}
+                      onChange={(e) => setPaymentConfigState({
+                        ...paymentConfigState,
+                        bankTransfer: { ...paymentConfigState.bankTransfer, enabled: e.target.checked }
+                      })}
+                      className="w-4 h-4 text-blue-500 rounded"
+                    />
+                  </label>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="block text-neutral-400 mb-1">Institución Bancaria:</label>
+                    <input
+                      type="text"
+                      placeholder="BBVA México"
+                      value={paymentConfigState.bankTransfer.bankName}
+                      onChange={(e) => setPaymentConfigState({
+                        ...paymentConfigState,
+                        bankTransfer: { ...paymentConfigState.bankTransfer, bankName: e.target.value }
+                      })}
+                      className="w-full bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-400 mb-1">Beneficiario / Razón Social:</label>
+                    <input
+                      type="text"
+                      placeholder="LUMESA SOLUCIONES S.A. DE C.V."
+                      value={paymentConfigState.bankTransfer.accountHolder}
+                      onChange={(e) => setPaymentConfigState({
+                        ...paymentConfigState,
+                        bankTransfer: { ...paymentConfigState.bankTransfer, accountHolder: e.target.value }
+                      })}
+                      className="w-full bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-400 mb-1">CLABE Interbancaria (18 dígitos):</label>
+                    <input
+                      type="text"
+                      placeholder="012 700 00123456789 4"
+                      value={paymentConfigState.bankTransfer.clabe}
+                      onChange={(e) => setPaymentConfigState({
+                        ...paymentConfigState,
+                        bankTransfer: { ...paymentConfigState.bankTransfer, clabe: e.target.value }
+                      })}
+                      className="w-full bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-neutral-400 mb-1">Número de Cuenta:</label>
+                      <input
+                        type="text"
+                        placeholder="0123456789"
+                        value={paymentConfigState.bankTransfer.accountNumber}
+                        onChange={(e) => setPaymentConfigState({
+                          ...paymentConfigState,
+                          bankTransfer: { ...paymentConfigState.bankTransfer, accountNumber: e.target.value }
+                        })}
+                        className="w-full bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-neutral-400 mb-1">RFC de la Empresa:</label>
+                      <input
+                        type="text"
+                        placeholder="LUM850101XYZ"
+                        value={paymentConfigState.bankTransfer.rfc}
+                        onChange={(e) => setPaymentConfigState({
+                          ...paymentConfigState,
+                          bankTransfer: { ...paymentConfigState.bankTransfer, rfc: e.target.value }
+                        })}
+                        className="w-full bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono uppercase"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Reglas de Envío & Logística */}
+              <div className="p-6 rounded-3xl bg-neutral-950 border border-neutral-800 shadow-xl space-y-4">
+                <div className="flex items-center space-x-2.5 border-b border-neutral-800 pb-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                    <Truck className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Reglas de Envío & Paquetería</h3>
+                    <p className="text-[11px] text-neutral-400">Condiciones de flete gratis y entrega estimada en Checkout</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-neutral-400 mb-1">Compra Mínima para Flete Gratis ($ MXN):</label>
+                      <input
+                        type="number"
+                        value={paymentConfigState.shippingConfig.freeShippingThreshold}
+                        onChange={(e) => setPaymentConfigState({
+                          ...paymentConfigState,
+                          shippingConfig: { ...paymentConfigState.shippingConfig, freeShippingThreshold: Number(e.target.value) }
+                        })}
+                        className="w-full bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-neutral-400 mb-1">Costo de Envío Estándar ($ MXN):</label>
+                      <input
+                        type="number"
+                        value={paymentConfigState.shippingConfig.standardShippingCost}
+                        onChange={(e) => setPaymentConfigState({
+                          ...paymentConfigState,
+                          shippingConfig: { ...paymentConfigState.shippingConfig, standardShippingCost: Number(e.target.value) }
+                        })}
+                        className="w-full bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center space-x-2 cursor-pointer bg-neutral-900 p-2.5 rounded-xl border border-neutral-800 text-white">
+                      <input
+                        type="checkbox"
+                        checked={paymentConfigState.shippingConfig.localCityFreeShipping}
+                        onChange={(e) => setPaymentConfigState({
+                          ...paymentConfigState,
+                          shippingConfig: { ...paymentConfigState.shippingConfig, localCityFreeShipping: e.target.checked }
+                        })}
+                        className="text-blue-500 rounded"
+                      />
+                      <span>Envío local GRATIS siempre para San Luis Potosí y zona metropolitana</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-400 mb-1">Tiempo Estimado de Entrega a Mostrar:</label>
+                    <input
+                      type="text"
+                      placeholder="24 a 48 horas hábiles"
+                      value={paymentConfigState.shippingConfig.estimatedDays}
+                      onChange={(e) => setPaymentConfigState({
+                        ...paymentConfigState,
+                        shippingConfig: { ...paymentConfigState.shippingConfig, estimatedDays: e.target.value }
+                      })}
+                      className="w-full bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Cupones de Descuento Promocionales */}
+              <div className="p-6 rounded-3xl bg-neutral-950 border border-neutral-800 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                      <Percent className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Cupones de Descuento</h3>
+                      <p className="text-[11px] text-neutral-400">Códigos promocionales válidos en el Checkout</p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingCoupon(true)}
+                    className="px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-purple-300 border border-purple-800/60 text-xs font-bold transition flex items-center space-x-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Nuevo Cupón</span>
+                  </button>
+                </div>
+
+                {isAddingCoupon && (
+                  <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-3 text-xs">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-neutral-400 mb-1">Código del Cupón:</label>
+                        <input
+                          type="text"
+                          placeholder="KYOCERA10"
+                          value={couponForm.code}
+                          onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })}
+                          className="w-full bg-black text-white px-3 py-1.5 rounded-lg border border-neutral-700 font-mono uppercase"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-neutral-400 mb-1">Tipo de Descuento:</label>
+                        <select
+                          value={couponForm.discountType}
+                          onChange={(e) => setCouponForm({ ...couponForm, discountType: e.target.value as any })}
+                          className="w-full bg-black text-white px-3 py-1.5 rounded-lg border border-neutral-700"
+                        >
+                          <option value="porcentaje">Porcentaje (%)</option>
+                          <option value="monto_fijo">Monto Fijo ($ MXN)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-neutral-400 mb-1">Valor:</label>
+                        <input
+                          type="number"
+                          placeholder="10"
+                          value={couponForm.discountValue}
+                          onChange={(e) => setCouponForm({ ...couponForm, discountValue: Number(e.target.value) })}
+                          className="w-full bg-black text-white px-3 py-1.5 rounded-lg border border-neutral-700 font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-neutral-400 mb-1">Compra Mínima ($ MXN):</label>
+                        <input
+                          type="number"
+                          placeholder="1000"
+                          value={couponForm.minPurchase}
+                          onChange={(e) => setCouponForm({ ...couponForm, minPurchase: Number(e.target.value) })}
+                          className="w-full bg-black text-white px-3 py-1.5 rounded-lg border border-neutral-700 font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingCoupon(false)}
+                        className="px-3 py-1 text-neutral-400 text-xs font-bold"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveCoupon}
+                        className="px-4 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold"
+                      >
+                        Crear Cupón
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {couponsList.map((cpn) => (
+                    <div key={cpn.id} className="p-3 bg-neutral-900 rounded-xl border border-neutral-800 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <code className="font-mono font-bold text-white bg-black px-2 py-0.5 rounded border border-neutral-700">{cpn.code}</code>
+                          <span className="text-purple-400 font-bold">
+                            {(cpn.discountType === 'percentage' || cpn.discountType === 'porcentaje') ? `${cpn.discountValue}% OFF` : `-$${cpn.discountValue.toLocaleString()} MXN`}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-neutral-500 mt-0.5">
+                          Mínimo: ${cpn.minPurchase?.toLocaleString() || 0} MXN • Usos: {cpn.usesCount}/{cpn.maxUses || '∞'}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCoupon(cpn.id)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            cpn.active
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                              : 'bg-neutral-800 text-neutral-500'
+                          }`}
+                        >
+                          {cpn.active ? 'Activo' : 'Pausado'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCoupon(cpn.id)}
+                          className="p-1 text-neutral-500 hover:text-red-400"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </form>
         )}
 
         {/* ========================================================= */}

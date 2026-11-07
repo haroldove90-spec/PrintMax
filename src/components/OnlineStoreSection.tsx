@@ -8,24 +8,27 @@ import {
   Eye, 
   Truck,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  FileDown
 } from 'lucide-react';
-import { Product, ProductCategory } from '../types';
+import { Product, ProductCategory, StoreCategory } from '../types';
 
 interface OnlineStoreSectionProps {
   products: Product[];
   onAddToCart: (product: Product, type?: 'compra' | 'renta') => void;
   onOpenProductDetail: (product: Product) => void;
   initialSearchQuery?: string;
+  categories?: StoreCategory[];
 }
 
 export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
   products,
   onAddToCart,
   onOpenProductDetail,
-  initialSearchQuery = ''
+  initialSearchQuery = '',
+  categories: storeCategoriesProp
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<ProductCategory>('todos');
+  const [selectedCategory, setSelectedCategory] = useState<string>('todos');
   const [colorFilter, setColorFilter] = useState<'all' | 'color' | 'mono'>('all');
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'rating'>('featured');
@@ -37,7 +40,7 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
     }
   }, [initialSearchQuery]);
 
-  const categories: { id: ProductCategory; label: string }[] = [
+  const defaultCategories = [
     { id: 'todos', label: 'Todo el Catálogo' },
     { id: 'multifuncionales-a3', label: 'Multifuncionales A3' },
     { id: 'multifuncionales-a4', label: 'Multifuncionales A4' },
@@ -45,6 +48,19 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
     { id: 'consumibles', label: 'Tóner y Consumibles' },
     { id: 'polizas', label: 'Pólizas de Servicio' }
   ];
+
+  const categories = useMemo(() => {
+    if (storeCategoriesProp && storeCategoriesProp.length > 0) {
+      return [
+        { id: 'todos', label: 'Todo el Catálogo' },
+        ...storeCategoriesProp
+          .filter(c => c.active)
+          .sort((a, b) => a.order - b.order)
+          .map(c => ({ id: c.slug, label: c.name }))
+      ];
+    }
+    return defaultCategories;
+  }, [storeCategoriesProp]);
 
   const filteredProducts = useMemo(() => {
     return products
@@ -269,10 +285,26 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                       className="max-h-40 w-auto object-contain transform group-hover:scale-105 transition duration-300"
                     />
 
-                    {product.inStock && (
-                      <span className="absolute bottom-2 left-3 text-[10px] font-semibold text-slate-200 bg-[#000000]/80 px-2 py-0.5 rounded-md border border-[#394B61] flex items-center">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#F27C36] mr-1.5 animate-pulse" />
-                        Stock San Luis Potosí
+                    {product.inStock ? (
+                      <span className={`absolute bottom-2 left-3 text-[10px] font-semibold px-2 py-0.5 rounded-md border flex items-center ${
+                        (product.stockQuantity !== undefined && product.stockQuantity <= (product.minStockAlert || 2))
+                          ? 'bg-amber-950/90 text-amber-300 border-amber-600'
+                          : 'bg-[#000000]/80 text-slate-200 border-[#394B61]'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 animate-pulse ${
+                          (product.stockQuantity !== undefined && product.stockQuantity <= (product.minStockAlert || 2))
+                            ? 'bg-amber-400'
+                            : 'bg-[#F27C36]'
+                        }`} />
+                        {product.stockQuantity !== undefined
+                          ? product.stockQuantity <= (product.minStockAlert || 2)
+                            ? `¡Últimas ${product.stockQuantity} pzas en SLP!`
+                            : `${product.stockQuantity} disponibles en SLP`
+                          : 'Stock San Luis Potosí'}
+                      </span>
+                    ) : (
+                      <span className="absolute bottom-2 left-3 text-[10px] font-semibold text-red-300 bg-red-950/90 px-2 py-0.5 rounded-md border border-red-700">
+                        Agotado temporalmente
                       </span>
                     )}
                   </div>
@@ -297,11 +329,25 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                         {product.shortDescription}
                       </p>
 
-                      {product.specs.velocidad && product.category !== 'consumibles' && (
-                        <div className="text-[11px] font-medium text-slate-200 bg-[#394B61]/60 px-2.5 py-1 rounded-md mb-4 inline-block border border-[#394B61]">
-                          <span className="text-[#F27C36] font-bold mr-1">⚡</span> {product.specs.velocidad}
-                        </div>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                        {product.specs.velocidad && product.category !== 'consumibles' && (
+                          <div className="text-[11px] font-medium text-slate-200 bg-[#394B61]/60 px-2 py-0.5 rounded border border-[#394B61]">
+                            <span className="text-[#F27C36] font-bold mr-1">⚡</span> {product.specs.velocidad}
+                          </div>
+                        )}
+                        {product.datasheetUrl && (
+                          <a
+                            href={product.datasheetUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] font-bold text-sky-300 bg-sky-950/80 hover:bg-sky-900 px-2 py-0.5 rounded border border-sky-700/60 flex items-center space-x-1 transition"
+                            title="Ver ficha técnica en PDF"
+                          >
+                            <FileDown className="w-3 h-3 text-sky-400" />
+                            <span>PDF Ficha</span>
+                          </a>
+                        )}
+                      </div>
                     </div>
 
                     {/* Price & Action */}
@@ -322,10 +368,13 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                         {/* Primary button: LUMESA Orange */}
                         <button
                           onClick={() => handleAddToCartWithFeedback(product, 'compra')}
+                          disabled={!product.inStock}
                           className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 ${
-                            isJustAdded
-                              ? 'bg-emerald-700 text-white shadow-md'
-                              : 'bg-[#F27C36] hover:bg-[#d96624] text-white shadow-md'
+                            !product.inStock
+                              ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                              : isJustAdded
+                                ? 'bg-emerald-700 text-white shadow-md'
+                                : 'bg-[#F27C36] hover:bg-[#d96624] text-white shadow-md'
                           }`}
                         >
                           {isJustAdded ? (
@@ -336,12 +385,12 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                           ) : (
                             <>
                               <ShoppingCart className="w-4 h-4 text-white" />
-                              <span>Añadir al Carrito</span>
+                              <span>{product.inStock ? 'Añadir al Carrito' : 'Sin Existencia'}</span>
                             </>
                           )}
                         </button>
 
-                        {product.rentalPriceMonthly && (
+                        {product.rentalPriceMonthly && product.inStock && (
                           <button
                             onClick={() => handleAddToCartWithFeedback(product, 'renta')}
                             className="w-full py-1.5 px-3 rounded-xl text-xs font-medium text-slate-200 hover:text-white bg-[#000000]/60 hover:bg-[#394B61] border border-[#394B61] transition text-center"

@@ -15,7 +15,18 @@ export type ProductCategory =
   | 'impresoras'
   | 'produccion'
   | 'consumibles'
-  | 'polizas';
+  | 'polizas'
+  | string;
+
+export interface StoreCategory {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  order: number;
+  active: boolean;
+}
 
 export interface ProductSpec {
   velocidad: string;
@@ -47,6 +58,9 @@ export interface Product {
   specs: ProductSpec;
   features: string[];
   inStock: boolean;
+  stockQuantity?: number;
+  minStockAlert?: number;
+  datasheetUrl?: string;
   rating: number;
   reviewsCount: number;
   originalRef?: string;
@@ -77,16 +91,65 @@ export interface OrderDetails {
   city: string;
   state: string;
   postalCode: string;
-  paymentMethod: 'spei' | 'tarjeta' | 'credito-empresarial';
+  paymentMethod: 'spei' | 'tarjeta' | 'credito-empresarial' | 'mercadopago' | string;
   items: CartItem[];
   subtotal: number;
   tax: number;
   shipping: number;
+  discountAmount?: number;
+  discountCoupon?: string;
   total: number;
   date: string;
   status: OrderStatus;
   trackingNumber?: string;
   notes?: string;
+  internalNotes?: string;
+  invoiceStatus?: 'pendiente' | 'emitida' | 'no_requerida';
+  invoicePdfUrl?: string;
+  invoiceXmlUrl?: string;
+  cfdiUse?: string;
+  taxRegime?: string;
+}
+
+export interface DiscountCoupon {
+  id: string;
+  code: string;
+  discountType: 'percentage' | 'fixed' | 'porcentaje' | 'monto_fijo';
+  discountValue: number;
+  minPurchase?: number;
+  active: boolean;
+  expiryDate?: string;
+  usesCount: number;
+  maxUses?: number;
+}
+
+export interface PaymentConfig {
+  mercadoPago: {
+    enabled: boolean;
+    publicKey: string;
+    accessToken: string;
+    sandboxMode: boolean;
+    acceptedMethods: {
+      creditCard: boolean;
+      debitCard: boolean;
+      ticketOxxo: boolean;
+      spei: boolean;
+    };
+  };
+  bankTransfer: {
+    enabled: boolean;
+    bankName: string;
+    accountHolder: string;
+    clabe: string;
+    accountNumber?: string;
+    rfc: string;
+  };
+  shippingConfig: {
+    freeShippingThreshold: number;
+    standardShippingCost: number;
+    localCityFreeShipping: boolean;
+    estimatedDays: string;
+  };
 }
 
 export interface HeroSlide {
@@ -211,4 +274,7 @@ export interface SiteContent {
     responseTime: string;
     modalitySchedule: string;
   };
+  storeCategories?: StoreCategory[];
+  paymentConfig?: PaymentConfig;
+  coupons?: DiscountCoupon[];
 }

@@ -13,7 +13,7 @@ import {
   ArrowRight,
   Receipt
 } from 'lucide-react';
-import { CartItem, OrderDetails } from '../types';
+import { CartItem, OrderDetails, PaymentConfig, DiscountCoupon } from '../types';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -21,6 +21,8 @@ interface CheckoutModalProps {
   items: CartItem[];
   onClearCart: () => void;
   onOrderCreated?: (order: OrderDetails) => void;
+  paymentConfig?: PaymentConfig;
+  coupons?: DiscountCoupon[];
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -28,24 +30,32 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   onClose,
   items,
   onClearCart,
-  onOrderCreated
+  onOrderCreated,
+  paymentConfig,
+  coupons = []
 }) => {
   const [formData, setFormData] = useState({
     customerName: '',
     companyName: '',
     rfc: '',
+    cfdiUse: 'G03 Gastos en general',
+    taxRegime: '601 General de Ley Personas Morales',
     email: '',
     phone: '',
     address: '',
     city: 'San Luis Potosí',
     state: 'San Luis Potosí',
     postalCode: '',
-    paymentMethod: 'spei' as 'spei' | 'tarjeta' | 'credito-empresarial',
+    paymentMethod: 'mercadopago' as 'spei' | 'tarjeta' | 'credito-empresarial' | 'mercadopago',
     notes: ''
   });
 
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<DiscountCoupon | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState<OrderDetails | null>(null);
+  const [mpProcessing, setMpProcessing] = useState(false);
 
   if (!isOpen) return null;
 
@@ -56,9 +66,61 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     return sum + (price * item.quantity);
   }, 0);
 
-  const tax = rawSubtotal * 0.16;
-  const shipping = 0; // Envío gratis garantizado
-  const total = rawSubtotal + tax + shipping;
+  // Discount Calculation
+  let discountAmount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discountType === 'percentage' || appliedCoupon.discountType === 'porcentaje') {
+      discountAmount = Math.round((rawSubtotal * appliedCoupon.discountValue) / 100);
+    } else {
+      discountAmount = Math.min(appliedCoupon.discountValue, rawSubtotal);
+    }
+  }
+
+  const discountedSubtotal = Math.max(0, rawSubtotal - discountAmount);
+  const tax = discountedSubtotal * 0.16;
+
+  // Shipping Rules
+  const shippingRules = paymentConfig?.shippingConfig || {
+    freeShippingThreshold: 5000,
+    standardShippingCost: 450,
+    localCityFreeShipping: true,
+    estimatedDays: '24 a 48 horas hábiles'
+  };
+
+  const isLocalSLP = formData.city.toLowerCase().includes('san luis potos') || formData.city.toLowerCase().includes('slp');
+  const isFreeByThreshold = rawSubtotal >= shippingRules.freeShippingThreshold;
+  const shipping = (isLocalSLP && shippingRules.localCityFreeShipping) || isFreeByThreshold ? 0 : shippingRules.standardShippingCost;
+  const total = discountedSubtotal + tax + shipping;
+
+  const handleApplyCoupon = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCouponError(null);
+    const code = couponCodeInput.trim().toUpperCase();
+    if (!code) return;
+
+    const found = coupons.find(c => c.code.toUpperCase() === code && c.active);
+    if (!found) {
+      setCouponError('Cupón inválido o inactivo.');
+      return;
+    }
+    if (found.minPurchase && rawSubtotal < found.minPurchase) {
+      setCouponError(`Requiere una compra mínima de $${found.minPurchase.toLocaleString('es-MX')} MXN.`);
+      return;
+    }
+    if (found.maxUses && found.usesCount >= found.maxUses) {
+      setCouponError('Este cupón ha alcanzado el límite máximo de usos.');
+      return;
+    }
+
+    setAppliedCoupon(found);
+    setCouponError(null);
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCodeInput('');
+    setCouponError(null);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +133,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         customerName: formData.customerName,
         companyName: formData.companyName || formData.customerName,
         rfc: formData.rfc.toUpperCase() || 'XAXX010101000',
+        cfdiUse: formData.cfdiUse,
+        taxRegime: formData.taxRegime,
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
@@ -79,10 +143,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         postalCode: formData.postalCode,
         paymentMethod: formData.paymentMethod,
         items: [...items],
-        subtotal: rawSubtotal,
+        subtotal: discountedSubtotal,
         tax,
         shipping,
         total,
+        discountCoupon: appliedCoupon?.code,
+        discountAmount: discountAmount > 0 ? discountAmount : undefined,
+        invoiceStatus: 'pendiente',
         date: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
         status: 'pendiente',
         notes: formData.notes
@@ -200,21 +267,51 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
 
               {/* Payment instructions based on method */}
-              <div className="p-3.5 sm:p-4 rounded-xl bg-blue-50 border border-blue-200 text-xs text-slate-700 space-y-1">
-                <div className="font-bold text-blue-900 flex items-center space-x-1.5">
-                  <Building2 className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span>Instrucciones de Pago ({confirmedOrder.paymentMethod === 'spei' ? 'Transferencia SPEI' : confirmedOrder.paymentMethod === 'tarjeta' ? 'Tarjeta Bancaria' : 'Crédito Empresarial'}):</span>
+              {confirmedOrder.paymentMethod === 'mercadopago' ? (
+                <div className="p-4 rounded-xl bg-sky-50 border border-sky-200 text-xs text-slate-800 space-y-2">
+                  <div className="font-bold text-sky-900 flex items-center justify-between">
+                    <span className="flex items-center space-x-1.5">
+                      <CreditCard className="w-4 h-4 text-[#009EE3]" />
+                      <span>Transacción Mercado Pago Oficial México</span>
+                    </span>
+                    <span className="text-[10px] bg-[#009EE3] text-white px-2 py-0.5 rounded font-bold">
+                      {paymentConfig?.mercadoPago?.sandboxMode ? 'Modo Pruebas / Sandbox' : 'Producción'}
+                    </span>
+                  </div>
+                  <p className="text-slate-700">
+                    Su orden ha sido registrada para procesamiento con la pasarela de Mercado Pago. Si requiere liga de pago directo o terminal virtual Point, nuestro asesor LUMESA se contactará de inmediato con su folio <strong className="font-mono text-sky-800">{confirmedOrder.orderId}</strong>.
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Clave Pública configurada: <code className="font-mono bg-sky-100 px-1 py-0.5 rounded">{paymentConfig?.mercadoPago?.publicKey ? `${paymentConfig.mercadoPago.publicKey.substring(0, 15)}...` : 'TEST-PUBLIC-KEY-LUMESA'}</code>
+                  </p>
                 </div>
-                <p>
-                  Banco: <strong>BBVA México</strong> | Beneficiario: <strong>KM Corporación S.A. de C.V.</strong>
-                </p>
-                <p>
-                  CLABE Interbancaria: <strong className="font-mono text-slate-900">012 700 00123456789 4</strong> | Referencia: <strong className="font-mono text-blue-700">{confirmedOrder.orderId}</strong>
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  Al realizar su depósito, envíe el comprobante al correo de facturación o directamente al WhatsApp corporativo para despacho prioritario.
-                </p>
-              </div>
+              ) : confirmedOrder.paymentMethod === 'spei' ? (
+                <div className="p-3.5 sm:p-4 rounded-xl bg-blue-50 border border-blue-200 text-xs text-slate-700 space-y-1">
+                  <div className="font-bold text-blue-900 flex items-center space-x-1.5">
+                    <Building2 className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>Instrucciones de Pago (Transferencia Bancaria SPEI Directa):</span>
+                  </div>
+                  <p>
+                    Banco: <strong>{paymentConfig?.bankTransfer?.bankName || 'BBVA México'}</strong> | Beneficiario: <strong>{paymentConfig?.bankTransfer?.accountHolder || 'LUMESA SOLUCIONES S.A. DE C.V.'}</strong>
+                  </p>
+                  <p>
+                    CLABE Interbancaria: <strong className="font-mono text-slate-900">{paymentConfig?.bankTransfer?.clabe || '012 700 00123456789 4'}</strong> | Referencia: <strong className="font-mono text-blue-700">{confirmedOrder.orderId}</strong>
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Al realizar su transferencia SPEI, envíe el comprobante al correo de facturación o directamente al WhatsApp corporativo para despacho prioritario desde San Luis Potosí.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-100 border border-neutral-300 text-xs text-slate-700 space-y-1">
+                  <div className="font-bold text-slate-900 flex items-center space-x-1.5">
+                    <Receipt className="w-4 h-4 text-slate-700 shrink-0" />
+                    <span>Orden de Renta / Crédito Empresarial Registrada:</span>
+                  </div>
+                  <p>
+                    Un ejecutivo de cuentas corporativas LUMESA validará su línea de crédito o contrato de arrendamiento en un plazo menor a 2 horas hábiles.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Actions Sticky Footer */}
@@ -250,16 +347,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Scrollable Fields */}
             <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-5">
-              {/* Step 1: Contact and Billing */}
+              {/* Step 1: Contact and Billing CFDI 4.0 */}
               <div>
                 <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
                   <Building2 className="w-4 h-4" />
-                  <span>1. Datos Fiscales y de Contacto (CFDI 4.0)</span>
+                  <span>1. Datos Fiscales y de Contacto (Facturación CFDI 4.0)</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Nombre Completo *
+                      Nombre Completo o Titular *
                     </label>
                     <input
                       type="text"
@@ -277,7 +374,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     </label>
                     <input
                       type="text"
-                      placeholder="Ej. Soluciones Industriales del Centro S.A."
+                      placeholder="Ej. Soluciones Industriales del Centro S.A. de C.V."
                       value={formData.companyName}
                       onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                       className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white"
@@ -286,11 +383,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      RFC (para factura fiscal)
+                      RFC Fiscal (SAT) *
                     </label>
                     <input
                       type="text"
-                      placeholder="Ej. SIC080412XYZ"
+                      required
+                      placeholder="Ej. SIC080412XYZ o XAXX010101000"
                       value={formData.rfc}
                       onChange={(e) => setFormData({ ...formData, rfc: e.target.value.toUpperCase() })}
                       className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 uppercase font-mono bg-white"
@@ -299,12 +397,44 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Correo Electrónico *
+                      Uso de CFDI (SAT)
+                    </label>
+                    <select
+                      value={formData.cfdiUse}
+                      onChange={(e) => setFormData({ ...formData, cfdiUse: e.target.value })}
+                      className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 bg-white"
+                    >
+                      <option value="G03 Gastos en general">G03 - Gastos en general</option>
+                      <option value="G01 Adquisición de mercancías">G01 - Adquisición de mercancías</option>
+                      <option value="I08 Otra maquinaria y equipo">I08 - Otra maquinaria y equipo</option>
+                      <option value="P01 Por definir">P01 - Por definir</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Régimen Fiscal (SAT)
+                    </label>
+                    <select
+                      value={formData.taxRegime}
+                      onChange={(e) => setFormData({ ...formData, taxRegime: e.target.value })}
+                      className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 bg-white"
+                    >
+                      <option value="601 General de Ley Personas Morales">601 - General de Ley Personas Morales</option>
+                      <option value="612 Personas Físicas con Actividades Empresariales y Profesionales">612 - Personas Físicas con Act. Empresariales</option>
+                      <option value="626 Régimen Simplificado de Confianza (RESICO)">626 - RESICO</option>
+                      <option value="605 Sueldos y Salarios">605 - Sueldos y Salarios</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Correo Electrónico (Recepción Factura) *
                     </label>
                     <input
                       type="email"
                       required
-                      placeholder="roberto@empresa.com"
+                      placeholder="facturacion@empresa.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white"
@@ -327,12 +457,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
               </div>
 
-              {/* Step 2: Delivery Address */}
+              {/* Step 2: Delivery Address & Dynamic Shipping */}
               <div className="border-t border-slate-100 pt-3.5">
-                <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
-                  <Truck className="w-4 h-4" />
-                  <span>2. Dirección de Entrega e Instalación en México</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center space-x-1.5">
+                    <Truck className="w-4 h-4" />
+                    <span>2. Dirección de Entrega e Instalación</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    {shipping === 0 ? '✓ Envío Gratis' : `Envío: $${shipping.toLocaleString('es-MX')} MXN`}
+                  </span>
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-3">
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -357,7 +493,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       required
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white"
+                      className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 bg-white"
                     />
                   </div>
 
@@ -370,7 +506,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       required
                       value={formData.state}
                       onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                      className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white"
+                      className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 bg-white"
                     />
                   </div>
 
@@ -384,79 +520,171 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       placeholder="78230"
                       value={formData.postalCode}
                       onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                      className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono bg-white"
+                      className="w-full text-xs sm:text-sm px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 font-mono bg-white"
                     />
                   </div>
                 </div>
+
+                <div className="mt-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <span>Logística LUMESA: Entrega estimada en <strong>{shippingRules.estimatedDays}</strong>.</span>
+                  {isLocalSLP && <span className="font-bold text-blue-700">✓ Zona Metropolitana SLP (Flete local incluido)</span>}
+                </div>
               </div>
 
-              {/* Step 3: Payment Method */}
+              {/* Step 3: Cupones de Descuento */}
+              <div className="border-t border-slate-100 pt-3.5">
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+                  ¿Tiene un cupón de descuento o convenio institucional?
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ej. KYOCERA5 o LUMESABENVENIDO"
+                    value={couponCodeInput}
+                    onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                    className="flex-1 text-xs sm:text-sm px-3 py-2 rounded-xl border border-slate-300 uppercase font-mono bg-white focus:outline-none focus:border-blue-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    className="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition"
+                  >
+                    Aplicar Cupón
+                  </button>
+                </div>
+
+                {appliedCoupon && (
+                  <div className="mt-2 p-2 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between text-xs text-emerald-800">
+                    <span>
+                      ✓ Cupón <strong>{appliedCoupon.code}</strong> aplicado: Descuento de <strong>-${discountAmount.toLocaleString('es-MX')} MXN</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-red-600 hover:text-red-800 font-bold ml-2 underline"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                )}
+
+                {couponError && (
+                  <div className="mt-2 text-xs text-red-600">
+                    {couponError}
+                  </div>
+                )}
+              </div>
+
+              {/* Step 4: Métodos de Pago con Mercado Pago Oficial */}
               <div className="border-t border-slate-100 pt-3.5">
                 <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
                   <CreditCard className="w-4 h-4" />
-                  <span>3. Método de Pago Corporativo</span>
+                  <span>4. Método de Pago Corporativo</span>
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                  {/* Mercado Pago */}
+                  <label className={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${formData.paymentMethod === 'mercadopago' ? 'border-[#009EE3] bg-sky-50/70 ring-2 ring-[#009EE3]' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="mercadopago"
+                            checked={formData.paymentMethod === 'mercadopago'}
+                            onChange={() => setFormData({ ...formData, paymentMethod: 'mercadopago' })}
+                            className="text-[#009EE3]"
+                          />
+                          <span className="text-xs font-black text-slate-900">Mercado Pago</span>
+                        </div>
+                        <span className="text-[10px] bg-[#009EE3]/15 text-[#009EE3] font-bold px-1.5 py-0.5 rounded">
+                          {paymentConfig?.mercadoPago?.sandboxMode ? 'Sandbox' : 'Oficial'}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-600 mt-1.5 block leading-tight">
+                        Tarjetas Visa / Mastercard / Amex, OXXO en efectivo y SPEI.
+                      </span>
+                    </div>
+                    <div className="pt-2 text-[10px] text-slate-400 font-medium">
+                      Cifrado SSL y protección al comprador
+                    </div>
+                  </label>
+
+                  {/* SPEI Bancario */}
                   <label className={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${formData.paymentMethod === 'spei' ? 'border-blue-600 bg-blue-50/70 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="spei"
-                        checked={formData.paymentMethod === 'spei'}
-                        onChange={() => setFormData({ ...formData, paymentMethod: 'spei' })}
-                        className="text-blue-600"
-                      />
-                      <span className="text-xs font-bold text-slate-900">SPEI Interbancario</span>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="spei"
+                          checked={formData.paymentMethod === 'spei'}
+                          onChange={() => setFormData({ ...formData, paymentMethod: 'spei' })}
+                          className="text-blue-600"
+                        />
+                        <span className="text-xs font-bold text-slate-900">Transferencia SPEI</span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 mt-1.5 block leading-tight">
+                        {paymentConfig?.bankTransfer?.bankName || 'BBVA México'}. Sin comisiones.
+                      </span>
                     </div>
-                    <span className="text-[11px] text-slate-500 mt-1.5 block">
-                      Sin comisiones extras. Confirmación inmediata.
-                    </span>
+                    <div className="pt-2 text-[10px] text-slate-400 font-medium font-mono">
+                      CLABE oficial LUMESA
+                    </div>
                   </label>
 
-                  <label className={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${formData.paymentMethod === 'tarjeta' ? 'border-blue-600 bg-blue-50/70 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="tarjeta"
-                        checked={formData.paymentMethod === 'tarjeta'}
-                        onChange={() => setFormData({ ...formData, paymentMethod: 'tarjeta' })}
-                        className="text-blue-600"
-                      />
-                      <span className="text-xs font-bold text-slate-900">Tarjeta Visa / MC / Amex</span>
-                    </div>
-                    <span className="text-[11px] text-slate-500 mt-1.5 block">
-                      Pago seguro con cifrado SSL bancario.
-                    </span>
-                  </label>
-
+                  {/* Crédito Corporativo */}
                   <label className={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${formData.paymentMethod === 'credito-empresarial' ? 'border-blue-600 bg-blue-50/70 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="credito-empresarial"
-                        checked={formData.paymentMethod === 'credito-empresarial'}
-                        onChange={() => setFormData({ ...formData, paymentMethod: 'credito-empresarial' })}
-                        className="text-blue-600"
-                      />
-                      <span className="text-xs font-bold text-slate-900">Orden de Compra / Renta</span>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="credito-empresarial"
+                          checked={formData.paymentMethod === 'credito-empresarial'}
+                          onChange={() => setFormData({ ...formData, paymentMethod: 'credito-empresarial' })}
+                          className="text-blue-600"
+                        />
+                        <span className="text-xs font-bold text-slate-900">Orden de Renta / Crédito</span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 mt-1.5 block leading-tight">
+                        Para contratos de arrendamiento mensual o crédito 30 días.
+                      </span>
                     </div>
-                    <span className="text-[11px] text-slate-500 mt-1.5 block">
-                      Para contratos de renta o crédito a 30 días.
-                    </span>
+                    <div className="pt-2 text-[10px] text-slate-400 font-medium">
+                      Sujeto a validación de contrato
+                    </div>
                   </label>
                 </div>
+              </div>
+
+              {/* Order Notes */}
+              <div className="border-t border-slate-100 pt-3">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Instrucciones especiales para entrega o almacén:
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Ej. Entregar en piso 3 área de sistemas, horario de 9am a 2pm..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-blue-600"
+                />
               </div>
             </div>
 
             {/* Sticky Action Footer */}
             <div className="shrink-0 border-t border-slate-200 p-3.5 sm:p-4 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-[11px] text-slate-500 uppercase tracking-wide block">Total a Pagar (Neto con IVA):</span>
+                <div className="flex items-center space-x-2 text-xs text-slate-500">
+                  <span>Subtotal: ${rawSubtotal.toLocaleString('es-MX')}</span>
+                  {discountAmount > 0 && <span className="text-emerald-600 font-bold">Desc: -${discountAmount.toLocaleString('es-MX')}</span>}
+                  <span>IVA 16%: ${tax.toLocaleString('es-MX')}</span>
+                  <span>Envío: {shipping === 0 ? 'Gratis' : `$${shipping.toLocaleString('es-MX')}`}</span>
+                </div>
                 <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
-                  ${total.toLocaleString('es-MX')} <span className="text-xs font-sans text-slate-500">MXN</span>
+                  ${total.toLocaleString('es-MX')} <span className="text-xs font-sans text-slate-500">MXN Total Neto</span>
                 </div>
               </div>
 
@@ -471,10 +699,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 sm:flex-none px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-black hover:bg-neutral-900 active:bg-neutral-950 text-white text-xs sm:text-sm font-bold tracking-wide border border-neutral-700 hover:border-blue-500 shadow-xl transition flex items-center justify-center space-x-2 disabled:opacity-50"
+                  className="flex-1 sm:flex-none px-5 py-2.5 sm:px-7 sm:py-3 rounded-xl bg-black hover:bg-neutral-900 active:bg-neutral-950 text-white text-xs sm:text-sm font-bold tracking-wide border border-neutral-700 hover:border-blue-500 shadow-xl transition flex items-center justify-center space-x-2 disabled:opacity-50"
                 >
                   <Lock className="w-4 h-4 text-blue-500" />
-                  <span>{isSubmitting ? 'Procesando Orden...' : 'Confirmar y Generar Pedido'}</span>
+                  <span>
+                    {isSubmitting 
+                      ? 'Procesando Orden...' 
+                      : formData.paymentMethod === 'mercadopago'
+                        ? 'Confirmar y Pagar con Mercado Pago'
+                        : 'Confirmar y Generar Pedido'}
+                  </span>
                 </button>
               </div>
             </div>

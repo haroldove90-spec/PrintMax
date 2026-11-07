@@ -27,6 +27,9 @@ CREATE TABLE IF NOT EXISTS public.products (
   specs JSONB DEFAULT '{}'::jsonb,
   features JSONB DEFAULT '[]'::jsonb,
   in_stock BOOLEAN DEFAULT true,
+  stock_quantity INTEGER DEFAULT 5,
+  min_stock_alert INTEGER DEFAULT 2,
+  datasheet_url TEXT,
   rating NUMERIC(3, 2) DEFAULT 5.0,
   reviews_count INTEGER DEFAULT 0,
   original_ref TEXT,
@@ -34,12 +37,19 @@ CREATE TABLE IF NOT EXISTS public.products (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Migraciones seguras para columnas añadidas
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock_quantity INTEGER DEFAULT 5;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS min_stock_alert INTEGER DEFAULT 2;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS datasheet_url TEXT;
+
 -- 3. TABLA: orders (Pedidos y cotizaciones de clientes con desglose de factura CFDI 4.0)
 CREATE TABLE IF NOT EXISTS public.orders (
   order_id TEXT PRIMARY KEY,
   customer_name TEXT NOT NULL,
   company_name TEXT,
   rfc TEXT,
+  cfdi_use TEXT,
+  tax_regime TEXT,
   email TEXT NOT NULL,
   phone TEXT,
   address TEXT,
@@ -51,14 +61,30 @@ CREATE TABLE IF NOT EXISTS public.orders (
   subtotal NUMERIC(12, 2) NOT NULL,
   tax NUMERIC(12, 2) NOT NULL,
   shipping NUMERIC(12, 2) DEFAULT 0,
+  discount_coupon TEXT,
+  discount_amount NUMERIC(12, 2) DEFAULT 0,
   total NUMERIC(12, 2) NOT NULL,
   date TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pendiente',
   tracking_number TEXT,
+  invoice_status TEXT DEFAULT 'pendiente',
+  invoice_pdf_url TEXT,
+  invoice_xml_url TEXT,
+  internal_notes TEXT,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Migraciones seguras para orders
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS cfdi_use TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS tax_regime TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_coupon TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12, 2) DEFAULT 0;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_status TEXT DEFAULT 'pendiente';
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_pdf_url TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_xml_url TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS internal_notes TEXT;
 
 -- ==============================================================================
 -- POLÍTICAS DE ACCESO (ROW LEVEL SECURITY - RLS)

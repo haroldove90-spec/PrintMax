@@ -131,6 +131,9 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
         specs: typeof item.specs === 'string' ? JSON.parse(item.specs) : (item.specs || {}),
         features: Array.isArray(item.features) ? item.features : [],
         inStock: Boolean(item.in_stock ?? item.inStock ?? true),
+        stockQuantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : item.stockQuantity,
+        minStockAlert: item.min_stock_alert !== undefined ? Number(item.min_stock_alert) : item.minStockAlert,
+        datasheetUrl: item.datasheet_url || item.datasheetUrl,
         rating: Number(item.rating || 5.0),
         reviewsCount: Number(item.reviews_count || item.reviewsCount || 0),
         originalRef: item.original_ref || item.originalRef
@@ -162,6 +165,9 @@ export async function saveProductToSupabase(product: Product): Promise<boolean> 
         specs: product.specs,
         features: product.features,
         in_stock: product.inStock,
+        stock_quantity: product.stockQuantity ?? (product.inStock ? 5 : 0),
+        min_stock_alert: product.minStockAlert ?? 2,
+        datasheet_url: product.datasheetUrl || null,
         rating: product.rating,
         reviews_count: product.reviewsCount,
         original_ref: product.originalRef || null,
@@ -218,6 +224,8 @@ export async function fetchOrdersFromSupabase(): Promise<OrderDetails[] | null> 
         customerName: item.customer_name || item.customerName,
         companyName: item.company_name || item.companyName,
         rfc: item.rfc,
+        cfdiUse: item.cfdi_use || item.cfdiUse,
+        taxRegime: item.tax_regime || item.taxRegime,
         email: item.email,
         phone: item.phone,
         address: item.address,
@@ -229,10 +237,16 @@ export async function fetchOrdersFromSupabase(): Promise<OrderDetails[] | null> 
         subtotal: Number(item.subtotal),
         tax: Number(item.tax),
         shipping: Number(item.shipping || 0),
+        discountCoupon: item.discount_coupon || item.discountCoupon,
+        discountAmount: item.discount_amount ? Number(item.discount_amount) : item.discountAmount,
         total: Number(item.total),
         date: item.date || new Date(item.created_at).toLocaleString(),
         status: item.status as OrderStatus,
         trackingNumber: item.tracking_number || item.trackingNumber,
+        invoiceStatus: item.invoice_status || item.invoiceStatus || 'pendiente',
+        invoicePdfUrl: item.invoice_pdf_url || item.invoicePdfUrl,
+        invoiceXmlUrl: item.invoice_xml_url || item.invoiceXmlUrl,
+        internalNotes: item.internal_notes || item.internalNotes,
         notes: item.notes
       }));
     }
@@ -252,6 +266,8 @@ export async function saveOrderToSupabase(order: OrderDetails): Promise<boolean>
         customer_name: order.customerName,
         company_name: order.companyName,
         rfc: order.rfc,
+        cfdi_use: order.cfdiUse || null,
+        tax_regime: order.taxRegime || null,
         email: order.email,
         phone: order.phone,
         address: order.address,
@@ -263,10 +279,16 @@ export async function saveOrderToSupabase(order: OrderDetails): Promise<boolean>
         subtotal: order.subtotal,
         tax: order.tax,
         shipping: order.shipping,
+        discount_coupon: order.discountCoupon || null,
+        discount_amount: order.discountAmount || 0,
         total: order.total,
         date: order.date,
         status: order.status,
         tracking_number: order.trackingNumber || null,
+        invoice_status: order.invoiceStatus || 'pendiente',
+        invoice_pdf_url: order.invoicePdfUrl || null,
+        invoice_xml_url: order.invoiceXmlUrl || null,
+        internal_notes: order.internalNotes || null,
         notes: order.notes || null,
         created_at: new Date().toISOString()
       }, { onConflict: 'order_id' });
@@ -285,16 +307,22 @@ export async function saveOrderToSupabase(order: OrderDetails): Promise<boolean>
 export async function updateOrderStatusInSupabase(
   orderId: string, 
   status: OrderStatus, 
-  trackingNumber?: string
+  trackingNumber?: string,
+  invoiceStatus?: 'pendiente' | 'emitida' | 'no_requerida',
+  invoicePdfUrl?: string,
+  invoiceXmlUrl?: string,
+  internalNotes?: string
 ): Promise<boolean> {
   try {
     const updatePayload: Record<string, any> = {
       status,
       updated_at: new Date().toISOString()
     };
-    if (trackingNumber !== undefined) {
-      updatePayload.tracking_number = trackingNumber;
-    }
+    if (trackingNumber !== undefined) updatePayload.tracking_number = trackingNumber;
+    if (invoiceStatus !== undefined) updatePayload.invoice_status = invoiceStatus;
+    if (invoicePdfUrl !== undefined) updatePayload.invoice_pdf_url = invoicePdfUrl;
+    if (invoiceXmlUrl !== undefined) updatePayload.invoice_xml_url = invoiceXmlUrl;
+    if (internalNotes !== undefined) updatePayload.internal_notes = internalNotes;
 
     const { error } = await supabase
       .from('orders')

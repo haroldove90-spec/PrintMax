@@ -17,7 +17,15 @@ interface OrderDetailModalProps {
   order: OrderDetails | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdateStatus: (orderId: string, status: OrderStatus, trackingNumber?: string) => void;
+  onUpdateStatus: (
+    orderId: string, 
+    status: OrderStatus, 
+    trackingNumber?: string,
+    invoiceStatus?: 'pendiente' | 'emitida' | 'no_requerida',
+    invoicePdfUrl?: string,
+    invoiceXmlUrl?: string,
+    internalNotes?: string
+  ) => void;
 }
 
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
@@ -28,11 +36,19 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus>(order?.status || 'pendiente');
   const [tracking, setTracking] = useState<string>(order?.trackingNumber || '');
+  const [invoiceStatus, setInvoiceStatus] = useState<'pendiente' | 'emitida' | 'no_requerida'>(order?.invoiceStatus || 'pendiente');
+  const [invoicePdfUrl, setInvoicePdfUrl] = useState<string>(order?.invoicePdfUrl || '');
+  const [invoiceXmlUrl, setInvoiceXmlUrl] = useState<string>(order?.invoiceXmlUrl || '');
+  const [internalNotes, setInternalNotes] = useState<string>(order?.internalNotes || '');
 
   React.useEffect(() => {
     if (order) {
       setSelectedStatus(order.status);
       setTracking(order.trackingNumber || '');
+      setInvoiceStatus(order.invoiceStatus || 'pendiente');
+      setInvoicePdfUrl(order.invoicePdfUrl || '');
+      setInvoiceXmlUrl(order.invoiceXmlUrl || '');
+      setInternalNotes(order.internalNotes || '');
     }
   }, [order]);
 
@@ -40,7 +56,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateStatus(order.orderId, selectedStatus, tracking);
+    onUpdateStatus(order.orderId, selectedStatus, tracking, invoiceStatus, invoicePdfUrl, invoiceXmlUrl, internalNotes);
     onClose();
   };
 
@@ -124,8 +140,10 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               </div>
 
               <div>
-                <span className="text-neutral-500 block">RFC:</span>
+                <span className="text-neutral-500 block">RFC / Fiscal:</span>
                 <span className="font-mono text-white font-bold">{order.rfc}</span>
+                {order.cfdiUse && <div className="text-[11px] text-neutral-400">Uso: {order.cfdiUse}</div>}
+                {order.taxRegime && <div className="text-[11px] text-neutral-400">Régimen: {order.taxRegime}</div>}
               </div>
 
               <div>
@@ -139,6 +157,13 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 <span className="text-neutral-300">{order.address}, {order.city}, {order.state} CP {order.postalCode}</span>
               </div>
             </div>
+
+            {order.discountCoupon && (
+              <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-xs">
+                <span className="text-emerald-400 font-bold">Cupón aplicado: <code className="bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/60 font-mono text-emerald-300">{order.discountCoupon}</code></span>
+                <span className="text-emerald-400 font-mono font-bold">-${(order.discountAmount || 0).toLocaleString('es-MX')} MXN</span>
+              </div>
+            )}
 
             {order.notes && (
               <div className="pt-2 border-t border-neutral-800/80">
@@ -189,17 +214,17 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Status Update Form */}
+          {/* Status & CFDI Facturación Form */}
           <form onSubmit={handleSave} className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-4">
             <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center space-x-1.5">
               <Truck className="w-4 h-4 text-blue-500" />
-              <span>Actualizar Estado de Envío / Pedido</span>
+              <span>Actualizar Estado de Envío & Facturación CFDI</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-neutral-400 mb-1">
-                  Nuevo Estado del Pedido:
+                  Estado del Pedido:
                 </label>
                 <select
                   value={selectedStatus}
@@ -221,12 +246,68 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej. FEDEX-839210"
+                  placeholder="Ej. FEDEX-839210 o En Ruta Local SLP"
                   value={tracking}
                   onChange={(e) => setTracking(e.target.value)}
                   className="w-full text-xs sm:text-sm bg-black text-white px-3 py-2.5 rounded-xl border border-neutral-700 focus:outline-none focus:border-blue-500 font-mono"
                 />
               </div>
+            </div>
+
+            {/* Facturación CFDI 4.0 */}
+            <div className="pt-3 border-t border-neutral-800">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold text-white flex items-center space-x-1.5">
+                  <Receipt className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Emisión Factura CFDI 4.0:</span>
+                </label>
+                <select
+                  value={invoiceStatus}
+                  onChange={(e) => setInvoiceStatus(e.target.value as any)}
+                  className="text-xs bg-black text-white px-2.5 py-1 rounded-lg border border-neutral-700 focus:outline-none focus:border-blue-500 font-bold"
+                >
+                  <option value="pendiente">⏳ Pendiente de Timbrar</option>
+                  <option value="emitida">✅ Timbrada y Emitida</option>
+                  <option value="no_requerida">❌ No requerida por cliente</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] text-neutral-400 mb-1">Enlace a Factura PDF:</label>
+                  <input
+                    type="url"
+                    placeholder="https://.../factura.pdf"
+                    value={invoicePdfUrl}
+                    onChange={(e) => setInvoicePdfUrl(e.target.value)}
+                    className="w-full text-xs bg-black text-white px-3 py-2 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-neutral-400 mb-1">Enlace a Factura XML:</label>
+                  <input
+                    type="url"
+                    placeholder="https://.../factura.xml"
+                    value={invoiceXmlUrl}
+                    onChange={(e) => setInvoiceXmlUrl(e.target.value)}
+                    className="w-full text-xs bg-black text-white px-3 py-2 rounded-xl border border-neutral-800 focus:border-blue-500 font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Internal Notes */}
+            <div className="pt-3 border-t border-neutral-800">
+              <label className="block text-xs font-bold text-neutral-300 mb-1">
+                Notas Internas de Almacén / Logística (Privadas para LUMESA):
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Ej. Equipo verificado con contador en ceros, toner precintado, entrega coordinada con Ing. López..."
+                value={internalNotes}
+                onChange={(e) => setInternalNotes(e.target.value)}
+                className="w-full text-xs bg-black text-white p-2.5 rounded-xl border border-neutral-800 focus:border-blue-500 resize-none"
+              />
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">

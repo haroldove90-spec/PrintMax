@@ -128,6 +128,9 @@ export default function App() {
             ...INITIAL_SITE_CONTENT.contact,
             ...(parsed.contact || {})
           },
+          storeCategories: parsed.storeCategories || INITIAL_SITE_CONTENT.storeCategories,
+          paymentConfig: parsed.paymentConfig || INITIAL_SITE_CONTENT.paymentConfig,
+          coupons: parsed.coupons || INITIAL_SITE_CONTENT.coupons,
           showTrustMetrics: visibility.showTrustMetrics,
           visibility
         };
@@ -209,6 +212,9 @@ export default function App() {
               ...INITIAL_SITE_CONTENT.contact,
               ...(cloudContent.contact || {})
             },
+            storeCategories: cloudContent.storeCategories || INITIAL_SITE_CONTENT.storeCategories,
+            paymentConfig: cloudContent.paymentConfig || INITIAL_SITE_CONTENT.paymentConfig,
+            coupons: cloudContent.coupons || INITIAL_SITE_CONTENT.coupons,
             showTrustMetrics: mergedVisibility.showTrustMetrics,
             visibility: mergedVisibility
           });
@@ -394,20 +400,32 @@ export default function App() {
     deleteProductFromSupabase(productId).catch((e) => console.warn('Supabase deleteProduct error:', e));
   };
 
-  const handleUpdateOrderStatus = (orderId: string, status: OrderStatus, trackingNumber?: string) => {
+  const handleUpdateOrderStatus = (
+    orderId: string, 
+    status: OrderStatus, 
+    trackingNumber?: string,
+    invoiceStatus?: 'pendiente' | 'emitida' | 'no_requerida',
+    invoicePdfUrl?: string,
+    invoiceXmlUrl?: string,
+    internalNotes?: string
+  ) => {
     setOrders((prev) =>
       prev.map((ord) => {
         if (ord.orderId === orderId) {
           return {
             ...ord,
             status,
-            trackingNumber: trackingNumber !== undefined ? trackingNumber : ord.trackingNumber
+            trackingNumber: trackingNumber !== undefined ? trackingNumber : ord.trackingNumber,
+            invoiceStatus: invoiceStatus !== undefined ? invoiceStatus : ord.invoiceStatus,
+            invoicePdfUrl: invoicePdfUrl !== undefined ? invoicePdfUrl : ord.invoicePdfUrl,
+            invoiceXmlUrl: invoiceXmlUrl !== undefined ? invoiceXmlUrl : ord.invoiceXmlUrl,
+            internalNotes: internalNotes !== undefined ? internalNotes : ord.internalNotes
           };
         }
         return ord;
       })
     );
-    updateOrderStatusInSupabase(orderId, status, trackingNumber).catch((e) => console.warn('Supabase updateOrderStatus error:', e));
+    updateOrderStatusInSupabase(orderId, status, trackingNumber, invoiceStatus, invoicePdfUrl, invoiceXmlUrl, internalNotes).catch((e) => console.warn('Supabase updateOrderStatus error:', e));
   };
 
   const handleSaveSiteContent = (newContent: SiteContent) => {
@@ -632,6 +650,7 @@ export default function App() {
             onAddToCart={handleAddToCart}
             onOpenProductDetail={(prod) => setSelectedProduct(prod)}
             initialSearchQuery={searchQuery}
+            categories={siteContent.storeCategories}
           />
         )}
 
@@ -744,6 +763,8 @@ export default function App() {
         items={cartItems}
         onClearCart={handleClearCart}
         onOrderCreated={handleOrderCreated}
+        paymentConfig={siteContent.paymentConfig}
+        coupons={siteContent.coupons}
       />
 
       <ProductDetailModal
@@ -783,6 +804,7 @@ export default function App() {
         }}
         productToEdit={productToEdit}
         onSave={handleSaveProduct}
+        categories={siteContent.storeCategories}
       />
 
       <OrderDetailModal

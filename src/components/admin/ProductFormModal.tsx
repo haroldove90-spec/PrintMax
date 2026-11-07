@@ -11,20 +11,22 @@ import {
   Cpu,
   Image as ImageIcon
 } from 'lucide-react';
-import { Product, ProductCategory } from '../../types';
+import { Product, ProductCategory, StoreCategory } from '../../types';
 
 interface ProductFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   productToEdit: Product | null;
   onSave: (product: Product) => void;
+  categories?: StoreCategory[];
 }
 
 export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   isOpen,
   onClose,
   productToEdit,
-  onSave
+  onSave,
+  categories
 }) => {
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
@@ -38,6 +40,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     description: '',
     image: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=800&q=80',
     inStock: true,
+    stockQuantity: 5,
+    minStockAlert: 2,
+    datasheetUrl: '',
     rating: 5.0,
     reviewsCount: 1,
     specs: {
@@ -76,6 +81,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         description: '',
         image: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=800&q=80',
         inStock: true,
+        stockQuantity: 5,
+        minStockAlert: 2,
+        datasheetUrl: '',
         rating: 5.0,
         reviewsCount: 1,
         specs: {
@@ -100,7 +108,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   if (!isOpen) return null;
 
-  const categoryOptions: { id: ProductCategory; label: string }[] = [
+  const defaultCategoryOptions: { id: ProductCategory; label: string }[] = [
     { id: 'multifuncionales-a3', label: 'Multifuncional A3' },
     { id: 'multifuncionales-a4', label: 'Multifuncional A4' },
     { id: 'impresoras', label: 'Impresora Láser' },
@@ -108,6 +116,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     { id: 'consumibles', label: 'Tóner y Consumibles' },
     { id: 'polizas', label: 'Póliza de Servicio' }
   ];
+
+  const categoryOptions = categories && categories.length > 0
+    ? categories.filter((c) => c.active).map((c) => ({ id: c.slug, label: c.name }))
+    : defaultCategoryOptions;
 
   const presetImages = [
     { label: 'Multifuncional A3 TASKalfa', url: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=800&q=80' },
@@ -126,6 +138,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setValidationError('Por favor ingrese el nombre y modelo/código del equipo.');
       return;
     }
+
+    const qty = Number(formData.stockQuantity ?? 5);
 
     const finalProduct: Product = {
       id: formData.id || `prod-${Date.now()}`,
@@ -152,7 +166,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         color: true
       },
       features: formData.features || ['Garantía oficial Kyocera'],
-      inStock: formData.inStock ?? true,
+      inStock: qty > 0 && (formData.inStock ?? true),
+      stockQuantity: qty,
+      minStockAlert: Number(formData.minStockAlert ?? 2),
+      datasheetUrl: formData.datasheetUrl || '',
       rating: formData.rating || 5.0,
       reviewsCount: formData.reviewsCount || 1,
       originalRef: formData.originalRef || ''
@@ -437,8 +454,63 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, inStock: e.target.checked })}
                   className="rounded text-blue-600 bg-neutral-900 border-neutral-700"
                 />
-                <span className="font-bold text-emerald-400">En Existencia (Stock SLP)</span>
+                <span className="font-bold text-emerald-400">Disponible para Venta Inmediata</span>
               </label>
+            </div>
+
+            {/* Inventario Numérico & Ficha Técnica */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800 text-xs mt-3">
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1">
+                  Unidades en Inventario (Piezas SLP):
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.stockQuantity ?? 5}
+                  onChange={(e) => {
+                    const q = parseInt(e.target.value) || 0;
+                    setFormData({
+                      ...formData,
+                      stockQuantity: q,
+                      inStock: q > 0
+                    });
+                  }}
+                  className="w-full bg-neutral-950 text-white font-mono font-bold px-3 py-2 rounded-lg border border-neutral-800 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1">
+                  Alerta de Stock Bajo (&lt;= pzas):
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.minStockAlert ?? 2}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    minStockAlert: parseInt(e.target.value) || 2
+                  })}
+                  className="w-full bg-neutral-950 text-amber-400 font-mono font-bold px-3 py-2 rounded-lg border border-neutral-800 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1">
+                  Ficha Técnica Oficial (PDF URL):
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://.../ficha-kyocera.pdf"
+                  value={formData.datasheetUrl || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    datasheetUrl: e.target.value
+                  })}
+                  className="w-full bg-neutral-950 text-white font-mono px-3 py-2 rounded-lg border border-neutral-800 focus:outline-none focus:border-blue-500"
+                />
+              </div>
             </div>
           </div>
 

@@ -120,7 +120,124 @@ export const INITIAL_SITE_CONTENT: SiteContent = {
     annualPolicyPrice: 14500,
     responseTime: "Menos de 24 horas",
     modalitySchedule: "09:00 a 18:00 hrs"
-  }
+  },
+  storeCategories: [
+    {
+      id: 'cat-a3',
+      slug: 'multifuncionales-a3',
+      name: 'Multifuncionales A3',
+      description: 'Equipos formato Doble Carta (11" x 17"), alto volumen y color profesional.',
+      icon: 'Printer',
+      order: 1,
+      active: true
+    },
+    {
+      id: 'cat-a4',
+      slug: 'multifuncionales-a4',
+      name: 'Multifuncionales A4',
+      description: 'Equipos compactos para oficina, notarías y despachos en Carta y Oficio.',
+      icon: 'FileText',
+      order: 2,
+      active: true
+    },
+    {
+      id: 'cat-impresoras',
+      slug: 'impresoras',
+      name: 'Impresoras Láser',
+      description: 'Impresoras robustas de alta velocidad con costos operativos extraordinariamente bajos.',
+      icon: 'Zap',
+      order: 3,
+      active: true
+    },
+    {
+      id: 'cat-produccion',
+      slug: 'produccion',
+      name: 'Impresión de Producción',
+      description: 'Inyección de tinta de alta velocidad y gran volumen para aplicaciones transaccionales.',
+      icon: 'Layers',
+      order: 4,
+      active: true
+    },
+    {
+      id: 'cat-consumibles',
+      slug: 'consumibles',
+      name: 'Tóner y Consumibles Genuinos',
+      description: 'Cartuchos de tóner microfino original Kyocera y kits de mantenimiento certificados.',
+      icon: 'Package',
+      order: 5,
+      active: true
+    },
+    {
+      id: 'cat-polizas',
+      slug: 'polizas',
+      name: 'Pólizas de Servicio',
+      description: 'Contratos preventivos y correctivos con refacciones y respuesta < 24h incluidos.',
+      icon: 'ShieldCheck',
+      order: 6,
+      active: true
+    },
+    {
+      id: 'cat-refacciones',
+      slug: 'refacciones',
+      name: 'Refacciones y Accesorios',
+      description: 'Alimentadores de papel, bandejas adicionales, finishers y tarjetas de red.',
+      icon: 'Cpu',
+      order: 7,
+      active: true
+    }
+  ],
+  paymentConfig: {
+    mercadoPago: {
+      enabled: false,
+      publicKey: '',
+      accessToken: '',
+      sandboxMode: true,
+      acceptedMethods: {
+        creditCard: true,
+        debitCard: true,
+        ticketOxxo: true,
+        spei: true
+      }
+    },
+    bankTransfer: {
+      enabled: true,
+      bankName: 'BBVA México',
+      accountHolder: 'LUMESA Impresión Digital S.A. de C.V.',
+      clabe: '012 700 00123456789 4',
+      accountNumber: '0123456789',
+      rfc: 'LID080315TR8'
+    },
+    shippingConfig: {
+      freeShippingThreshold: 10000,
+      standardShippingCost: 350,
+      localCityFreeShipping: true,
+      estimatedDays: '2 a 4 días hábiles'
+    }
+  },
+  coupons: [
+    {
+      id: 'coup-1',
+      code: 'KYOCERA5',
+      discountType: 'percentage',
+      discountValue: 5,
+      minPurchase: 5000,
+      active: true,
+      expiryDate: '2026-12-31',
+      usesCount: 14,
+      maxUses: 100
+    },
+    {
+      id: 'coup-2',
+      code: 'LUMESABENVENIDO',
+      discountType: 'fixed',
+      discountValue: 1000,
+      minPurchase: 15000,
+      active: true,
+      expiryDate: '2026-12-31',
+      usesCount: 8,
+      maxUses: 50
+    }
+  ]
 };
 
 export const INITIAL_ADMIN_USERS: AdminUser[] = [
