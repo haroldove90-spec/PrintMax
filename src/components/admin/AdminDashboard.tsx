@@ -2477,6 +2477,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </span>
                   </div>
                 </div>
+
+                {/* 8. Módulo de Software Kyocera */}
+                <div className={`p-4 rounded-2xl border transition-all ${
+                  currentVisibility.showSoftwareSection 
+                    ? 'bg-[#182F4F]/80 border-emerald-500/60 shadow-lg' 
+                    : 'bg-[#182F4F]/30 border-slate-700/80'
+                }`}>
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="p-2 rounded-xl bg-[#000000] border border-[#394B61]">
+                        <Cpu className="w-4 h-4 text-[#F27C36]" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white">Módulo Software Kyocera</h4>
+                        <span className="text-[10px] text-slate-400">Menú, portal de inicio y soluciones</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={currentVisibility.showSoftwareSection}
+                      onClick={() => handleToggleVisibility('showSoftwareSection')}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                        currentVisibility.showSoftwareSection ? 'bg-[#F27C36]' : 'bg-slate-700'
+                      }`}
+                    >
+                      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        currentVisibility.showSoftwareSection ? 'translate-x-5' : 'translate-x-0'
+                      }`} />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] pt-2 border-t border-white/5">
+                    <span className="text-slate-400">Estado:</span>
+                    <span className={`font-bold ${currentVisibility.showSoftwareSection ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {currentVisibility.showSoftwareSection ? 'Módulo Activo en Web' : 'Desactivado (Oculto)'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -3469,6 +3507,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <p className="text-xs text-slate-300 mt-1">
                     Edite el tag, título y el contenido detallado de los 5 módulos de software inteligente (MyQ, Fleet Services, etc.).
                   </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center space-x-1.5 ${
+                    currentVisibility.showSoftwareSection 
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-700' 
+                      : 'bg-amber-950 text-amber-300 border-amber-700'
+                  }`}>
+                    <span className={`w-2 h-2 rounded-full ${currentVisibility.showSoftwareSection ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                    <span>{currentVisibility.showSoftwareSection ? 'Módulo Activo en Web' : 'Módulo Desactivado por Admin'}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleVisibility('showSoftwareSection')}
+                    className="text-xs text-slate-300 hover:text-white underline underline-offset-2 ml-2"
+                  >
+                    {currentVisibility.showSoftwareSection ? 'Desactivar' : 'Activar Módulo'}
+                  </button>
                 </div>
               </div>
 

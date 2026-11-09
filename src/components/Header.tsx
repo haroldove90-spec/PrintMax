@@ -28,6 +28,7 @@ interface HeaderProps {
   onOpenAdmin: () => void;
   onSelectRoleAndOpenAdmin?: (role: AdminRole) => void;
   currentUser?: AdminUser | null;
+  showSoftware?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -38,7 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenQuickQuote,
   onOpenAdmin,
   onSelectRoleAndOpenAdmin,
-  currentUser
+  currentUser,
+  showSoftware = false
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -48,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'inicio', name: 'Inicio', icon: Home },
     { id: 'nosotros', name: 'Nosotros', icon: Building2 },
     { id: 'renta_venta', name: 'Renta / Venta', icon: Printer },
-    { id: 'software', name: 'Software', icon: Cpu },
+    ...(showSoftware ? [{ id: 'software' as AppSection, name: 'Software', icon: Cpu }] : []),
     { id: 'tienda', name: 'Tienda en Línea', icon: Store },
     { id: 'contacto', name: 'Contacto', icon: PhoneCall },
   ];

@@ -481,6 +481,7 @@ export default function App() {
             navigateToSection('admin');
           }}
           currentUser={currentUser}
+          showSoftware={siteContent.visibility?.showSoftwareSection ?? false}
         />
       )}
 
@@ -546,7 +547,7 @@ export default function App() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className={`grid grid-cols-1 sm:grid-cols-2 ${(siteContent.visibility?.showSoftwareSection ?? false) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
                     {/* Card 1: Tienda */}
                     <div 
                       onClick={() => navigateToSection('tienda')}
@@ -591,27 +592,29 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Card 3: Software */}
-                    <div 
-                      onClick={() => navigateToSection('software')}
-                      className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
-                          <Cpu className="w-6 h-6 text-[#F27C36]" />
+                    {/* Card 3: Software (Activable/Desactivable desde el CMS) */}
+                    {(siteContent.visibility?.showSoftwareSection ?? false) && (
+                      <div 
+                        onClick={() => navigateToSection('software')}
+                        className="p-6 rounded-3xl bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition cursor-pointer group flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="w-12 h-12 rounded-2xl bg-[#000000]/50 border border-[#394B61] flex items-center justify-center mb-4">
+                            <Cpu className="w-6 h-6 text-[#F27C36]" />
+                          </div>
+                          <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
+                            Software Kyocera
+                          </h4>
+                          <p className="text-xs text-slate-300 leading-relaxed">
+                            Control de costos MyQ, Net Manager, automatización DMConnect y monitoreo proactivo Fleet Services.
+                          </p>
                         </div>
-                        <h4 className="text-lg font-bold text-white mb-1 group-hover:text-[#F27C36] transition">
-                          Software Kyocera
-                        </h4>
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          Control de costos MyQ, Net Manager, automatización DMConnect y monitoreo proactivo Fleet Services.
-                        </p>
+                        <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
+                          <span>Ver Software</span>
+                          <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
+                        </div>
                       </div>
-                      <div className="mt-6 pt-4 border-t border-[#394B61] flex items-center justify-between text-xs font-bold text-[#F27C36]">
-                        <span>Ver Software</span>
-                        <ArrowRight className="w-4 h-4 text-[#F27C36] group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
+                    )}
 
                     {/* Card 4: Nosotros */}
                     <div 
@@ -673,10 +676,38 @@ export default function App() {
         {/* 4. SECCIÓN INDEPENDIENTE: SOFTWARE KYOCERA */}
         {/* ========================================================= */}
         {activeSection === 'software' && (
-          <SoftwareSolutionsSection
-            onOpenConsultation={handleConsultation}
-            content={siteContent.softwareSection}
-          />
+          (siteContent.visibility?.showSoftwareSection ?? false) ? (
+            <SoftwareSolutionsSection
+              onOpenConsultation={handleConsultation}
+              content={siteContent.softwareSection}
+            />
+          ) : (
+            <div className="py-24 px-4 text-center max-w-xl mx-auto">
+              <div className="w-16 h-16 rounded-3xl bg-[#182F4F] text-[#F27C36] flex items-center justify-center mx-auto mb-6 border border-[#394B61] shadow-xl">
+                <Cpu className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-black text-[#182F4F] mb-3">
+                Módulo de Software Kyocera Temporalmente Inactivo
+              </h3>
+              <p className="text-sm text-slate-600 mb-8 leading-relaxed">
+                Esta sección se encuentra temporalmente en pausa por la administración. Puede explorar nuestro catálogo de multifuncionales en renta/venta o visitar la tienda en línea.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => navigateToSection('tienda')}
+                  className="px-6 py-3 bg-[#F27C36] hover:bg-[#d96726] text-white rounded-xl font-bold text-sm shadow-md transition"
+                >
+                  Ir a la Tienda en Línea
+                </button>
+                <button
+                  onClick={() => navigateToSection('renta_venta')}
+                  className="px-6 py-3 bg-[#182F4F] hover:bg-[#000000] text-white rounded-xl font-bold text-sm shadow-md transition"
+                >
+                  Ver Renta y Venta
+                </button>
+              </div>
+            </div>
+          )
         )}
 
         {/* ========================================================= */}
@@ -744,7 +775,10 @@ export default function App() {
 
       {/* Footer Corporativo */}
       {activeSection !== 'admin' && (
-        <Footer onSelectSection={navigateToSection} />
+        <Footer 
+          onSelectSection={navigateToSection} 
+          showSoftware={siteContent.visibility?.showSoftwareSection ?? false}
+        />
       )}
 
       {/* Modals & Drawers */}

@@ -185,6 +185,7 @@ export interface ContentVisibility {
   showSlideImages?: boolean;
   showCoverageMap?: boolean;
   showSoftwareHighlights?: boolean;
+  showSoftwareSection?: boolean;
 }
 
 export interface PillarItem {

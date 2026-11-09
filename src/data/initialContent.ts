@@ -9,7 +9,8 @@ export const DEFAULT_VISIBILITY: ContentVisibility = {
   showAboutStats: true,
   showSlideImages: true,
   showCoverageMap: true,
-  showSoftwareHighlights: true
+  showSoftwareHighlights: false,
+  showSoftwareSection: false
 };
 
 export const INITIAL_SITE_CONTENT: SiteContent = {

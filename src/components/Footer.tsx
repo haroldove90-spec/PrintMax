@@ -11,9 +11,10 @@ import { AppSection } from '../types';
 
 interface FooterProps {
   onSelectSection: (section: AppSection) => void;
+  showSoftware?: boolean;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
+export const Footer: React.FC<FooterProps> = ({ onSelectSection, showSoftware = false }) => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -108,7 +109,9 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
               <li><button onClick={() => handleNav('inicio')} className="hover:text-[#F27C36] transition text-left">Inicio</button></li>
               <li><button onClick={() => handleNav('nosotros')} className="hover:text-[#F27C36] transition text-left">Nosotros</button></li>
               <li><button onClick={() => handleNav('renta_venta')} className="hover:text-[#F27C36] transition text-left">Renta / Venta</button></li>
-              <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">Software</button></li>
+              {showSoftware && (
+                <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">Software</button></li>
+              )}
               <li><button onClick={() => handleNav('tienda')} className="hover:text-[#F27C36] transition text-left">Tienda en Línea</button></li>
               <li><button onClick={() => handleNav('contacto')} className="hover:text-[#F27C36] transition text-left">Contacto</button></li>
             </ul>
@@ -117,14 +120,23 @@ export const Footer: React.FC<FooterProps> = ({ onSelectSection }) => {
           {/* Col 4: Hardware & Soluciones */}
           <div>
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-[#F27C36] pl-2">
-              Equipos & Software
+              {showSoftware ? 'Equipos & Software' : 'Equipos & Servicios'}
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-300">
               <li><button onClick={() => handleNav('hardware')} className="hover:text-[#F27C36] transition text-left">Multifuncionales A3 Color</button></li>
               <li><button onClick={() => handleNav('hardware')} className="hover:text-[#F27C36] transition text-left">Multifuncionales A4 Compactos</button></li>
               <li><button onClick={() => handleNav('tienda')} className="hover:text-[#F27C36] transition text-left">Tóner y Consumibles</button></li>
-              <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">KYOCERA Net Manager</button></li>
-              <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">Control de Costos MyQ</button></li>
+              {showSoftware ? (
+                <>
+                  <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">KYOCERA Net Manager</button></li>
+                  <li><button onClick={() => handleNav('software')} className="hover:text-[#F27C36] transition text-left">Control de Costos MyQ</button></li>
+                </>
+              ) : (
+                <>
+                  <li><button onClick={() => handleNav('renta_venta')} className="hover:text-[#F27C36] transition text-left">Planes de Renta Todo Incluido</button></li>
+                  <li><button onClick={() => handleNav('contacto')} className="hover:text-[#F27C36] transition text-left">Pólizas Preventivas Kyocera</button></li>
+                </>
+              )}
               <li><button onClick={() => handleNav('contacto')} className="hover:text-[#F27C36] transition text-left">Asesoría en Equipamiento</button></li>
             </ul>
           </div>
