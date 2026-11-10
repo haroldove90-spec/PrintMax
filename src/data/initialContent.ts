@@ -1,5 +1,12 @@
-import { SiteContent, OrderDetails, AdminUser, ContentVisibility, FooterConfig } from '../types';
+import { SiteContent, OrderDetails, AdminUser, ContentVisibility, FooterConfig, CoverageConfig } from '../types';
 import { HERO_SLIDES, TRUST_METRICS, PRODUCTS, SOFTWARE_SOLUTIONS } from './mockData';
+
+export const DEFAULT_COVERAGE: CoverageConfig = {
+  tag: "Cobertura",
+  title: "Cobertura",
+  text: "Atendemos en San Luis Potosí. ¿Tu empresa está en otra ciudad? Escríbenos y revisamos las opciones de servicio para tu zona.",
+  ctaText: "Escríbenos y revisamos tu zona"
+};
 
 export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   bannerTitle: "¿Necesita asesoría o equipamiento Kyocera para su empresa?",
@@ -90,6 +97,7 @@ export const INITIAL_SITE_CONTENT: SiteContent = {
       }
     ]
   },
+  coverage: DEFAULT_COVERAGE,
   hardwareSection: {
     tag: "Catálogo Oficial: Renta / Venta de Multifuncionales",
     title: "Equipos Kyocera en Renta y Venta Directa",

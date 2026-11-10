@@ -1,106 +1,75 @@
 import React from 'react';
-import { MapPin, Navigation, Truck, Building, Phone, Clock, Mail } from 'lucide-react';
+import { MapPin, MessageSquare, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { CoverageConfig } from '../types';
 
-export const CoverageMapSection: React.FC = () => {
-  const regionalHubs = [
-    { name: 'Sede Central & Taller Matriz', state: 'San Luis Potosí, S.L.P.', time: 'Atención Inmediata (<4h)', active: true },
-    { name: 'Región Bajío & Centro', state: 'Querétaro, Guanajuato, Aguascalientes', time: 'Servicio en <24h', active: true },
-    { name: 'Región Norte & Frontera', state: 'Monterrey, Saltillo, Chihuahua', time: 'Servicio en <24h', active: true },
-    { name: 'Región Occidente', state: 'Guadalajara, Jalisco, Michoacán', time: 'Servicio en <24h', active: true },
-    { name: 'Región Metropolitana', state: 'CDMX, Toluca, Puebla', time: 'Servicio en <24h', active: true }
-  ];
+interface CoverageMapSectionProps {
+  content?: CoverageConfig;
+  onContact?: () => void;
+}
+
+export const CoverageMapSection: React.FC<CoverageMapSectionProps> = ({ content, onContact }) => {
+  const tag = content?.tag || 'Cobertura';
+  const title = content?.title || 'Cobertura';
+  const text = content?.text || 'Atendemos en San Luis Potosí. ¿Tu empresa está en otra ciudad? Escríbenos y revisamos las opciones de servicio para tu zona.';
+  const ctaText = content?.ctaText || 'Escríbenos y revisamos tu zona';
 
   return (
-    <section className="py-20 bg-white text-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+    <section className="py-12 sm:py-16 bg-slate-50 border-t border-slate-200/80 text-slate-800">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#182F4F] via-[#112239] to-[#0A1626] text-white p-8 sm:p-12 shadow-xl border border-[#394B61]/60">
           
-          {/* Left: Info */}
-          <div className="lg:col-span-5">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#182F4F] text-white border border-[#394B61] text-xs font-bold uppercase tracking-wider mb-3">
-              <MapPin className="w-4 h-4 text-[#F27C36]" />
-              <span>Infraestructura y Logística</span>
-            </div>
+          {/* Subtle background decoration */}
+          <div className="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-[#F27C36]/10 blur-3xl pointer-events-none" />
+          <div className="absolute -left-20 -top-20 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
             
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#182F4F] tracking-tight mb-4">
-              Centro de Distribución en San Luis Potosí y Cobertura Nacional
-            </h2>
-            
-            <p className="text-[#394B61] text-base leading-relaxed mb-6 font-normal">
-              Nuestra ubicación estratégica en el corazón de México nos permite despachar consumibles, tóner original, refacciones y cuadrillas de ingenieros certificados a cualquier punto del país con tiempos de respuesta inigualables.
-            </p>
-
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                <Building className="w-5 h-5 text-[#182F4F] shrink-0 mt-0.5" />
-                <div className="text-xs">
-                  <span className="font-bold text-[#182F4F] block">Sede Corporativa & Centro de Distribución:</span>
-                  <span className="text-slate-600">Av. Venustiano Carranza #1450, Col. Tequisquiapan, San Luis Potosí, S.L.P. C.P. 78230</span>
-                </div>
+            {/* Left: Text & Badges */}
+            <div className="max-w-2xl space-y-4">
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-xs font-bold uppercase tracking-wider text-white">
+                <MapPin className="w-3.5 h-3.5 text-[#F27C36]" />
+                <span>{tag}</span>
               </div>
 
-              <div className="flex items-start space-x-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                <Clock className="w-5 h-5 text-[#182F4F] shrink-0 mt-0.5" />
-                <div className="text-xs">
-                  <span className="font-bold text-[#182F4F] block">Horario de Taller y Atención a Clientes:</span>
-                  <span className="text-slate-600">Lunes a Viernes de 09:00 a 18:00 hrs | Soporte Urgente 24/7 para pólizas Platinum</span>
-                </div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                {title}
+              </h2>
+
+              <p className="text-slate-200 text-base sm:text-lg leading-relaxed font-normal">
+                {text}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-slate-300">
+                <span className="inline-flex items-center space-x-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Sede matriz en San Luis Potosí</span>
+                </span>
+                <span className="inline-flex items-center space-x-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#F27C36] shrink-0" />
+                  <span>Atención y asesoría personalizada</span>
+                </span>
               </div>
-
-              <div className="flex items-start space-x-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                <Truck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                <div className="text-xs">
-                  <span className="font-bold text-[#182F4F] block">Almacén Central de Refacciones:</span>
-                  <span className="text-slate-600">Más de 5,000 unidades de tóner original y kits de mantenimiento en existencia inmediata.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Regional Hubs Card */}
-          <div className="lg:col-span-7 bg-[#000000] text-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-neutral-800">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-4 mb-6">
-              <div>
-                <h3 className="text-lg font-bold text-white">Red de Atención y Distribución en México</h3>
-                <span className="text-xs text-neutral-400">Monitoreo y despacho continuo</span>
-              </div>
-              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold">
-                100% Activa
-              </span>
             </div>
 
-            <div className="space-y-3">
-              {regionalHubs.map((hub, idx) => (
-                <div 
-                  key={idx}
-                  className="p-3.5 rounded-xl bg-[#182F4F]/40 border border-[#394B61]/60 hover:border-[#F27C36] transition flex items-center justify-between"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#F27C36] shrink-0 animate-ping" />
-                    <div>
-                      <div className="text-xs sm:text-sm font-bold text-white">{hub.name}</div>
-                      <div className="text-[11px] text-slate-300">{hub.state}</div>
-                    </div>
-                  </div>
-                  <span className="text-xs font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-md border border-emerald-800/50">
-                    {hub.time}
-                  </span>
-                </div>
-              ))}
+            {/* Right: CTA Button */}
+            <div className="shrink-0 flex flex-col sm:flex-row md:flex-col gap-3">
+              <button
+                type="button"
+                onClick={onContact}
+                className="inline-flex items-center justify-center space-x-2.5 px-6 py-3.5 rounded-2xl bg-[#F27C36] hover:bg-[#d96726] text-white font-bold text-sm shadow-lg shadow-orange-950/30 transition-all transform active:scale-95 cursor-pointer"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>{ctaText}</span>
+                <ArrowRight className="w-4 h-4 ml-0.5" />
+              </button>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-400 gap-3">
-              <span className="flex items-center">
-                <Navigation className="w-4 h-4 text-[#F27C36] mr-1.5" />
-                Envíos garantizados con FedEx, Estafeta y flotilla propia local en SLP.
-              </span>
-            </div>
           </div>
 
         </div>
-
       </div>
     </section>
   );
 };
+
+export const CoverageSection = CoverageMapSection;

@@ -117,6 +117,10 @@ export default function App() {
             ...INITIAL_SITE_CONTENT.about,
             ...(parsed.about || {})
           },
+          coverage: {
+            ...INITIAL_SITE_CONTENT.coverage,
+            ...(parsed.coverage || {})
+          },
           hardwareSection: {
             ...INITIAL_SITE_CONTENT.hardwareSection,
             ...(parsed.hardwareSection || {})
@@ -210,6 +214,10 @@ export default function App() {
             about: {
               ...INITIAL_SITE_CONTENT.about,
               ...(cloudContent.about || {})
+            },
+            coverage: {
+              ...INITIAL_SITE_CONTENT.coverage,
+              ...(cloudContent.coverage || {})
             },
             hardwareSection: {
               ...INITIAL_SITE_CONTENT.hardwareSection,
@@ -711,7 +719,12 @@ export default function App() {
               visibility={siteContent.visibility}
               onNavigate={navigateToSection}
             />
-            {(siteContent.visibility?.showCoverageMap ?? true) && <CoverageMapSection />}
+            {(siteContent.visibility?.showCoverageMap ?? true) && (
+              <CoverageMapSection 
+                content={siteContent.coverage}
+                onContact={() => navigateToSection('contacto')}
+              />
+            )}
           </div>
         )}
 
@@ -724,7 +737,14 @@ export default function App() {
               prefilledSubject={prefilledContactSubject} 
               contactInfo={siteContent.contact}
             />
-            {(siteContent.visibility?.showCoverageMap ?? true) && <CoverageMapSection />}
+            {(siteContent.visibility?.showCoverageMap ?? true) && (
+              <CoverageMapSection 
+                content={siteContent.coverage}
+                onContact={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            )}
           </div>
         )}
 

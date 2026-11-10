@@ -254,6 +254,12 @@ VALUES (
         }
       ]
     },
+    "coverage": {
+      "tag": "Cobertura",
+      "title": "Cobertura",
+      "text": "Atendemos en San Luis Potosí. ¿Tu empresa está en otra ciudad? Escríbenos y revisamos las opciones de servicio para tu zona.",
+      "ctaText": "Escríbenos y revisamos tu zona"
+    },
     "hardwareSection": {
       "tag": "Catálogo Oficial: Renta / Venta de Multifuncionales",
       "title": "Equipos Kyocera en Renta y Venta Directa",

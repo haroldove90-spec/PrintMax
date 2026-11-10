@@ -243,6 +243,13 @@ export interface FooterConfig {
   copyrightText: string;
 }
 
+export interface CoverageConfig {
+  tag?: string;
+  title?: string;
+  text?: string;
+  ctaText?: string;
+}
+
 export interface SiteContent {
   slides: HeroSlide[];
   showTrustMetrics?: boolean;
@@ -266,6 +273,7 @@ export interface SiteContent {
     experienceYears: string;
     pillars?: PillarItem[];
   };
+  coverage?: CoverageConfig;
   hardwareSection?: {
     tag?: string;
     title?: string;

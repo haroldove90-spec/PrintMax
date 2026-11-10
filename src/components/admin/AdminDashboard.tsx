@@ -78,9 +78,10 @@ import {
   DiscountCoupon,
   FooterConfig,
   FooterLinkItem,
-  AppSection
+  AppSection,
+  CoverageConfig
 } from '../../types';
-import { DEFAULT_VISIBILITY, INITIAL_SITE_CONTENT, DEFAULT_FOOTER_CONFIG } from '../../data/initialContent';
+import { DEFAULT_VISIBILITY, INITIAL_SITE_CONTENT, DEFAULT_FOOTER_CONFIG, DEFAULT_COVERAGE } from '../../data/initialContent';
 import { FormattedText } from '../FormattedText';
 
 interface AdminDashboardProps {
@@ -160,7 +161,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeSlideEditor, setActiveSlideEditor] = useState<number>(0);
   const [newBulletInput, setNewBulletInput] = useState('');
   const [activeSoftwareIndex, setActiveSoftwareIndex] = useState<number>(0);
-  const [activeHardwareCategoryIndex, setActiveHardwareCategoryIndex] = useState<number>(0);
   const [newQueBulletInput, setNewQueBulletInput] = useState('');
   const [newChipInput, setNewChipInput] = useState('');
   const [newSoftwareBenefitInput, setNewSoftwareBenefitInput] = useState('');
@@ -463,6 +463,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         queHacemosBullets: editableContent.about.queHacemosBullets || INITIAL_SITE_CONTENT.about.queHacemosBullets,
         queHacemosChips: editableContent.about.queHacemosChips || INITIAL_SITE_CONTENT.about.queHacemosChips
       },
+      coverage: editableContent.coverage || INITIAL_SITE_CONTENT.coverage || DEFAULT_COVERAGE,
       hardwareSection: editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection,
       softwareSection: editableContent.softwareSection || INITIAL_SITE_CONTENT.softwareSection,
       whatsappButton: editableContent.whatsappButton || INITIAL_SITE_CONTENT.whatsappButton,
@@ -2497,7 +2498,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 </div>
 
-                {/* 7. Mapa de Cobertura Nacional */}
+                {/* 7. Bloque de Cobertura */}
                 <div className={`p-4 rounded-2xl border transition-all ${
                   currentVisibility.showCoverageMap 
                     ? 'bg-[#182F4F]/80 border-emerald-500/60 shadow-lg' 
@@ -2509,8 +2510,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <MapPin className="w-4 h-4 text-[#F27C36]" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white">Mapa Cobertura Nacional</h4>
-                        <span className="text-[10px] text-slate-400">Sede San Luis Potosí y estados</span>
+                        <h4 className="text-xs font-bold text-white">Bloque de Cobertura</h4>
+                        <span className="text-[10px] text-slate-400">San Luis Potosí y atención foránea</span>
                       </div>
                     </div>
                     <button
@@ -3377,22 +3378,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* ========================================================= */}
-            {/* SECCIÓN CMS: RENTA Y VENTA (CATÁLOGO DE HARDWARE) */}
+            {/* SECCIÓN CMS: COBERTURA (SAN LUIS POTOSÍ Y OTRAS CIUDADES) */}
             {/* ========================================================= */}
             <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-6 text-white">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-3 gap-3">
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center space-x-2">
-                    <Printer className="w-5 h-5 text-[#F27C36]" />
-                    <span>Editor de Sección: Renta / Venta de Multifuncionales (Hardware)</span>
+                    <MapPin className="w-5 h-5 text-[#F27C36]" />
+                    <span>Editor de Sección: Cobertura (SLP y Atención Foránea)</span>
                   </h3>
                   <p className="text-xs text-slate-300 mt-1">
-                    Edite el tag superior, título, subtítulo y la descripción de cada categoría de equipos (A3, A4, Impresoras, Producción).
+                    Reemplazo del bloque de infraestructura y logística por un bloque corto y conciso.
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditableContent({
+                      ...editableContent,
+                      coverage: {
+                        tag: 'Cobertura',
+                        title: 'Cobertura',
+                        text: 'Atendemos en San Luis Potosí. ¿Tu empresa está en otra ciudad? Escríbenos y revisamos las opciones de servicio para tu zona.',
+                        ctaText: 'Escríbenos y revisamos tu zona'
+                      }
+                    });
+                  }}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#000000]/60 border border-[#394B61] text-xs font-semibold text-slate-300 hover:text-white hover:border-[#F27C36] transition cursor-pointer self-start sm:self-auto"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-[#F27C36]" />
+                  <span>Restablecer texto sugerido</span>
+                </button>
               </div>
 
-              {/* Cabecera general de la sección Renta y Venta */}
+              {/* Formulario de Cobertura */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61]">
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
@@ -3400,155 +3419,107 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={editableContent.hardwareSection?.tag || INITIAL_SITE_CONTENT.hardwareSection?.tag || ''}
+                    value={editableContent.coverage?.tag ?? DEFAULT_COVERAGE.tag ?? 'Cobertura'}
                     onChange={(e) => {
-                      const cur = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
+                      const cur = editableContent.coverage || DEFAULT_COVERAGE;
                       setEditableContent({
                         ...editableContent,
-                        hardwareSection: { ...cur, tag: e.target.value }
+                        coverage: { ...cur, tag: e.target.value }
                       });
                     }}
-                    placeholder="Catálogo Oficial: Renta / Venta de Multifuncionales"
+                    placeholder="Cobertura"
                     className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Título Principal de la Sección
+                    Título Principal
                   </label>
                   <input
                     type="text"
-                    value={editableContent.hardwareSection?.title || INITIAL_SITE_CONTENT.hardwareSection?.title || ''}
+                    value={editableContent.coverage?.title ?? DEFAULT_COVERAGE.title ?? 'Cobertura'}
                     onChange={(e) => {
-                      const cur = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
+                      const cur = editableContent.coverage || DEFAULT_COVERAGE;
                       setEditableContent({
                         ...editableContent,
-                        hardwareSection: { ...cur, title: e.target.value }
+                        coverage: { ...cur, title: e.target.value }
                       });
                     }}
-                    placeholder="Equipos Kyocera en Renta y Venta Directa"
+                    placeholder="Cobertura"
                     className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Subtítulo / Descripción
+                    Texto Descriptivo de Cobertura
                   </label>
                   <textarea
-                    rows={2}
-                    value={editableContent.hardwareSection?.subtitle || INITIAL_SITE_CONTENT.hardwareSection?.subtitle || ''}
+                    rows={3}
+                    value={editableContent.coverage?.text ?? DEFAULT_COVERAGE.text}
                     onChange={(e) => {
-                      const cur = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
+                      const cur = editableContent.coverage || DEFAULT_COVERAGE;
                       setEditableContent({
                         ...editableContent,
-                        hardwareSection: { ...cur, subtitle: e.target.value }
+                        coverage: { ...cur, text: e.target.value }
                       });
                     }}
-                    placeholder="Adquiera su multifuncional mediante compra definitiva o arrendamiento 100% deducible..."
+                    placeholder="Atendemos en San Luis Potosí. ¿Tu empresa está en otra ciudad? Escríbenos y revisamos las opciones de servicio para tu zona."
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36] leading-relaxed"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Este texto se muestra en las secciones «Sobre Nosotros» y «Contacto».
+                  </p>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    Texto del Botón de Contacto (CTA)
+                  </label>
+                  <input
+                    type="text"
+                    value={editableContent.coverage?.ctaText ?? DEFAULT_COVERAGE.ctaText ?? 'Escríbenos y revisamos tu zona'}
+                    onChange={(e) => {
+                      const cur = editableContent.coverage || DEFAULT_COVERAGE;
+                      setEditableContent({
+                        ...editableContent,
+                        coverage: { ...cur, ctaText: e.target.value }
+                      });
+                    }}
+                    placeholder="Escríbenos y revisamos tu zona"
                     className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
                   />
                 </div>
               </div>
 
-              {/* Selector de las 4 Categorías de Hardware */}
-              <div className="p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#394B61] pb-2">
-                  <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
-                    <Sliders className="w-4 h-4 text-[#F27C36]" />
-                    <span>Configuración de las 4 Categorías de Equipos</span>
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(editableContent.hardwareSection?.categories || INITIAL_SITE_CONTENT.hardwareSection?.categories || []).map((cat, cIdx) => (
-                      <button
-                        key={cIdx}
-                        type="button"
-                        onClick={() => setActiveHardwareCategoryIndex(cIdx)}
-                        className={`px-3 py-1 rounded-xl text-xs font-bold border transition cursor-pointer ${
-                          activeHardwareCategoryIndex === cIdx
-                            ? 'bg-[#F27C36] text-white border-[#F27C36]'
-                            : 'bg-[#182F4F] text-slate-300 border-[#394B61] hover:text-white'
-                        }`}
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
+              {/* Vista previa en tiempo real */}
+              <div className="p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-2">
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+                  <Eye className="w-4 h-4 text-[#F27C36]" />
+                  <span>Vista Previa del Bloque de Cobertura en la Web</span>
+                </span>
+                
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-[#182F4F] to-[#0A1626] border border-[#394B61]/80 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-2">
+                    <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-[11px] font-bold uppercase text-white">
+                      <MapPin className="w-3 h-3 text-[#F27C36]" />
+                      <span>{editableContent.coverage?.tag || DEFAULT_COVERAGE.tag}</span>
+                    </span>
+                    <h4 className="text-lg font-bold text-white">
+                      {editableContent.coverage?.title || DEFAULT_COVERAGE.title}
+                    </h4>
+                    <p className="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed">
+                      {editableContent.coverage?.text || DEFAULT_COVERAGE.text}
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-[#F27C36] text-white text-xs font-bold">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>{editableContent.coverage?.ctaText || DEFAULT_COVERAGE.ctaText}</span>
+                    </div>
                   </div>
                 </div>
-
-                {/* Formulario para la categoría seleccionada */}
-                {(() => {
-                  const cats = editableContent.hardwareSection?.categories || INITIAL_SITE_CONTENT.hardwareSection?.categories || [];
-                  const cat = cats[activeHardwareCategoryIndex];
-                  if (!cat) return null;
-                  return (
-                    <div className="space-y-3 pt-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-bold text-slate-300 mb-1">
-                            Nombre de la Categoría:
-                          </label>
-                          <input
-                            type="text"
-                            value={cat.name}
-                            onChange={(e) => {
-                              const updatedCats = [...cats];
-                              updatedCats[activeHardwareCategoryIndex] = { ...cat, name: e.target.value };
-                              const curSec = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
-                              setEditableContent({
-                                ...editableContent,
-                                hardwareSection: { ...curSec, categories: updatedCats }
-                              });
-                            }}
-                            className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-slate-300 mb-1">
-                            Subtítulo / Formatos Compatibles:
-                          </label>
-                          <input
-                            type="text"
-                            value={cat.subtitle}
-                            onChange={(e) => {
-                              const updatedCats = [...cats];
-                              updatedCats[activeHardwareCategoryIndex] = { ...cat, subtitle: e.target.value };
-                              const curSec = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
-                              setEditableContent({
-                                ...editableContent,
-                                hardwareSection: { ...curSec, categories: updatedCats }
-                              });
-                            }}
-                            placeholder="Carta, Oficio, Doble Carta | B&N y Color"
-                            className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                          />
-                        </div>
-
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs font-bold text-slate-300 mb-1">
-                            Descripción en el Banner de Categoría:
-                          </label>
-                          <textarea
-                            rows={2}
-                            value={cat.description}
-                            onChange={(e) => {
-                              const updatedCats = [...cats];
-                              updatedCats[activeHardwareCategoryIndex] = { ...cat, description: e.target.value };
-                              const curSec = editableContent.hardwareSection || INITIAL_SITE_CONTENT.hardwareSection!;
-                              setEditableContent({
-                                ...editableContent,
-                                hardwareSection: { ...curSec, categories: updatedCats }
-                              });
-                            }}
-                            className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
               </div>
             </div>
 
