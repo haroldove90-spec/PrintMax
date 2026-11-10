@@ -1,4 +1,4 @@
-import { SiteContent, OrderDetails, AdminUser, ContentVisibility, FooterConfig, CoverageConfig } from '../types';
+import { SiteContent, OrderDetails, AdminUser, ContentVisibility, FooterConfig, CoverageConfig, HeroSlide } from '../types';
 import { HERO_SLIDES, TRUST_METRICS, PRODUCTS, SOFTWARE_SOLUTIONS } from './mockData';
 
 export const DEFAULT_COVERAGE: CoverageConfig = {
@@ -51,8 +51,40 @@ export const DEFAULT_VISIBILITY: ContentVisibility = {
   showSoftwareSection: false
 };
 
+export function normalizeHeroSlides(slides?: any[]): HeroSlide[] {
+  const result: HeroSlide[] = [];
+  for (let i = 0; i < 3; i++) {
+    const existing = slides && Array.isArray(slides) && slides[i];
+    if (existing && existing.title) {
+      result.push({
+        ...(HERO_SLIDES[i] || {}),
+        ...existing,
+        id: existing.id || i + 1,
+        features: Array.isArray(existing.features) && existing.features.length > 0 
+          ? existing.features 
+          : (HERO_SLIDES[i]?.features || [])
+      });
+    } else {
+      result.push(HERO_SLIDES[i] || {
+        id: i + 1,
+        tag: `Diapositiva ${i + 1}`,
+        title: `Diapositiva ${i + 1}`,
+        subtitle: '',
+        ctaPrimaryText: 'Ver Catálogo',
+        ctaPrimaryAction: 'tienda',
+        ctaSecondaryText: 'Cotizar',
+        ctaSecondaryAction: 'contacto',
+        badgeText: 'LUMESA',
+        imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80',
+        features: []
+      });
+    }
+  }
+  return result;
+}
+
 export const INITIAL_SITE_CONTENT: SiteContent = {
-  slides: HERO_SLIDES,
+  slides: normalizeHeroSlides(HERO_SLIDES),
   showTrustMetrics: true,
   visibility: DEFAULT_VISIBILITY,
   trustMetrics: TRUST_METRICS,

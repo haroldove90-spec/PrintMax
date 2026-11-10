@@ -49,7 +49,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides, show
     return (validSections.includes(cleanAction as AppSection) ? cleanAction : fallback) as AppSection;
   };
 
-  const current = activeSlides[currentSlide];
+  const current = activeSlides[currentSlide] || activeSlides[0] || HERO_SLIDES[0];
 
   return (
     <section 

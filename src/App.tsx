@@ -20,7 +20,7 @@ import { OrderDetailModal } from './components/admin/OrderDetailModal';
 import { SplashScreen } from './components/SplashScreen';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { PRODUCTS } from './data/mockData';
-import { INITIAL_SITE_CONTENT, INITIAL_ADMIN_USERS, INITIAL_ORDERS } from './data/initialContent';
+import { INITIAL_SITE_CONTENT, INITIAL_ADMIN_USERS, INITIAL_ORDERS, normalizeHeroSlides } from './data/initialContent';
 import { 
   fetchSiteContentFromSupabase, 
   saveSiteContentToSupabase,
@@ -114,9 +114,7 @@ export default function App() {
         const updatedContent: SiteContent = {
           ...INITIAL_SITE_CONTENT,
           ...parsed,
-          slides: parsed.slides && Array.isArray(parsed.slides) && parsed.slides.length > 0 
-            ? parsed.slides 
-            : INITIAL_SITE_CONTENT.slides,
+          slides: normalizeHeroSlides(parsed.slides),
           trustMetrics: parsed.trustMetrics && Array.isArray(parsed.trustMetrics) && parsed.trustMetrics.length > 0 
             ? parsed.trustMetrics 
             : INITIAL_SITE_CONTENT.trustMetrics,
@@ -248,7 +246,7 @@ export default function App() {
             const updatedContent: SiteContent = {
               ...INITIAL_SITE_CONTENT,
               ...cloudContent,
-              slides: cloudContent.slides && cloudContent.slides.length > 0 ? cloudContent.slides : INITIAL_SITE_CONTENT.slides,
+              slides: normalizeHeroSlides(cloudContent.slides),
               trustMetrics: cloudContent.trustMetrics && cloudContent.trustMetrics.length > 0 ? cloudContent.trustMetrics : INITIAL_SITE_CONTENT.trustMetrics,
               about: {
                 ...INITIAL_SITE_CONTENT.about,

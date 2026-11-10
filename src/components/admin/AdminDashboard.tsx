@@ -81,7 +81,7 @@ import {
   AppSection,
   CoverageConfig
 } from '../../types';
-import { DEFAULT_VISIBILITY, INITIAL_SITE_CONTENT, DEFAULT_FOOTER_CONFIG, DEFAULT_COVERAGE } from '../../data/initialContent';
+import { DEFAULT_VISIBILITY, INITIAL_SITE_CONTENT, DEFAULT_FOOTER_CONFIG, DEFAULT_COVERAGE, normalizeHeroSlides } from '../../data/initialContent';
 import { FormattedText } from '../FormattedText';
 
 interface AdminDashboardProps {
@@ -171,7 +171,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [productCategoryFilter, setProductCategoryFilter] = useState<string>('todos');
 
   // CMS state for web editing
-  const [editableContent, setEditableContent] = useState<SiteContent>(siteContent);
+  const [editableContent, setEditableContent] = useState<SiteContent>(() => ({
+    ...siteContent,
+    slides: normalizeHeroSlides(siteContent?.slides)
+  }));
   const [cmsSaveNotice, setCmsSaveNotice] = useState(false);
   const [cmsSaving, setCmsSaving] = useState(false);
   const [cmsSaveError, setCmsSaveError] = useState<string | null>(null);
@@ -206,48 +209,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Sync if prop updates
   React.useEffect(() => {
-    setEditableContent(siteContent);
+    setEditableContent({
+      ...siteContent,
+      slides: normalizeHeroSlides(siteContent?.slides)
+    });
   }, [siteContent]);
 
   const handleAddFeatureToSlide = () => {
     if (!newBulletInput.trim()) return;
-    const currentSlide = editableContent.slides[activeSlideEditor];
+    const currentNormalized = normalizeHeroSlides(editableContent.slides);
+    const currentSlide = currentNormalized[activeSlideEditor] || currentNormalized[0];
     const currentFeatures = currentSlide.features || [];
-    const updatedSlides = [...editableContent.slides];
-    updatedSlides[activeSlideEditor] = {
-      ...currentSlide,
-      features: [...currentFeatures, newBulletInput.trim()]
-    };
+    const updatedSlides = currentNormalized.map((s, idx) =>
+      idx === activeSlideEditor ? { ...s, features: [...currentFeatures, newBulletInput.trim()] } : s
+    );
     setEditableContent({ ...editableContent, slides: updatedSlides });
     setNewBulletInput('');
   };
 
   const handleRemoveFeatureFromSlide = (index: number) => {
-    const currentSlide = editableContent.slides[activeSlideEditor];
-    const updatedFeatures = (currentSlide.features || []).filter((_, i) => i !== index);
-    const updatedSlides = [...editableContent.slides];
-    updatedSlides[activeSlideEditor] = {
-      ...currentSlide,
-      features: updatedFeatures
-    };
+    const currentNormalized = normalizeHeroSlides(editableContent.slides);
+    const currentSlide = currentNormalized[activeSlideEditor] || currentNormalized[0];
+    const updatedFeatures = (currentSlide.features || []).filter((_: string, i: number) => i !== index);
+    const updatedSlides = currentNormalized.map((s, idx) =>
+      idx === activeSlideEditor ? { ...s, features: updatedFeatures } : s
+    );
     setEditableContent({ ...editableContent, slides: updatedSlides });
   };
 
   const handleSetImageFeaturesPreset = () => {
-    const currentSlide = editableContent.slides[activeSlideEditor];
-    const updatedSlides = [...editableContent.slides];
-    updatedSlides[activeSlideEditor] = {
-      ...currentSlide,
-      features: [
-        'Multifuncionales A3 (hasta 11" x 17") y A4 compactos',
-        'Renta 100% deducible de impuestos',
-        'Mantenimiento y tóner original incluidos'
-      ],
-      ctaPrimaryText: 'Ver Catálogo de Equipos',
-      ctaPrimaryAction: 'hardware',
-      ctaSecondaryText: 'Calculadora de Renta',
-      ctaSecondaryAction: 'contacto'
-    };
+    const currentNormalized = normalizeHeroSlides(editableContent.slides);
+    const updatedSlides = currentNormalized.map((s, idx) =>
+      idx === activeSlideEditor
+        ? {
+            ...s,
+            features: [
+              'Multifuncionales A3 (hasta 11" x 17") y A4 compactos',
+              'Renta 100% deducible de impuestos',
+              'Mantenimiento y tóner original incluidos',
+              'Servicio técnico certificado y soporte directo'
+            ],
+            ctaPrimaryText: 'Ver Catálogo de Equipos',
+            ctaPrimaryAction: 'hardware',
+            ctaSecondaryText: 'Calculadora de Renta',
+            ctaSecondaryAction: 'contacto'
+          }
+        : s
+    );
     setEditableContent({ ...editableContent, slides: updatedSlides });
   };
 
@@ -2644,7 +2652,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setActiveSlideEditor(idx)}
+                      onClick={() => {
+                        const normalized = normalizeHeroSlides(editableContent.slides);
+                        setEditableContent({ ...editableContent, slides: normalized });
+                        setActiveSlideEditor(idx);
+                      }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                         activeSlideEditor === idx
                           ? 'bg-[#F27C36] text-white border-[#F27C36] shadow-sm'
@@ -2657,299 +2669,306 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              {/* Slide Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Etiqueta / Tag Superior
-                  </label>
-                  <input
-                    type="text"
-                    value={editableContent.slides[activeSlideEditor].tag}
-                    onChange={(e) => {
-                      const updatedSlides = editableContent.slides.map((s, idx) =>
-                        idx === activeSlideEditor ? { ...s, tag: e.target.value } : s
-                      );
-                      setEditableContent({ ...editableContent, slides: updatedSlides });
-                    }}
-                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                  />
-                </div>
+              {/* Slide Fields - 100% Protegido contra undefined y pantallas en blanco */}
+              {(() => {
+                const normalizedSlides = normalizeHeroSlides(editableContent.slides);
+                const currentSlide = normalizedSlides[activeSlideEditor] || normalizedSlides[0];
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Badge / Resaltado
-                  </label>
-                  <input
-                    type="text"
-                    value={editableContent.slides[activeSlideEditor].badgeText || ''}
-                    onChange={(e) => {
-                      const updatedSlides = editableContent.slides.map((s, idx) =>
-                        idx === activeSlideEditor ? { ...s, badgeText: e.target.value } : s
-                      );
-                      setEditableContent({ ...editableContent, slides: updatedSlides });
-                    }}
-                    placeholder="Ej: Tecnología ECOSYS y TASKalfa"
-                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Título Principal de la Diapositiva
-                  </label>
-                  <input
-                    type="text"
-                    value={editableContent.slides[activeSlideEditor].title}
-                    onChange={(e) => {
-                      const updatedSlides = editableContent.slides.map((s, idx) =>
-                        idx === activeSlideEditor ? { ...s, title: e.target.value } : s
-                      );
-                      setEditableContent({ ...editableContent, slides: updatedSlides });
-                    }}
-                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Subtítulo / Descripción
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={editableContent.slides[activeSlideEditor].subtitle}
-                    onChange={(e) => {
-                      const updatedSlides = editableContent.slides.map((s, idx) =>
-                        idx === activeSlideEditor ? { ...s, subtitle: e.target.value } : s
-                      );
-                      setEditableContent({ ...editableContent, slides: updatedSlides });
-                    }}
-                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                  />
-                </div>
-
-                {/* BOTONES DE ACCIÓN (CTA 1 & CTA 2) */}
-                <div className="sm:col-span-2 p-4 rounded-2xl bg-[#000000]/70 border border-[#394B61] space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
-                      <Sliders className="w-4 h-4 text-[#F27C36]" />
-                      <span>Configurar Botones del Slider (Acciones y Textos)</span>
-                    </h4>
-                    <span className="text-[11px] text-slate-400">Edite el texto y la sección a la que dirigen</span>
-                  </div>
-
+                return (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Botón 1 (Principal - Naranja) */}
-                    <div className="space-y-2 p-3 rounded-xl bg-[#182F4F]/60 border border-[#394B61]">
-                      <div className="text-xs font-bold text-white flex items-center space-x-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#F27C36]" />
-                        <span>Botón Principal (Ej. Ver Catálogo de Equipos)</span>
-                      </div>
-                      <div>
-                        <label className="block text-[11px] text-slate-300 mb-1">Texto del Botón:</label>
-                        <input
-                          type="text"
-                          value={editableContent.slides[activeSlideEditor].ctaPrimaryText || ''}
-                          onChange={(e) => {
-                            const updatedSlides = editableContent.slides.map((s, idx) =>
-                              idx === activeSlideEditor ? { ...s, ctaPrimaryText: e.target.value } : s
-                            );
-                            setEditableContent({ ...editableContent, slides: updatedSlides });
-                          }}
-                          placeholder="Ver Catálogo de Equipos"
-                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] text-slate-300 mb-1">Destino al hacer clic:</label>
-                        <select
-                          value={editableContent.slides[activeSlideEditor].ctaPrimaryAction || 'hardware'}
-                          onChange={(e) => {
-                            const updatedSlides = editableContent.slides.map((s, idx) =>
-                              idx === activeSlideEditor ? { ...s, ctaPrimaryAction: e.target.value } : s
-                            );
-                            setEditableContent({ ...editableContent, slides: updatedSlides });
-                          }}
-                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
-                        >
-                          <option value="hardware">Renta / Venta de Equipos Kyocera</option>
-                          <option value="tienda">Tienda en Línea</option>
-                          <option value="software">Software y Soluciones Documentales</option>
-                          <option value="contacto">Contacto & Cotización Inmediata</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Botón 2 (Secundario - Azul Marino) */}
-                    <div className="space-y-2 p-3 rounded-xl bg-[#182F4F]/60 border border-[#394B61]">
-                      <div className="text-xs font-bold text-white flex items-center space-x-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-                        <span>Botón Secundario (Ej. Calculadora de Renta)</span>
-                      </div>
-                      <div>
-                        <label className="block text-[11px] text-slate-300 mb-1">Texto del Botón:</label>
-                        <input
-                          type="text"
-                          value={editableContent.slides[activeSlideEditor].ctaSecondaryText || ''}
-                          onChange={(e) => {
-                            const updatedSlides = editableContent.slides.map((s, idx) =>
-                              idx === activeSlideEditor ? { ...s, ctaSecondaryText: e.target.value } : s
-                            );
-                            setEditableContent({ ...editableContent, slides: updatedSlides });
-                          }}
-                          placeholder="Calculadora de Renta"
-                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] text-slate-300 mb-1">Destino al hacer clic:</label>
-                        <select
-                          value={editableContent.slides[activeSlideEditor].ctaSecondaryAction || 'contacto'}
-                          onChange={(e) => {
-                            const updatedSlides = editableContent.slides.map((s, idx) =>
-                              idx === activeSlideEditor ? { ...s, ctaSecondaryAction: e.target.value } : s
-                            );
-                            setEditableContent({ ...editableContent, slides: updatedSlides });
-                          }}
-                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
-                        >
-                          <option value="contacto">Contacto & Calculadora de Renta</option>
-                          <option value="hardware">Renta / Venta de Equipos</option>
-                          <option value="tienda">Tienda en Línea</option>
-                          <option value="software">Software Kyocera</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* VIÑETAS / PUNTOS DESTACADOS (FEATURES CON PALOMITA) */}
-                <div className="sm:col-span-2 p-4 rounded-2xl bg-[#000000]/70 border border-[#394B61] space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
-                        <CheckCircle2 className="w-4 h-4 text-[#F27C36]" />
-                        <span>Puntos Destacados / Viñetas con Palomita (Features)</span>
-                      </h4>
-                      <p className="text-[11px] text-slate-300 mt-0.5">
-                        Aquí puede editar o agregar viñetas como: "Multifuncionales A3", "Renta 100% deducible", "Mantenimiento y tóner original incluidos".
-                      </p>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                        Etiqueta / Tag Superior
+                      </label>
+                      <input
+                        type="text"
+                        value={currentSlide.tag || ''}
+                        onChange={(e) => {
+                          const updatedSlides = normalizedSlides.map((s, idx) =>
+                            idx === activeSlideEditor ? { ...s, tag: e.target.value } : s
+                          );
+                          setEditableContent({ ...editableContent, slides: updatedSlides });
+                        }}
+                        className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      />
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={handleSetImageFeaturesPreset}
-                      className="px-3 py-1.5 rounded-lg bg-[#394B61] hover:bg-[#F27C36] text-white text-[11px] font-bold transition flex items-center space-x-1.5 cursor-pointer shrink-0"
-                      title="Cargar las viñetas oficiales de la imagen compartida"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-[#F27C36]" />
-                      <span>Cargar Viñetas de la Imagen</span>
-                    </button>
-                  </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                        Badge / Resaltado
+                      </label>
+                      <input
+                        type="text"
+                        value={currentSlide.badgeText || ''}
+                        onChange={(e) => {
+                          const updatedSlides = normalizedSlides.map((s, idx) =>
+                            idx === activeSlideEditor ? { ...s, badgeText: e.target.value } : s
+                          );
+                          setEditableContent({ ...editableContent, slides: updatedSlides });
+                        }}
+                        placeholder="Ej: Tecnología ECOSYS y TASKalfa"
+                        className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      />
+                    </div>
 
-                  {/* List of existing features */}
-                  <div className="space-y-2">
-                    {editableContent.slides[activeSlideEditor].features && editableContent.slides[activeSlideEditor].features.length > 0 ? (
-                      editableContent.slides[activeSlideEditor].features.map((feature, fIdx) => (
-                        <div key={fIdx} className="flex items-center space-x-2 bg-[#182F4F] p-2 rounded-xl border border-[#394B61]">
-                          <CheckCircle2 className="w-4 h-4 text-[#F27C36] shrink-0" />
-                          <input
-                            type="text"
-                            value={feature}
-                            onChange={(e) => {
-                              const updatedFeatures = [...(editableContent.slides[activeSlideEditor].features || [])];
-                              updatedFeatures[fIdx] = e.target.value;
-                              const updatedSlides = editableContent.slides.map((s, idx) =>
-                                idx === activeSlideEditor ? { ...s, features: updatedFeatures } : s
-                              );
-                              setEditableContent({ ...editableContent, slides: updatedSlides });
-                            }}
-                            className="flex-1 text-xs bg-transparent text-white focus:outline-none font-medium"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFeatureFromSlide(fIdx)}
-                            className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-950 transition cursor-pointer"
-                            title="Eliminar esta viñeta"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                        Título Principal de la Diapositiva
+                      </label>
+                      <input
+                        type="text"
+                        value={currentSlide.title || ''}
+                        onChange={(e) => {
+                          const updatedSlides = normalizedSlides.map((s, idx) =>
+                            idx === activeSlideEditor ? { ...s, title: e.target.value } : s
+                          );
+                          setEditableContent({ ...editableContent, slides: updatedSlides });
+                        }}
+                        className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                        Subtítulo / Descripción
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={currentSlide.subtitle || ''}
+                        onChange={(e) => {
+                          const updatedSlides = normalizedSlides.map((s, idx) =>
+                            idx === activeSlideEditor ? { ...s, subtitle: e.target.value } : s
+                          );
+                          setEditableContent({ ...editableContent, slides: updatedSlides });
+                        }}
+                        className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      />
+                    </div>
+
+                    {/* BOTONES DE ACCIÓN (CTA 1 & CTA 2) */}
+                    <div className="sm:col-span-2 p-4 rounded-2xl bg-[#000000]/70 border border-[#394B61] space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                          <Sliders className="w-4 h-4 text-[#F27C36]" />
+                          <span>Configurar Botones del Slider (Acciones y Textos)</span>
+                        </h4>
+                        <span className="text-[11px] text-slate-400">Edite el texto y la sección a la que dirigen</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Botón 1 (Principal - Naranja) */}
+                        <div className="space-y-2 p-3 rounded-xl bg-[#182F4F]/60 border border-[#394B61]">
+                          <div className="text-xs font-bold text-white flex items-center space-x-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#F27C36]" />
+                            <span>Botón Principal (Ej. Ver Catálogo de Equipos)</span>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] text-slate-300 mb-1">Texto del Botón:</label>
+                            <input
+                              type="text"
+                              value={currentSlide.ctaPrimaryText || ''}
+                              onChange={(e) => {
+                                const updatedSlides = normalizedSlides.map((s, idx) =>
+                                  idx === activeSlideEditor ? { ...s, ctaPrimaryText: e.target.value } : s
+                                );
+                                setEditableContent({ ...editableContent, slides: updatedSlides });
+                              }}
+                              placeholder="Ver Catálogo de Equipos"
+                              className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] text-slate-300 mb-1">Destino al hacer clic:</label>
+                            <select
+                              value={currentSlide.ctaPrimaryAction || 'hardware'}
+                              onChange={(e) => {
+                                const updatedSlides = normalizedSlides.map((s, idx) =>
+                                  idx === activeSlideEditor ? { ...s, ctaPrimaryAction: e.target.value } : s
+                                );
+                                setEditableContent({ ...editableContent, slides: updatedSlides });
+                              }}
+                              className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                            >
+                              <option value="hardware">Renta / Venta de Equipos Kyocera</option>
+                              <option value="tienda">Tienda en Línea</option>
+                              <option value="software">Software y Soluciones Documentales</option>
+                              <option value="contacto">Contacto & Cotización Inmediata</option>
+                            </select>
+                          </div>
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-xs text-slate-400 italic">No hay viñetas registradas para esta diapositiva.</p>
-                    )}
-                  </div>
 
-                  {/* Add new feature input */}
-                  <div className="flex items-center space-x-2 pt-2">
-                    <input
-                      type="text"
-                      value={newBulletInput}
-                      onChange={(e) => setNewBulletInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddFeatureToSlide();
-                        }
-                      }}
-                      placeholder="Escribir nueva viñeta (ej: Multifuncionales A3 compactos)..."
-                      className="flex-1 text-xs bg-[#000000] text-white px-3 py-2 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddFeatureToSlide}
-                      className="px-3.5 py-2 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold transition flex items-center space-x-1 cursor-pointer shrink-0"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Agregar Viñeta</span>
-                    </button>
-                  </div>
-                </div>
+                        {/* Botón 2 (Secundario - Azul Marino) */}
+                        <div className="space-y-2 p-3 rounded-xl bg-[#182F4F]/60 border border-[#394B61]">
+                          <div className="text-xs font-bold text-white flex items-center space-x-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
+                            <span>Botón Secundario (Ej. Calculadora de Renta)</span>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] text-slate-300 mb-1">Texto del Botón:</label>
+                            <input
+                              type="text"
+                              value={currentSlide.ctaSecondaryText || ''}
+                              onChange={(e) => {
+                                const updatedSlides = normalizedSlides.map((s, idx) =>
+                                  idx === activeSlideEditor ? { ...s, ctaSecondaryText: e.target.value } : s
+                                );
+                                setEditableContent({ ...editableContent, slides: updatedSlides });
+                              }}
+                              placeholder="Calculadora de Renta"
+                              className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] text-slate-300 mb-1">Destino al hacer clic:</label>
+                            <select
+                              value={currentSlide.ctaSecondaryAction || 'contacto'}
+                              onChange={(e) => {
+                                const updatedSlides = normalizedSlides.map((s, idx) =>
+                                  idx === activeSlideEditor ? { ...s, ctaSecondaryAction: e.target.value } : s
+                                );
+                                setEditableContent({ ...editableContent, slides: updatedSlides });
+                              }}
+                              className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                            >
+                              <option value="contacto">Contacto & Calculadora de Renta</option>
+                              <option value="hardware">Renta / Venta de Equipos</option>
+                              <option value="tienda">Tienda en Línea</option>
+                              <option value="software">Software Kyocera</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    URL de la Imagen de Fondo
-                  </label>
-                  <input
-                    type="url"
-                    value={editableContent.slides[activeSlideEditor].imageUrl}
-                    onChange={(e) => {
-                      const updatedSlides = editableContent.slides.map((s, idx) =>
-                        idx === activeSlideEditor ? { ...s, imageUrl: e.target.value } : s
-                      );
-                      setEditableContent({ ...editableContent, slides: updatedSlides });
-                    }}
-                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36] font-mono"
-                  />
-                </div>
+                    {/* VIÑETAS / PUNTOS DESTACADOS (FEATURES CON PALOMITA) */}
+                    <div className="sm:col-span-2 p-4 rounded-2xl bg-[#000000]/70 border border-[#394B61] space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                            <CheckCircle2 className="w-4 h-4 text-[#F27C36]" />
+                            <span>Puntos Destacados / Viñetas con Palomita (Features)</span>
+                          </h4>
+                          <p className="text-[11px] text-slate-300 mt-0.5">
+                            Aquí puede editar o agregar viñetas como: "Multifuncionales A3", "Renta 100% deducible", "Mantenimiento y tóner original incluidos".
+                          </p>
+                        </div>
 
-                {/* BOTÓN DIRECTO DE GUARDADO DEL SLIDER */}
-                <div className="sm:col-span-2 pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0a1420] p-4 rounded-2xl border border-[#394B61]">
-                  <div className="text-xs text-slate-300 flex items-center space-x-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Guarda los cambios de esta diapositiva directamente en Supabase y memoria local.</span>
+                        <button
+                          type="button"
+                          onClick={handleSetImageFeaturesPreset}
+                          className="px-3 py-1.5 rounded-lg bg-[#394B61] hover:bg-[#F27C36] text-white text-[11px] font-bold transition flex items-center space-x-1.5 cursor-pointer shrink-0"
+                          title="Cargar las viñetas oficiales de la imagen compartida"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-[#F27C36]" />
+                          <span>Cargar Viñetas de la Imagen</span>
+                        </button>
+                      </div>
+
+                      {/* List of existing features */}
+                      <div className="space-y-2">
+                        {currentSlide.features && currentSlide.features.length > 0 ? (
+                          currentSlide.features.map((feature: string, fIdx: number) => (
+                            <div key={fIdx} className="flex items-center space-x-2 bg-[#182F4F] p-2 rounded-xl border border-[#394B61]">
+                              <CheckCircle2 className="w-4 h-4 text-[#F27C36] shrink-0" />
+                              <input
+                                type="text"
+                                value={feature}
+                                onChange={(e) => {
+                                  const updatedFeatures = [...(currentSlide.features || [])];
+                                  updatedFeatures[fIdx] = e.target.value;
+                                  const updatedSlides = normalizedSlides.map((s, idx) =>
+                                    idx === activeSlideEditor ? { ...s, features: updatedFeatures } : s
+                                  );
+                                  setEditableContent({ ...editableContent, slides: updatedSlides });
+                                }}
+                                className="flex-1 text-xs bg-transparent text-white focus:outline-none font-medium"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFeatureFromSlide(fIdx)}
+                                className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-950 transition cursor-pointer"
+                                title="Eliminar esta viñeta"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs text-slate-400 italic">No hay viñetas registradas para esta diapositiva.</p>
+                        )}
+                      </div>
+
+                      {/* Add new feature input */}
+                      <div className="flex items-center space-x-2 pt-2">
+                        <input
+                          type="text"
+                          value={newBulletInput}
+                          onChange={(e) => setNewBulletInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddFeatureToSlide();
+                            }
+                          }}
+                          placeholder="Escribir nueva viñeta (ej: Multifuncionales A3 compactos)..."
+                          className="flex-1 text-xs bg-[#000000] text-white px-3 py-2 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddFeatureToSlide}
+                          className="px-3.5 py-2 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold transition flex items-center space-x-1 cursor-pointer shrink-0"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Agregar Viñeta</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                        URL de la Imagen de Fondo
+                      </label>
+                      <input
+                        type="url"
+                        value={currentSlide.imageUrl || ''}
+                        onChange={(e) => {
+                          const updatedSlides = normalizedSlides.map((s, idx) =>
+                            idx === activeSlideEditor ? { ...s, imageUrl: e.target.value } : s
+                          );
+                          setEditableContent({ ...editableContent, slides: updatedSlides });
+                        }}
+                        className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36] font-mono"
+                      />
+                    </div>
+
+                    {/* BOTÓN DIRECTO DE GUARDADO DEL SLIDER */}
+                    <div className="sm:col-span-2 pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0a1420] p-4 rounded-2xl border border-[#394B61]">
+                      <div className="text-xs text-slate-300 flex items-center space-x-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>Guarda los cambios de esta diapositiva directamente en Supabase y memoria local.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveCMS()}
+                        disabled={cmsSaving}
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96726] text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer disabled:opacity-50"
+                      >
+                        {cmsSaving ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                            <span>Guardando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4 text-white" />
+                            <span>Guardar Cambios del Slider</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleSaveCMS()}
-                    disabled={cmsSaving}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96726] text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer disabled:opacity-50"
-                  >
-                    {cmsSaving ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                        <span>Guardando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 text-white" />
-                        <span>Guardar Cambios del Slider</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
+                );
+              })()}
             </div>
 
             {/* Trust Metrics CMS Section (4 Recuadros de Servicios) - Con función de Activar / Desactivar */}
