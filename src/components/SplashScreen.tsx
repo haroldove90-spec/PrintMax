@@ -5,10 +5,25 @@ interface SplashScreenProps {
 }
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(() => {
+    try {
+      return sessionStorage.getItem('lumesa_splash_shown') !== 'true';
+    } catch {
+      return false;
+    }
+  });
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
+    if (!visible) {
+      if (onFinish) onFinish();
+      return;
+    }
+
+    try {
+      sessionStorage.setItem('lumesa_splash_shown', 'true');
+    } catch {}
+
     // Show splash for 1 second, then fade out smoothly
     const timer = setTimeout(() => {
       setFading(true);
@@ -20,7 +35,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
     }, 1100);
 
     return () => clearTimeout(timer);
-  }, [onFinish]);
+  }, [visible, onFinish]);
 
   if (!visible) return null;
 

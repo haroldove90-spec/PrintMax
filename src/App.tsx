@@ -39,7 +39,9 @@ import {
   AdminUser, 
   AdminRole, 
   OrderDetails, 
-  OrderStatus 
+  OrderStatus,
+  ContentVisibility,
+  FooterConfig
 } from './types';
 import { 
   MessageCircle, 
@@ -56,9 +58,8 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  // Navigation: SEPARATE INDEPENDENT SECTIONS
+  // Navigation: SEPARATE INDEPENDENT SECTIONS with reload persistence
   const [activeSection, setActiveSection] = useState<AppSection>(() => {
-    const hash = window.location.hash.replace('#', '') as AppSection;
     const validSections: AppSection[] = [
       'inicio', 
       'nosotros', 
@@ -69,7 +70,13 @@ export default function App() {
       'contacto',
       'admin'
     ];
-    return validSections.includes(hash) ? hash : 'tienda';
+    try {
+      const hash = window.location.hash.replace('#', '') as AppSection;
+      if (validSections.includes(hash)) return hash;
+      const saved = localStorage.getItem('lumesa_active_section') as AppSection;
+      if (saved && validSections.includes(saved)) return saved;
+    } catch {}
+    return 'inicio';
   });
 
   // ==========================================
@@ -97,22 +104,22 @@ export default function App() {
 
   const [siteContent, setSiteContent] = useState<SiteContent>(() => {
     try {
-      const isV3 = localStorage.getItem('lumesa_content_v3') === 'true';
       const saved = localStorage.getItem('lumesa_site_content');
       if (saved) {
         const parsed = JSON.parse(saved);
-        const visibility = {
+        const visibility: ContentVisibility = {
           ...INITIAL_SITE_CONTENT.visibility,
-          ...(parsed.visibility || {}),
-          showTrustMetrics: isV3 
-            ? (parsed.showTrustMetrics ?? parsed.visibility?.showTrustMetrics ?? true) 
-            : true
+          ...(parsed.visibility || {})
         };
         const updatedContent: SiteContent = {
           ...INITIAL_SITE_CONTENT,
           ...parsed,
-          slides: isV3 && parsed.slides ? parsed.slides : INITIAL_SITE_CONTENT.slides,
-          trustMetrics: isV3 && parsed.trustMetrics ? parsed.trustMetrics : INITIAL_SITE_CONTENT.trustMetrics,
+          slides: parsed.slides && Array.isArray(parsed.slides) && parsed.slides.length > 0 
+            ? parsed.slides 
+            : INITIAL_SITE_CONTENT.slides,
+          trustMetrics: parsed.trustMetrics && Array.isArray(parsed.trustMetrics) && parsed.trustMetrics.length > 0 
+            ? parsed.trustMetrics 
+            : INITIAL_SITE_CONTENT.trustMetrics,
           about: {
             ...INITIAL_SITE_CONTENT.about,
             ...(parsed.about || {})
@@ -140,20 +147,16 @@ export default function App() {
           footer: {
             ...INITIAL_SITE_CONTENT.footer,
             ...(parsed.footer || {})
-          },
+          } as FooterConfig,
           storeCategories: parsed.storeCategories || INITIAL_SITE_CONTENT.storeCategories,
           paymentConfig: parsed.paymentConfig || INITIAL_SITE_CONTENT.paymentConfig,
           coupons: parsed.coupons || INITIAL_SITE_CONTENT.coupons,
-          showTrustMetrics: visibility.showTrustMetrics,
-          visibility
+          showTrustMetrics: parsed.showTrustMetrics ?? visibility.showTrustMetrics,
+          visibility,
+          _lastUpdated: parsed._lastUpdated || Date.now()
         };
-        if (!isV3) {
-          localStorage.setItem('lumesa_content_v3', 'true');
-          localStorage.setItem('lumesa_site_content', JSON.stringify(updatedContent));
-        }
         return updatedContent;
       }
-      localStorage.setItem('lumesa_content_v3', 'true');
     } catch {
       // fallback
     }
@@ -172,26 +175,40 @@ export default function App() {
 
   // Sync state changes to LocalStorage
   useEffect(() => {
-    localStorage.setItem('lumesa_products', JSON.stringify(products));
+    try {
+      localStorage.setItem('lumesa_products', JSON.stringify(products));
+    } catch {}
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('lumesa_orders', JSON.stringify(orders));
+    try {
+      localStorage.setItem('lumesa_orders', JSON.stringify(orders));
+    } catch {}
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem('lumesa_site_content', JSON.stringify(siteContent));
+    try {
+      localStorage.setItem('lumesa_site_content', JSON.stringify(siteContent));
+    } catch {}
   }, [siteContent]);
 
   useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('lumesa_current_admin', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('lumesa_current_admin');
-    }
+    try {
+      if (currentUser) {
+        localStorage.setItem('lumesa_current_admin', JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem('lumesa_current_admin');
+      }
+    } catch {}
   }, [currentUser]);
 
-  // Initial Sync from Supabase Cloud (with local fallback)
+  useEffect(() => {
+    try {
+      localStorage.setItem('lumesa_active_section', activeSection);
+    } catch {}
+  }, [activeSection]);
+
+  // Initial Sync from Supabase Cloud (with intelligent timestamp conflict resolution)
   useEffect(() => {
     let isMounted = true;
     async function loadCloudData() {
@@ -202,45 +219,77 @@ export default function App() {
           fetchOrdersFromSupabase()
         ]);
         if (!isMounted) return;
+
         if (cloudContent) {
-          const mergedVisibility = {
-            ...INITIAL_SITE_CONTENT.visibility,
-            ...(cloudContent.visibility || {}),
-            showTrustMetrics: cloudContent.showTrustMetrics ?? cloudContent.visibility?.showTrustMetrics ?? false
-          };
-          setSiteContent({
-            ...INITIAL_SITE_CONTENT,
-            ...cloudContent,
-            about: {
-              ...INITIAL_SITE_CONTENT.about,
-              ...(cloudContent.about || {})
-            },
-            coverage: {
-              ...INITIAL_SITE_CONTENT.coverage,
-              ...(cloudContent.coverage || {})
-            },
-            hardwareSection: {
-              ...INITIAL_SITE_CONTENT.hardwareSection,
-              ...(cloudContent.hardwareSection || {})
-            },
-            softwareSection: {
-              ...INITIAL_SITE_CONTENT.softwareSection,
-              ...(cloudContent.softwareSection || {})
-            },
-            whatsappButton: {
-              ...INITIAL_SITE_CONTENT.whatsappButton,
-              ...(cloudContent.whatsappButton || {})
-            },
-            contact: {
-              ...INITIAL_SITE_CONTENT.contact,
-              ...(cloudContent.contact || {})
-            },
-            storeCategories: cloudContent.storeCategories || INITIAL_SITE_CONTENT.storeCategories,
-            paymentConfig: cloudContent.paymentConfig || INITIAL_SITE_CONTENT.paymentConfig,
-            coupons: cloudContent.coupons || INITIAL_SITE_CONTENT.coupons,
-            showTrustMetrics: mergedVisibility.showTrustMetrics,
-            visibility: mergedVisibility
-          });
+          // Check local timestamp
+          let localTs = 0;
+          let localParsed: SiteContent | null = null;
+          try {
+            const rawLocal = localStorage.getItem('lumesa_site_content');
+            if (rawLocal) {
+              localParsed = JSON.parse(rawLocal);
+              localTs = Number(localParsed?._lastUpdated || 0);
+            }
+          } catch {}
+
+          const cloudTs = Number((cloudContent as any)._lastUpdated || 0);
+
+          // If local has newer modifications, do NOT overwrite them! Instead, sync local UP to Supabase.
+          if (localTs > cloudTs && localTs > 0 && localParsed) {
+            console.log('Local CMS content is newer than cloud. Pushing local to Supabase...');
+            saveSiteContentToSupabase(localParsed).catch(console.warn);
+          } else {
+            // Cloud has newer or equal content: merge carefully into state and localStorage
+            const mergedVisibility = {
+              ...INITIAL_SITE_CONTENT.visibility,
+              ...(cloudContent.visibility || {}),
+              showTrustMetrics: cloudContent.showTrustMetrics ?? cloudContent.visibility?.showTrustMetrics ?? true
+            };
+            const updatedContent: SiteContent = {
+              ...INITIAL_SITE_CONTENT,
+              ...cloudContent,
+              slides: cloudContent.slides && cloudContent.slides.length > 0 ? cloudContent.slides : INITIAL_SITE_CONTENT.slides,
+              trustMetrics: cloudContent.trustMetrics && cloudContent.trustMetrics.length > 0 ? cloudContent.trustMetrics : INITIAL_SITE_CONTENT.trustMetrics,
+              about: {
+                ...INITIAL_SITE_CONTENT.about,
+                ...(cloudContent.about || {})
+              },
+              coverage: {
+                ...INITIAL_SITE_CONTENT.coverage,
+                ...(cloudContent.coverage || {})
+              },
+              hardwareSection: {
+                ...INITIAL_SITE_CONTENT.hardwareSection,
+                ...(cloudContent.hardwareSection || {})
+              },
+              softwareSection: {
+                ...INITIAL_SITE_CONTENT.softwareSection,
+                ...(cloudContent.softwareSection || {})
+              },
+              whatsappButton: {
+                ...INITIAL_SITE_CONTENT.whatsappButton,
+                ...(cloudContent.whatsappButton || {})
+              },
+              contact: {
+                ...INITIAL_SITE_CONTENT.contact,
+                ...(cloudContent.contact || {})
+              },
+              footer: {
+                ...INITIAL_SITE_CONTENT.footer,
+                ...(cloudContent.footer || {})
+              } as FooterConfig,
+              storeCategories: cloudContent.storeCategories || INITIAL_SITE_CONTENT.storeCategories,
+              paymentConfig: cloudContent.paymentConfig || INITIAL_SITE_CONTENT.paymentConfig,
+              coupons: cloudContent.coupons || INITIAL_SITE_CONTENT.coupons,
+              showTrustMetrics: mergedVisibility.showTrustMetrics,
+              visibility: mergedVisibility,
+              _lastUpdated: cloudTs || Date.now()
+            };
+            setSiteContent(updatedContent);
+            try {
+              localStorage.setItem('lumesa_site_content', JSON.stringify(updatedContent));
+            } catch {}
+          }
         }
         if (cloudProducts && cloudProducts.length > 0) {
           setProducts(cloudProducts);
@@ -451,9 +500,24 @@ export default function App() {
     updateOrderStatusInSupabase(orderId, status, trackingNumber, invoiceStatus, invoicePdfUrl, invoiceXmlUrl, internalNotes).catch((e) => console.warn('Supabase updateOrderStatus error:', e));
   };
 
-  const handleSaveSiteContent = (newContent: SiteContent) => {
-    setSiteContent(newContent);
-    saveSiteContentToSupabase(newContent).catch((e) => console.warn('Supabase saveSiteContent error:', e));
+  const handleSaveSiteContent = async (newContent: SiteContent): Promise<boolean> => {
+    const withTimestamp: SiteContent = {
+      ...newContent,
+      _lastUpdated: Date.now()
+    };
+    setSiteContent(withTimestamp);
+    try {
+      localStorage.setItem('lumesa_site_content', JSON.stringify(withTimestamp));
+    } catch (e) {
+      console.warn('localStorage saveSiteContent error:', e);
+    }
+    try {
+      const ok = await saveSiteContentToSupabase(withTimestamp);
+      return ok;
+    } catch (e) {
+      console.warn('Supabase saveSiteContent error:', e);
+      return false;
+    }
   };
 
   const handleResetFactoryData = () => {

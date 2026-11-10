@@ -251,6 +251,7 @@ export interface CoverageConfig {
 }
 
 export interface SiteContent {
+  _lastUpdated?: number;
   slides: HeroSlide[];
   showTrustMetrics?: boolean;
   visibility?: ContentVisibility;

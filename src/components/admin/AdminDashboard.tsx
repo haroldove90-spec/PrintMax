@@ -102,7 +102,7 @@ interface AdminDashboardProps {
     internalNotes?: string
   ) => void;
   siteContent: SiteContent;
-  onSaveSiteContent: (content: SiteContent) => void;
+  onSaveSiteContent: (content: SiteContent) => Promise<boolean> | void;
   onResetFactoryData: () => void;
   onOpenNewProductModal: () => void;
   onOpenEditProductModal: (product: Product) => void;
@@ -151,13 +151,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { id: 'roles', label: 'Roles y Configuración', icon: KeyRound }
   ];
 
-  const [activeTab, setActiveTab] = useState<string>(allowedTabs[0]?.id || 'resumen');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    try {
+      const savedTab = localStorage.getItem('lumesa_admin_active_tab');
+      if (savedTab && allowedTabs.some((t) => t.id === savedTab)) {
+        return savedTab;
+      }
+    } catch {}
+    return allowedTabs[0]?.id || 'resumen';
+  });
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('lumesa_admin_active_tab', activeTab);
+    } catch {}
+  }, [activeTab]);
+
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState<string>('todos');
 
   // CMS state for web editing
   const [editableContent, setEditableContent] = useState<SiteContent>(siteContent);
   const [cmsSaveNotice, setCmsSaveNotice] = useState(false);
+  const [cmsSaving, setCmsSaving] = useState(false);
+  const [cmsSaveError, setCmsSaveError] = useState<string | null>(null);
   const [activeSlideEditor, setActiveSlideEditor] = useState<number>(0);
   const [newBulletInput, setNewBulletInput] = useState('');
   const [activeSoftwareIndex, setActiveSoftwareIndex] = useState<number>(0);
@@ -432,21 +449,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     showTrustMetrics: editableContent.showTrustMetrics ?? editableContent.visibility?.showTrustMetrics ?? false
   };
 
-  const handleToggleVisibility = (key: keyof ContentVisibility) => {
+  const handleToggleVisibility = async (key: keyof ContentVisibility) => {
     const updatedVal = !currentVisibility[key];
     const updatedVis: ContentVisibility = {
       ...currentVisibility,
       [key]: updatedVal
     };
-    setEditableContent({
+    const updated: SiteContent = {
       ...editableContent,
       showTrustMetrics: key === 'showTrustMetrics' ? updatedVal : (editableContent.showTrustMetrics ?? false),
-      visibility: updatedVis
-    });
+      visibility: updatedVis,
+      _lastUpdated: Date.now()
+    };
+    setEditableContent(updated);
+    try {
+      await onSaveSiteContent(updated);
+    } catch {}
   };
 
-  const handleSaveCMS = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveCMS = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setCmsSaving(true);
+    setCmsSaveError(null);
     const finalVis: ContentVisibility = {
       ...DEFAULT_VISIBILITY,
       ...(editableContent.visibility || {}),
@@ -471,11 +495,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         ...INITIAL_SITE_CONTENT.contact,
         ...editableContent.contact
       },
-      footer: editableContent.footer || INITIAL_SITE_CONTENT.footer || DEFAULT_FOOTER_CONFIG
+      footer: editableContent.footer || INITIAL_SITE_CONTENT.footer || DEFAULT_FOOTER_CONFIG,
+      _lastUpdated: Date.now()
     };
-    onSaveSiteContent(contentToSave);
-    setCmsSaveNotice(true);
-    setTimeout(() => setCmsSaveNotice(false), 2500);
+    try {
+      await onSaveSiteContent(contentToSave);
+      setCmsSaveNotice(true);
+      setTimeout(() => setCmsSaveNotice(false), 4000);
+    } catch {
+      setCmsSaveError('Error al contactar Supabase. Los datos se guardaron localmente.');
+      setTimeout(() => setCmsSaveError(null), 4000);
+    } finally {
+      setCmsSaving(false);
+    }
   };
 
   const handleToggleProductStock = (product: Product) => {
@@ -2232,17 +2264,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white border border-neutral-700 hover:border-blue-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition"
+                disabled={cmsSaving}
+                className="px-6 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96726] text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer disabled:opacity-50"
               >
-                <Save className="w-4 h-4 text-blue-500" />
-                <span>Guardar Cambios de la Web</span>
+                {cmsSaving ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    <span>Guardando en Supabase...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 text-white" />
+                    <span>Guardar Cambios de la Web</span>
+                  </>
+                )}
               </button>
             </div>
 
             {cmsSaveNotice && (
-              <div className="p-4 rounded-2xl bg-emerald-950 border border-emerald-700 text-emerald-300 text-xs font-bold flex items-center space-x-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                <span>¡Contenido web actualizado y guardado con éxito! Se refleja en vivo en todo el sitio web.</span>
+              <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-600 text-emerald-200 text-xs font-bold flex items-center space-x-2 shadow-lg animate-in fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span>¡Contenido web guardado con éxito en la base de datos Supabase y en memoria local! Queda protegido permanentemente al refrescar el navegador.</span>
+              </div>
+            )}
+
+            {cmsSaveError && (
+              <div className="p-4 rounded-2xl bg-amber-950/80 border border-amber-600 text-amber-200 text-xs font-bold flex items-center space-x-2 shadow-lg animate-in fade-in">
+                <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+                <span>{cmsSaveError}</span>
               </div>
             )}
 
@@ -4556,12 +4605,50 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="pt-2 flex justify-end">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm flex items-center space-x-2 shadow-lg transition cursor-pointer"
+                  disabled={cmsSaving}
+                  className="px-6 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm flex items-center space-x-2 shadow-lg transition cursor-pointer disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4 text-white" />
-                  <span>Guardar y Aplicar Todos los Cambios</span>
+                  {cmsSaving ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                      <span>Guardando en Supabase...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 text-white" />
+                      <span>Guardar y Aplicar Todos los Cambios</span>
+                    </>
+                  )}
                 </button>
               </div>
+            </div>
+
+            {/* Barra Flotante Persistente para Guardar CMS */}
+            <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 p-3 rounded-2xl bg-[#000000]/95 border border-[#394B61] shadow-2xl backdrop-blur-md">
+              <div className="hidden sm:flex flex-col text-right pr-2">
+                <span className="text-xs font-bold text-white flex items-center justify-end gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Editor CMS LUMESA
+                </span>
+                <span className="text-[10px] text-slate-400">Guarda en Supabase & LocalStorage</span>
+              </div>
+              <button
+                type="submit"
+                disabled={cmsSaving}
+                className="px-5 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96726] text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer disabled:opacity-50"
+              >
+                {cmsSaving ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 text-white" />
+                    <span>Guardar Cambios</span>
+                  </>
+                )}
+              </button>
             </div>
           </form>
         )}
