@@ -219,6 +219,30 @@ export interface WhatsAppButtonConfig {
   enabled?: boolean;
 }
 
+export interface FooterLinkItem {
+  id: string;
+  label: string;
+  target: AppSection | string;
+}
+
+export interface FooterConfig {
+  bannerTitle: string;
+  bannerSubtitle: string;
+  bannerPhone: string;
+  bannerWhatsAppText: string;
+  bannerWhatsAppUrl?: string;
+  description: string;
+  address: string;
+  schedule: string;
+  email: string;
+  sectionsTitle: string;
+  equiposTitle: string;
+  equiposLinks: FooterLinkItem[];
+  empresaTitle: string;
+  empresaLinks: FooterLinkItem[];
+  copyrightText: string;
+}
+
 export interface SiteContent {
   slides: HeroSlide[];
   showTrustMetrics?: boolean;
@@ -278,4 +302,5 @@ export interface SiteContent {
   storeCategories?: StoreCategory[];
   paymentConfig?: PaymentConfig;
   coupons?: DiscountCoupon[];
+  footer?: FooterConfig;
 }

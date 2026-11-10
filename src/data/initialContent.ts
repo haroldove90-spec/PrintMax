@@ -1,5 +1,36 @@
-import { SiteContent, OrderDetails, AdminUser, ContentVisibility } from '../types';
+import { SiteContent, OrderDetails, AdminUser, ContentVisibility, FooterConfig } from '../types';
 import { HERO_SLIDES, TRUST_METRICS, PRODUCTS, SOFTWARE_SOLUTIONS } from './mockData';
+
+export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
+  bannerTitle: "¿Necesita asesoría o equipamiento Kyocera para su empresa?",
+  bannerSubtitle: "LUMESA ofrece soluciones documentales de vanguardia, consumibles originales y atención personalizada en México.",
+  bannerPhone: "(444) 812-3000",
+  bannerWhatsAppText: "WhatsApp de Atención",
+  bannerWhatsAppUrl: "https://wa.me/524448123000?text=Hola,%20solicito%20atencion%20LUMESA%20Kyocera",
+  description: "Con más de tres décadas respaldando a empresas en México, LUMESA es distribuidor autorizado y centro oficial de soluciones Kyocera Japón, con base en San Luis Potosí y cobertura de servicio a nivel nacional.",
+  address: "San Luis Potosí, S.L.P., México. C.P. 78230",
+  schedule: "Lunes a Viernes: 09:00 a 18:00 hrs",
+  email: "contacto@lumesa.com.mx",
+  sectionsTitle: "Secciones",
+  equiposTitle: "Equipos & Servicios",
+  equiposLinks: [
+    { id: "eq-1", label: "Multifuncionales A3 Color", target: "hardware" },
+    { id: "eq-2", label: "Multifuncionales A4 Compactos", target: "hardware" },
+    { id: "eq-3", label: "Tóner y Consumibles", target: "tienda" },
+    { id: "eq-4", label: "Planes de Renta Todo Incluido", target: "renta_venta" },
+    { id: "eq-5", label: "Pólizas Preventivas Kyocera", target: "contacto" },
+    { id: "eq-6", label: "Asesoría en Equipamiento", target: "contacto" }
+  ],
+  empresaTitle: "Empresa y Atención",
+  empresaLinks: [
+    { id: "em-1", label: "Sobre Nosotros", target: "nosotros" },
+    { id: "em-2", label: "Cobertura en México", target: "nosotros" },
+    { id: "em-3", label: "Contacto Directo", target: "contacto" },
+    { id: "em-4", label: "Facturación CFDI 4.0 SAT", target: "tienda" },
+    { id: "em-5", label: "Acceso Admin Autoadministrable →", target: "admin" }
+  ],
+  copyrightText: `© ${new Date().getFullYear()} LUMESA. Todos los derechos reservados. Distribuidor Autorizado Kyocera Japón en México.`
+};
 
 export const DEFAULT_VISIBILITY: ContentVisibility = {
   showTrustMetrics: true,
@@ -238,7 +269,8 @@ export const INITIAL_SITE_CONTENT: SiteContent = {
       usesCount: 8,
       maxUses: 50
     }
-  ]
+  ],
+  footer: DEFAULT_FOOTER_CONFIG
 };
 
 export const INITIAL_ADMIN_USERS: AdminUser[] = [

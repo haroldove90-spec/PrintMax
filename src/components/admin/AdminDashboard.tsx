@@ -75,9 +75,12 @@ import {
   ContentVisibility,
   StoreCategory,
   PaymentConfig,
-  DiscountCoupon
+  DiscountCoupon,
+  FooterConfig,
+  FooterLinkItem,
+  AppSection
 } from '../../types';
-import { DEFAULT_VISIBILITY, INITIAL_SITE_CONTENT } from '../../data/initialContent';
+import { DEFAULT_VISIBILITY, INITIAL_SITE_CONTENT, DEFAULT_FOOTER_CONFIG } from '../../data/initialContent';
 import { FormattedText } from '../FormattedText';
 
 interface AdminDashboardProps {
@@ -161,6 +164,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newQueBulletInput, setNewQueBulletInput] = useState('');
   const [newChipInput, setNewChipInput] = useState('');
   const [newSoftwareBenefitInput, setNewSoftwareBenefitInput] = useState('');
+  const [newEquiposLinkTitle, setNewEquiposLinkTitle] = useState('');
+  const [newEquiposLinkTarget, setNewEquiposLinkTarget] = useState<AppSection>('hardware');
+  const [newEmpresaLinkTitle, setNewEmpresaLinkTitle] = useState('');
+  const [newEmpresaLinkTarget, setNewEmpresaLinkTarget] = useState<AppSection>('nosotros');
 
   // Supabase state
   const [supabaseStatus, setSupabaseStatus] = useState<{
@@ -315,6 +322,55 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  // Footer helpers
+  const currentFooter: FooterConfig = editableContent.footer || DEFAULT_FOOTER_CONFIG;
+
+  const handleUpdateFooter = (patch: Partial<FooterConfig>) => {
+    setEditableContent({
+      ...editableContent,
+      footer: {
+        ...currentFooter,
+        ...patch
+      }
+    });
+  };
+
+  const handleAddEquiposLink = () => {
+    if (!newEquiposLinkTitle.trim()) return;
+    const newLink: FooterLinkItem = {
+      id: `eq-${Date.now()}`,
+      label: newEquiposLinkTitle.trim(),
+      target: newEquiposLinkTarget
+    };
+    handleUpdateFooter({
+      equiposLinks: [...(currentFooter.equiposLinks || []), newLink]
+    });
+    setNewEquiposLinkTitle('');
+  };
+
+  const handleRemoveEquiposLink = (index: number) => {
+    const updated = (currentFooter.equiposLinks || []).filter((_, i) => i !== index);
+    handleUpdateFooter({ equiposLinks: updated });
+  };
+
+  const handleAddEmpresaLink = () => {
+    if (!newEmpresaLinkTitle.trim()) return;
+    const newLink: FooterLinkItem = {
+      id: `em-${Date.now()}`,
+      label: newEmpresaLinkTitle.trim(),
+      target: newEmpresaLinkTarget
+    };
+    handleUpdateFooter({
+      empresaLinks: [...(currentFooter.empresaLinks || []), newLink]
+    });
+    setNewEmpresaLinkTitle('');
+  };
+
+  const handleRemoveEmpresaLink = (index: number) => {
+    const updated = (currentFooter.empresaLinks || []).filter((_, i) => i !== index);
+    handleUpdateFooter({ empresaLinks: updated });
+  };
+
   const handleTestSupabase = async () => {
     setSupabaseStatus({ tested: true, loading: true, success: false, message: 'Probando conexión con Supabase Cloud...', tables: [] });
     const res = await testSupabaseConnection();
@@ -413,7 +469,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       contact: {
         ...INITIAL_SITE_CONTENT.contact,
         ...editableContent.contact
-      }
+      },
+      footer: editableContent.footer || INITIAL_SITE_CONTENT.footer || DEFAULT_FOOTER_CONFIG
     };
     onSaveSiteContent(contentToSave);
     setCmsSaveNotice(true);
@@ -4099,6 +4156,433 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="pt-4 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm flex items-center space-x-2 shadow-lg transition cursor-pointer"
+                >
+                  <Save className="w-4 h-4 text-white" />
+                  <span>Guardar y Aplicar Todos los Cambios</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ========================================================= */}
+            {/* SECCIÓN CMS: PIE DE PÁGINA (FOOTER COMPLETO) */}
+            {/* ========================================================= */}
+            <div className="p-6 rounded-3xl bg-[#182F4F] border-2 border-[#394B61] shadow-2xl space-y-6 text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-4 gap-3">
+                <div>
+                  <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#000000] text-[#F27C36] text-[10px] font-bold uppercase tracking-wider mb-2 border border-[#394B61]">
+                    <Layers className="w-3.5 h-3.5 text-[#F27C36]" />
+                    <span>Autoadministración de Pie de Página</span>
+                  </div>
+                  <h3 className="text-xl font-black text-white flex items-center space-x-2">
+                    <Building2 className="w-5 h-5 text-[#F27C36]" />
+                    <span>Editor de Pie de Página Web (Footer)</span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Personalice todos los textos, banner de soporte, datos de contacto, enlaces de columnas y derechos reservados del pie de página oficial.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2 text-xs bg-[#000000] px-3.5 py-2 rounded-xl border border-[#394B61] text-slate-300 shrink-0">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="font-semibold text-white">Reflejo en Vivo en Toda la Web</span>
+                </div>
+              </div>
+
+              {/* 1. Banner Superior de Asesoría & Soporte */}
+              <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
+                <div className="border-b border-[#394B61] pb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                    <ShieldCheck className="w-4 h-4 text-[#F27C36]" />
+                    <span>1. Banner Superior de Soporte Rápido</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Franja horizontal que aparece en la parte superior del pie de página con llamado a la acción.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Título del Banner
+                    </label>
+                    <input
+                      type="text"
+                      value={currentFooter.bannerTitle}
+                      onChange={(e) => handleUpdateFooter({ bannerTitle: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="¿Necesita asesoría o equipamiento Kyocera para su empresa?"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Subtítulo / Mensaje Descriptivo
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={currentFooter.bannerSubtitle}
+                      onChange={(e) => handleUpdateFooter({ bannerSubtitle: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="LUMESA ofrece soluciones documentales de vanguardia..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Teléfono de Contacto
+                    </label>
+                    <input
+                      type="text"
+                      value={currentFooter.bannerPhone}
+                      onChange={(e) => handleUpdateFooter({ bannerPhone: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="(444) 812-3000"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Texto del Botón WhatsApp
+                    </label>
+                    <input
+                      type="text"
+                      value={currentFooter.bannerWhatsAppText}
+                      onChange={(e) => handleUpdateFooter({ bannerWhatsAppText: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="WhatsApp de Atención"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Columna 1: Branding y Datos de Contacto Directo */}
+              <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
+                <div className="border-b border-[#394B61] pb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                    <Building2 className="w-4 h-4 text-[#F27C36]" />
+                    <span>2. Columna 1: Identidad & Datos de Contacto (Bajo el Logo LUMESA)</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Párrafo corporativo, ubicación, horarios y correo oficial mostrados en la primera columna del pie de página.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Descripción Corporativa
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={currentFooter.description}
+                      onChange={(e) => handleUpdateFooter({ description: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="Con más de tres décadas respaldando a empresas en México..."
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Dirección Sede
+                    </label>
+                    <input
+                      type="text"
+                      value={currentFooter.address}
+                      onChange={(e) => handleUpdateFooter({ address: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="San Luis Potosí, S.L.P., México. C.P. 78230"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Horario de Atención
+                    </label>
+                    <input
+                      type="text"
+                      value={currentFooter.schedule}
+                      onChange={(e) => handleUpdateFooter({ schedule: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="Lunes a Viernes: 09:00 a 18:00 hrs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Correo de Atención
+                    </label>
+                    <input
+                      type="email"
+                      value={currentFooter.email}
+                      onChange={(e) => handleUpdateFooter({ email: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="contacto@lumesa.com.mx"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Títulos de Columnas de Enlaces */}
+              <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
+                <div className="border-b border-[#394B61] pb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                    <Tag className="w-4 h-4 text-[#F27C36]" />
+                    <span>3. Títulos de las 3 Columnas de Navegación</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Encabezados con línea naranja visible para cada bloque de enlaces.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Título Columna 2
+                    </label>
+                    <input
+                      type="text"
+                      value={currentFooter.sectionsTitle}
+                      onChange={(e) => handleUpdateFooter({ sectionsTitle: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="Secciones"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Título Columna 3
+                    </label>
+                    <input
+                      type="text"
+                      value={currentFooter.equiposTitle}
+                      onChange={(e) => handleUpdateFooter({ equiposTitle: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="Equipos & Servicios"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Título Columna 4
+                    </label>
+                    <input
+                      type="text"
+                      value={currentFooter.empresaTitle}
+                      onChange={(e) => handleUpdateFooter({ empresaTitle: e.target.value })}
+                      className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      placeholder="Empresa y Atención"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Enlaces Editables de Columna 3 (Equipos & Servicios) */}
+              <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-2 gap-2">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                      <Printer className="w-4 h-4 text-[#F27C36]" />
+                      <span>4. Enlaces de Columna 3 ({currentFooter.equiposTitle || 'Equipos & Servicios'})</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Modifique los textos y la sección a la que apunta cada enlace.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  {(currentFooter.equiposLinks || []).map((link, idx) => (
+                    <div key={link.id || idx} className="flex flex-col sm:flex-row sm:items-center gap-2 bg-[#182F4F] p-3 rounded-xl border border-[#394B61]">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={link.label}
+                          onChange={(e) => {
+                            const updated = [...(currentFooter.equiposLinks || [])];
+                            updated[idx] = { ...updated[idx], label: e.target.value };
+                            handleUpdateFooter({ equiposLinks: updated });
+                          }}
+                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61] font-semibold"
+                          placeholder="Texto del enlace..."
+                        />
+                      </div>
+                      <div className="w-full sm:w-48">
+                        <select
+                          value={link.target}
+                          onChange={(e) => {
+                            const updated = [...(currentFooter.equiposLinks || [])];
+                            updated[idx] = { ...updated[idx], target: e.target.value as AppSection };
+                            handleUpdateFooter({ equiposLinks: updated });
+                          }}
+                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                        >
+                          <option value="hardware">Renta / Venta (Hardware)</option>
+                          <option value="renta_venta">Renta / Venta</option>
+                          <option value="tienda">Tienda en Línea</option>
+                          <option value="contacto">Contacto & Cotización</option>
+                          <option value="nosotros">Nosotros</option>
+                          <option value="software">Software</option>
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveEquiposLink(idx)}
+                        className="p-2 rounded-lg text-rose-400 hover:text-white hover:bg-rose-900 transition cursor-pointer shrink-0 self-end sm:self-center"
+                        title="Eliminar este enlace"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Formulario para agregar nuevo enlace a Columna 3 */}
+                <div className="p-3.5 rounded-xl bg-[#182F4F]/60 border border-dashed border-[#394B61] flex flex-col sm:flex-row items-center gap-2.5">
+                  <input
+                    type="text"
+                    value={newEquiposLinkTitle}
+                    onChange={(e) => setNewEquiposLinkTitle(e.target.value)}
+                    placeholder="Nuevo enlace para Equipos & Servicios..."
+                    className="flex-1 text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61] w-full"
+                  />
+                  <select
+                    value={newEquiposLinkTarget}
+                    onChange={(e) => setNewEquiposLinkTarget(e.target.value as AppSection)}
+                    className="text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61] w-full sm:w-48"
+                  >
+                    <option value="hardware">Renta / Venta (Hardware)</option>
+                    <option value="renta_venta">Renta / Venta</option>
+                    <option value="tienda">Tienda en Línea</option>
+                    <option value="contacto">Contacto</option>
+                    <option value="nosotros">Nosotros</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddEquiposLink}
+                    className="px-4 py-2 rounded-lg bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shrink-0 w-full sm:w-auto justify-center"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar Enlace</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 5. Enlaces Editables de Columna 4 (Empresa y Atención) */}
+              <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-2 gap-2">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                      <Users className="w-4 h-4 text-[#F27C36]" />
+                      <span>5. Enlaces de Columna 4 ({currentFooter.empresaTitle || 'Empresa y Atención'})</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Modifique los textos y la sección a la que apunta cada enlace.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  {(currentFooter.empresaLinks || []).map((link, idx) => (
+                    <div key={link.id || idx} className="flex flex-col sm:flex-row sm:items-center gap-2 bg-[#182F4F] p-3 rounded-xl border border-[#394B61]">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={link.label}
+                          onChange={(e) => {
+                            const updated = [...(currentFooter.empresaLinks || [])];
+                            updated[idx] = { ...updated[idx], label: e.target.value };
+                            handleUpdateFooter({ empresaLinks: updated });
+                          }}
+                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61] font-semibold"
+                          placeholder="Texto del enlace..."
+                        />
+                      </div>
+                      <div className="w-full sm:w-48">
+                        <select
+                          value={link.target}
+                          onChange={(e) => {
+                            const updated = [...(currentFooter.empresaLinks || [])];
+                            updated[idx] = { ...updated[idx], target: e.target.value as AppSection };
+                            handleUpdateFooter({ empresaLinks: updated });
+                          }}
+                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                        >
+                          <option value="nosotros">Nosotros</option>
+                          <option value="contacto">Contacto</option>
+                          <option value="tienda">Tienda en Línea</option>
+                          <option value="renta_venta">Renta / Venta</option>
+                          <option value="admin">Acceso Admin Autoadministrable</option>
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveEmpresaLink(idx)}
+                        className="p-2 rounded-lg text-rose-400 hover:text-white hover:bg-rose-900 transition cursor-pointer shrink-0 self-end sm:self-center"
+                        title="Eliminar este enlace"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Formulario para agregar nuevo enlace a Columna 4 */}
+                <div className="p-3.5 rounded-xl bg-[#182F4F]/60 border border-dashed border-[#394B61] flex flex-col sm:flex-row items-center gap-2.5">
+                  <input
+                    type="text"
+                    value={newEmpresaLinkTitle}
+                    onChange={(e) => setNewEmpresaLinkTitle(e.target.value)}
+                    placeholder="Nuevo enlace para Empresa y Atención..."
+                    className="flex-1 text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61] w-full"
+                  />
+                  <select
+                    value={newEmpresaLinkTarget}
+                    onChange={(e) => setNewEmpresaLinkTarget(e.target.value as AppSection)}
+                    className="text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61] w-full sm:w-48"
+                  >
+                    <option value="nosotros">Nosotros</option>
+                    <option value="contacto">Contacto</option>
+                    <option value="tienda">Tienda en Línea</option>
+                    <option value="renta_venta">Renta / Venta</option>
+                    <option value="admin">Acceso Admin</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddEmpresaLink}
+                    className="px-4 py-2 rounded-lg bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shrink-0 w-full sm:w-auto justify-center"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar Enlace</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 6. Barra Inferior de Derechos Reservados (Copyright) */}
+              <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-3">
+                <div className="border-b border-[#394B61] pb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-[#F27C36]" />
+                    <span>6. Barra Inferior de Derechos Reservados (Copyright)</span>
+                  </h4>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Texto de Derechos Reservados
+                  </label>
+                  <input
+                    type="text"
+                    value={currentFooter.copyrightText}
+                    onChange={(e) => handleUpdateFooter({ copyrightText: e.target.value })}
+                    className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                    placeholder="© 2026 LUMESA. Todos los derechos reservados..."
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
                 <button
                   type="submit"
                   className="px-6 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm flex items-center space-x-2 shadow-lg transition cursor-pointer"

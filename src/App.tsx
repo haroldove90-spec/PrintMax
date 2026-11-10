@@ -133,6 +133,10 @@ export default function App() {
             ...INITIAL_SITE_CONTENT.contact,
             ...(parsed.contact || {})
           },
+          footer: {
+            ...INITIAL_SITE_CONTENT.footer,
+            ...(parsed.footer || {})
+          },
           storeCategories: parsed.storeCategories || INITIAL_SITE_CONTENT.storeCategories,
           paymentConfig: parsed.paymentConfig || INITIAL_SITE_CONTENT.paymentConfig,
           coupons: parsed.coupons || INITIAL_SITE_CONTENT.coupons,
@@ -765,6 +769,7 @@ export default function App() {
         <Footer 
           onSelectSection={navigateToSection} 
           showSoftware={siteContent.visibility?.showSoftwareSection ?? false}
+          footerContent={siteContent.footer}
         />
       )}
 
