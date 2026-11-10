@@ -189,68 +189,73 @@ VALUES (
       "showQuickPortals": true,
       "showQueHacemos": true,
       "showSobreNosotros": true,
-      "showAboutStats": true,
+      "showAboutStats": false,
       "showSlideImages": true,
       "showCoverageMap": true,
-      "showSoftwareHighlights": true
+      "showSoftwareHighlights": false,
+      "showSoftwareSection": false
     },
     "trustMetrics": [
       {
-        "value": "+30",
-        "label": "Años de Experiencia",
-        "description": "Liderando soluciones de impresión y gestión documental en México"
+        "value": "",
+        "label": "Renta a tu medida",
+        "description": "pago mensual según cuánto imprimes"
       },
       {
-        "value": "+2,000",
-        "label": "Clientes Satisfechos",
-        "description": "Empresas, corporativos, escuelas y despachos a nivel nacional"
+        "value": "",
+        "label": "Venta de equipos",
+        "description": "multifuncionales e impresoras para cada tamaño de oficina"
       },
       {
-        "value": "< 24h",
-        "label": "Respuesta Técnica",
-        "description": "Garantía de asistencia técnica y soporte en sitio"
+        "value": "",
+        "label": "Servicio técnico",
+        "description": "mantenimiento y soporte para tu equipo"
       },
       {
-        "value": "100%",
-        "label": "Original Kyocera",
-        "description": "Tóner, consumibles y refacciones genuinas de importación directa"
+        "value": "",
+        "label": "Asesoría personalizada",
+        "description": "te ayudamos a elegir entre blanco y negro, color, carta o doble carta"
       }
     ],
     "about": {
-      "headline": "Tres Décadas de Liderazgo en Gestión Documental",
-      "subheadline": "Con base central en San Luis Potosí y cobertura a nivel nacional, respaldamos a más de 2,000 empresas con tecnología de impresión y soporte técnico especializado.",
+      "headline": "Una empresa potosina de soluciones de impresión",
+      "subheadline": "En LUMESA rentamos y vendemos multifuncionales e impresoras láser Kyocera con atención directa y trato personal en San Luis Potosí.",
       "queHacemosTitle": "Qué Hacemos",
-      "queHacemosText": "Ofrecemos soluciones integrales que permiten trabajar con calidad, eficiencia y productividad en los procesos de gestión documental de su empresa. En LUMESA nos ocupamos por brindarle el mejor servicio para optimizar el funcionamiento de sus equipos de marca Kyocera, ofreciendo servicios de venta, renta de impresoras y soporte técnico como una solución confiable cuando requiere productos tecnológicos.\n\nNuestro personal cuenta con amplia experiencia para dar una asistencia puntual a los equipos. Disponemos de refacciones y consumibles para garantizar la operatividad de sus dispositivos.",
+      "queHacemosText": "En LUMESA rentamos y vendemos multifuncionales e impresoras láser de marca Kyocera. Te ayudamos a elegir el equipo según tu volumen de impresión, si necesitas color o doble carta, y te enviamos una cotización sin compromiso.",
       "queHacemosBullets": [
-        "Ingenieros certificados directamente por Kyocera y un amplio stock de refacciones y consumibles originales.",
-        "Garantía de respuesta y asistencia técnica en menos de 24 horas a partir de su llamada."
+        "Renta de equipos: Equipo instalado en tu oficina con un pago mensual. Cotizamos según tu volumen de impresión.",
+        "Venta de equipos: Multifuncionales e impresoras láser en blanco y negro y a color, tamaño carta, oficio y doble carta.",
+        "Servicio técnico: Mantenimiento y soporte para los equipos que rentas o compras con nosotros."
       ],
       "queHacemosChips": [
-        "Renta Dedicada",
-        "Venta de Hardware A3 / A4",
-        "Tóner Original Certificado",
-        "Pólizas Preventivas"
+        "Renta de Equipos",
+        "Venta de Equipos",
+        "Servicio Técnico Kyocera",
+        "Asesoría a tu Medida"
       ],
-      "sobreNosotrosTitle": "Sobre Nosotros",
-      "sobreNosotrosText1": "Creemos firmemente que el motor de nuestro crecimiento como empresa y como personas es la absoluta satisfacción de cada cliente. Somos un centro de distribución oficial de Kyocera en México con sede en San Luis Potosí y más de dos décadas de trayectoria en el mercado.",
-      "sobreNosotrosText2": "Como representantes líderes en el sector de la impresión digital, respaldamos a una cartera de más de 2,000 clientes a nivel nacional con servicios de renta, venta y soporte técnico especializado. Desde una impresora esencial hasta robustas soluciones de software para el control y gestión del trabajo, le ofrecemos asesoramiento profesional, trato totalmente personalizado y un equipo en constante capacitación.",
-      "clientsCount": "+2,000",
-      "experienceYears": "+30",
+      "sobreNosotrosTitle": "Sobre nosotros",
+      "sobreNosotrosText1": "LUMESA nace en San Luis Potosí con una idea sencilla: que cualquier negocio pueda tener equipos de impresión de calidad profesional sin complicaciones. Trabajamos con atención directa y trato personal, desde que eliges tu equipo hasta que lo tienes funcionando en tu oficina.",
+      "sobreNosotrosText2": "",
+      "clientsCount": "",
+      "experienceYears": "",
       "pillars": [
         {
+          "id": "atencion-directa",
           "icon": "award",
-          "title": "Certificación Directa Japón",
-          "description": "Garantía oficial LUMESA y soporte avalado por la fábrica con personal en constante actualización."
+          "title": "Atención directa",
+          "description": "Hablas con nosotros, no con un conmutador."
         },
         {
+          "id": "equipos-confiables",
           "icon": "cpu",
-          "title": "Componentes Cerámicos ECOSYS",
-          "description": "Cilindros de silicio amorfo de larga duración que reducen costos drásticamente."
+          "title": "Equipos confiables",
+          "description": "Multifuncionales e impresoras láser diseñados para trabajo de oficina diario."
         },
         {
+          "id": "cotizacion-medida",
           "icon": "map-pin",
-          "title": "Hub San Luis Potosí",
-          "description": "Envío exprés y distribución ágil de consumibles y piezas a todo el país."
+          "title": "Cotización a tu medida",
+          "description": "Te proponemos el equipo que de verdad necesitas, ni más ni menos."
         }
       ]
     },
@@ -258,7 +263,7 @@ VALUES (
       "tag": "Cobertura",
       "title": "Cobertura",
       "text": "Atendemos en San Luis Potosí. ¿Tu empresa está en otra ciudad? Escríbenos y revisamos las opciones de servicio para tu zona.",
-      "ctaText": "Escríbenos y revisamos tu zona"
+      "ctaText": "Escríbenos y revisamos las opciones de servicio para tu zona"
     },
     "hardwareSection": {
       "tag": "Catálogo Oficial: Renta / Venta de Multifuncionales",
@@ -363,10 +368,40 @@ VALUES (
         }
       ]
     },
+    "footer": {
+      "bannerTitle": "¿Necesitas un equipo de impresión para tu empresa? Solicita tu cotización.",
+      "bannerSubtitle": "Te asesoramos para elegir el equipo ideal y te enviamos una cotización a la medida.",
+      "bannerPhone": "(444) 812-3000",
+      "bannerWhatsAppText": "Solicitar Cotización por WhatsApp",
+      "bannerWhatsAppUrl": "https://wa.me/524448123000?text=Hola,%20me%20comunico%20desde%20la%20p%C3%A1gina%20de%20LUMESA%20para%20solicitar%20una%20cotizaci%C3%B3n.",
+      "description": "LUMESA · Renta y venta de equipos de impresión en San Luis Potosí.",
+      "address": "San Luis Potosí, S.L.P., México",
+      "schedule": "Lunes a viernes de 9:00 a 18:00 h",
+      "email": "contacto@lumesa.com.mx",
+      "sectionsTitle": "Secciones",
+      "equiposTitle": "Equipos & Servicios",
+      "equiposLinks": [
+        { "id": "eq-1", "label": "Inicio", "target": "inicio" },
+        { "id": "eq-2", "label": "Nosotros", "target": "nosotros" },
+        { "id": "eq-3", "label": "Tienda en Línea", "target": "tienda" },
+        { "id": "eq-4", "label": "Renta / Venta", "target": "renta_venta" },
+        { "id": "eq-5", "label": "Contacto", "target": "contacto" },
+        { "id": "eq-6", "label": "Aviso de privacidad", "target": "contacto" }
+      ],
+      "empresaTitle": "Empresa y Atención",
+      "empresaLinks": [
+        { "id": "em-1", "label": "Sobre Nosotros", "target": "nosotros" },
+        { "id": "em-2", "label": "Cobertura en San Luis Potosí", "target": "nosotros" },
+        { "id": "em-3", "label": "Contacto Directo", "target": "contacto" },
+        { "id": "em-4", "label": "Tienda en Línea", "target": "tienda" },
+        { "id": "em-5", "label": "Acceso Admin Autoadministrable →", "target": "admin" }
+      ],
+      "copyrightText": "© 2026 LUMESA. Todos los derechos reservados. Kyocera, ECOSYS y TASKalfa son marcas registradas de sus respectivos titulares."
+    },
     "whatsappButton": {
       "label": "WhatsApp Asesor LUMESA",
       "phone": "524448123000",
-      "defaultMessage": "Hola LUMESA, me comunico desde la página web para solicitar cotización y asesoría.",
+      "defaultMessage": "Hola, me comunico desde la página de LUMESA para solicitar una cotización.",
       "enabled": true
     },
     "contact": {

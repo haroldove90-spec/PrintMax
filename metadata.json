@@ -1,6 +1,6 @@
 {
   "name": "LUMESA",
-  "description": "LUMESA: Soluciones documentales, renta y venta de multifuncionales Kyocera, consumibles y tienda en línea oficial en México.",
+  "description": "LUMESA: renta y venta de multifuncionales e impresoras láser en San Luis Potosí. Solicita tu cotización.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

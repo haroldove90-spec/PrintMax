@@ -21,36 +21,36 @@ interface AboutSectionProps {
 }
 
 export const AboutSection: React.FC<AboutSectionProps> = ({ content, visibility, onNavigate }) => {
-  const headline = content?.headline || "Tres Décadas de Liderazgo en Gestión Documental";
-  const subheadline = content?.subheadline || "Con base central en San Luis Potosí y cobertura a nivel nacional, respaldamos a más de 2,000 empresas con tecnología de impresión y soporte técnico especializado.";
-  const queHacemosText = content?.queHacemosText || "Impulsamos la calidad, eficiencia y productividad en cada uno de sus procesos de gestión documental. Nos apasiona optimizar el rendimiento de su infraestructura tecnológica, por lo que ponemos a su disposición la venta, renta y soporte técnico especializado de equipos Kyocera.";
-  const sobreNosotrosText1 = content?.sobreNosotrosText1 || "Creemos firmemente que el motor de nuestro crecimiento como empresa y como personas es la absoluta satisfacción de cada cliente. Somos un centro de distribución oficial de Kyocera en México con sede en San Luis Potosí y más de dos décadas de trayectoria en el mercado.";
-  const sobreNosotrosText2 = content?.sobreNosotrosText2 || "Como representantes líderes en el sector de la impresión digital, respaldamos a una cartera de más de 2,000 clientes a nivel nacional con servicios de renta, venta y soporte técnico especializado.";
-  const clientsCount = content?.clientsCount || "+2,000";
-  const experienceYears = content?.experienceYears || "+30";
+  const headline = content?.headline || "Una empresa potosina de soluciones de impresión";
+  const subheadline = content?.subheadline || "En LUMESA rentamos y vendemos multifuncionales e impresoras láser Kyocera con atención directa y trato personal en San Luis Potosí.";
+  const queHacemosText = content?.queHacemosText || "En LUMESA rentamos y vendemos multifuncionales e impresoras láser de marca Kyocera. Te ayudamos a elegir el equipo según tu volumen de impresión, si necesitas color o doble carta, y te enviamos una cotización sin compromiso.";
+  const sobreNosotrosText1 = content?.sobreNosotrosText1 || "LUMESA nace en San Luis Potosí con una idea sencilla: que cualquier negocio pueda tener equipos de impresión de calidad profesional sin complicaciones. Trabajamos con atención directa y trato personal, desde que eliges tu equipo hasta que lo tienes funcionando en tu oficina.";
+  const sobreNosotrosText2 = content?.sobreNosotrosText2 || "";
+  const clientsCount = content?.clientsCount || "";
+  const experienceYears = content?.experienceYears || "";
 
   const showQueHacemos = visibility?.showQueHacemos !== false;
   const showSobreNosotros = visibility?.showSobreNosotros !== false;
-  const showAboutStats = visibility?.showAboutStats !== false;
+  const showAboutStats = visibility?.showAboutStats === true && !!clientsCount && !!experienceYears;
   const showCoverageMap = visibility?.showCoverageMap !== false;
 
   const defaultPillars = [
     {
-      id: "certificacion",
-      title: "Certificación Directa Japón",
-      description: "Garantía oficial LUMESA y soporte avalado por la fábrica con personal en constante actualización.",
+      id: "atencion-directa",
+      title: "Atención directa",
+      description: "Hablas con nosotros, no con un conmutador.",
       icon: "Award"
     },
     {
-      id: "ceramicos",
-      title: "Componentes Cerámicos ECOSYS",
-      description: "Cilindros de silicio amorfo de larga duración que reducen costos drásticamente.",
+      id: "equipos-confiables",
+      title: "Equipos confiables",
+      description: "Multifuncionales e impresoras láser diseñados para trabajo de oficina diario.",
       icon: "Cpu"
     },
     {
-      id: "hub",
-      title: "Hub San Luis Potosí",
-      description: "Envío exprés y distribución ágil de consumibles y piezas a todo el país.",
+      id: "cotizacion-medida",
+      title: "Cotización a tu medida",
+      description: "Te proponemos el equipo que de verdad necesitas, ni más ni menos.",
       icon: "MapPin"
     }
   ];
@@ -58,8 +58,9 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ content, visibility,
   const bullets = content?.queHacemosBullets && content.queHacemosBullets.length > 0
     ? content.queHacemosBullets
     : [
-        "Ingenieros certificados directamente por Kyocera y un amplio stock de refacciones y consumibles originales.",
-        "Garantía de respuesta y asistencia técnica en menos de 24 horas a partir de su llamada."
+        "Renta de equipos: Equipo instalado en tu oficina con un pago mensual. Cotizamos según tu volumen de impresión.",
+        "Venta de equipos: Multifuncionales e impresoras láser en blanco y negro y a color, tamaño carta, oficio y doble carta.",
+        "Servicio técnico: Mantenimiento y soporte para los equipos que rentas o compras con nosotros."
       ];
 
   const chips = content?.queHacemosChips && content.queHacemosChips.length > 0
