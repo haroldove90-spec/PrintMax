@@ -63,10 +63,8 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center space-x-3">
             <span className="inline-flex items-center space-x-1.5 font-semibold text-white">
               <span className="w-2 h-2 rounded-full bg-[#F27C36] animate-pulse" />
-              <span>LUMESA • Distribuidor Oficial Kyocera Japón</span>
+              <span>LUMESA · Renta y venta de equipos de impresión</span>
             </span>
-            <span className="hidden sm:inline text-slate-400">|</span>
-            <span className="hidden sm:inline text-slate-400">Soluciones Documentales Kyocera en México</span>
           </div>
 
           <div className="flex items-center space-x-4">

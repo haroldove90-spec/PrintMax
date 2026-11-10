@@ -2212,7 +2212,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               {/* Grid de Controles de Visibilidad */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* 1. Métricas de Confianza (4 KPIs) */}
+                {/* 1. Tarjetas de Servicios y Beneficios (4 Recuadros) */}
                 <div className={`p-4 rounded-2xl border transition-all ${
                   currentVisibility.showTrustMetrics 
                     ? 'bg-[#182F4F]/80 border-emerald-500/60 shadow-lg' 
@@ -2224,8 +2224,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <Award className="w-4 h-4 text-[#F27C36]" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white">Métricas de Confianza (4 KPIs)</h4>
-                        <span className="text-[10px] text-slate-400">+30 Años, +2,000 Clientes, &lt;24h</span>
+                        <h4 className="text-xs font-bold text-white">Tarjetas de Servicios (4 Recuadros)</h4>
+                        <span className="text-[10px] text-slate-400">Renta a tu medida, Venta, Soporte, Asesoría</span>
                       </div>
                     </div>
                     <button
@@ -2808,14 +2808,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
 
-            {/* Trust Metrics CMS Section (4 KPIs) - Con función de Activar / Desactivar */}
+            {/* Trust Metrics CMS Section (4 Recuadros de Servicios) - Con función de Activar / Desactivar */}
             <div className="p-6 rounded-3xl bg-[#182F4F] border border-[#394B61] shadow-xl space-y-6 text-white">
               <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-[#394B61] pb-4 gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2.5">
                     <Award className="w-5 h-5 text-[#F27C36]" />
                     <h3 className="text-base font-bold text-white">
-                      Tarjetas de Métricas de Confianza (4 KPIs del Inicio)
+                      Tarjetas de Servicios y Beneficios (4 Recuadros del Inicio)
                     </h3>
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                       editableContent.showTrustMetrics
@@ -2826,7 +2826,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-slate-300 mt-1">
-                    Active o desactive la visualización de las 4 tarjetas (+30 Años, +2,000 Clientes, &lt; 24h Soporte, 100% Kyocera) en la página web.
+                    Edite los 4 recuadros principales del inicio (Renta a tu medida, Venta de equipos, Servicio técnico, Asesoría personalizada).
                   </p>
                 </div>
 
@@ -2834,7 +2834,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="flex items-center space-x-3 bg-[#000000]/70 px-4 py-2.5 rounded-2xl border border-[#394B61] shrink-0">
                   <div className="text-right">
                     <div className="text-xs font-bold text-white">
-                      {editableContent.showTrustMetrics ? 'Métricas Activas' : 'Métricas Inactivas'}
+                      {editableContent.showTrustMetrics ? 'Tarjetas Activas' : 'Tarjetas Inactivas'}
                     </div>
                     <div className="text-[10px] text-slate-400">
                       {editableContent.showTrustMetrics ? 'Mostrándose en el sitio' : 'Ocultas para los usuarios'}
@@ -2852,7 +2852,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                       editableContent.showTrustMetrics ? 'bg-[#F27C36]' : 'bg-slate-700'
                     }`}
-                    title={editableContent.showTrustMetrics ? 'Desactivar visualización de métricas' : 'Activar visualización de métricas'}
+                    title={editableContent.showTrustMetrics ? 'Desactivar visualización de tarjetas' : 'Activar visualización de tarjetas'}
                   >
                     <span
                       className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
@@ -2868,9 +2868,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="p-4 rounded-2xl bg-[#000000]/80 border border-[#F27C36]/50 text-slate-200 text-xs flex items-center space-x-3 animate-in fade-in">
                   <EyeOff className="w-5 h-5 text-[#F27C36] shrink-0" />
                   <div>
-                    <span className="font-bold text-white block">Tarjetas de métricas desactivadas en la página web</span>
+                    <span className="font-bold text-white block">Tarjetas de servicios desactivadas en la página web</span>
                     <span className="text-slate-300">
-                      Por el momento las métricas están ocultas en la página web pública. Puedes editar los valores aquí abajo y se guardarán para cuando decidas reactivarlas.
+                      Por el momento las tarjetas están ocultas en la página web pública. Puedes editar los valores aquí abajo y se guardarán para cuando decidas reactivarlas.
                     </span>
                   </div>
                 </div>
@@ -2882,13 +2882,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {editableContent.trustMetrics && editableContent.trustMetrics.map((metric, mIdx) => (
                   <div key={mIdx} className="p-3.5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#F27C36]">
-                      Métrica {mIdx + 1}
+                      Recuadro {mIdx + 1}
                     </span>
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-0.5">Cifra Destacada:</label>
+                      <label className="block text-[10px] text-slate-400 mb-0.5">Cifra (Opcional):</label>
                       <input
                         type="text"
-                        value={metric.value}
+                        placeholder="Sin número por defecto"
+                        value={metric.value || ''}
                         onChange={(e) => {
                           const updated = [...editableContent.trustMetrics];
                           updated[mIdx].value = e.target.value;
@@ -2898,7 +2899,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-0.5">Título / Etiqueta:</label>
+                      <label className="block text-[10px] text-slate-400 mb-0.5">Título / Servicio:</label>
                       <input
                         type="text"
                         value={metric.label}

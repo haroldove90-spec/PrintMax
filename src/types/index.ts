@@ -224,7 +224,7 @@ export interface SiteContent {
   showTrustMetrics?: boolean;
   visibility?: ContentVisibility;
   trustMetrics: {
-    value: string;
+    value?: string;
     label: string;
     description: string;
   }[];

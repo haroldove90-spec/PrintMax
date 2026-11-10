@@ -2,7 +2,7 @@ import { SiteContent, OrderDetails, AdminUser, ContentVisibility } from '../type
 import { HERO_SLIDES, TRUST_METRICS, PRODUCTS, SOFTWARE_SOLUTIONS } from './mockData';
 
 export const DEFAULT_VISIBILITY: ContentVisibility = {
-  showTrustMetrics: false,
+  showTrustMetrics: true,
   showQuickPortals: true,
   showQueHacemos: true,
   showSobreNosotros: true,
@@ -15,7 +15,7 @@ export const DEFAULT_VISIBILITY: ContentVisibility = {
 
 export const INITIAL_SITE_CONTENT: SiteContent = {
   slides: HERO_SLIDES,
-  showTrustMetrics: false,
+  showTrustMetrics: true,
   visibility: DEFAULT_VISIBILITY,
   trustMetrics: TRUST_METRICS,
   about: {

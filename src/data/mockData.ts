@@ -3,77 +3,62 @@ import { HeroSlide, Product } from '../types';
 export const HERO_SLIDES: HeroSlide[] = [
   {
     id: 1,
-    tag: "Presentación / Marca y Experiencia",
-    title: "Innovación y Tecnología Kyocera en México",
-    subtitle: "Más de 30 años respaldando el éxito y la productividad de tu empresa con soluciones documentales de vanguardia.",
-    ctaPrimaryText: "Explorar Soluciones",
-    ctaPrimaryAction: "#hardware",
-    ctaSecondaryText: "Ir a Tienda en Línea",
-    ctaSecondaryAction: "#tienda",
-    badgeText: "Distribuidor Oficial Autorizado",
+    tag: "Renta y venta de equipos de impresión",
+    title: "El equipo de impresión que tu empresa necesita, en renta o en venta",
+    subtitle: "Multifuncionales e impresoras láser para oficinas, escuelas, despachos y negocios. Te asesoramos para elegir el equipo ideal y te enviamos una cotización a la medida.",
+    ctaPrimaryText: "Ir a la tienda",
+    ctaPrimaryAction: "tienda",
+    ctaSecondaryText: "Solicitar cotización",
+    ctaSecondaryAction: "contacto",
+    badgeText: "LUMESA",
     imageUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80",
     features: [
-      "Centro de distribución oficial de Kyocera Japón",
-      "Sede en San Luis Potosí y cobertura en todo México",
-      "+2,000 clientes corporativos satisfechos"
+      "Renta a tu medida: pago mensual según cuánto imprimes",
+      "Venta de equipos: multifuncionales e impresoras para cada tamaño de oficina",
+      "Servicio técnico: mantenimiento y soporte para tu equipo",
+      "Asesoría personalizada: te ayudamos a elegir entre blanco y negro, color, carta o doble carta"
     ]
   },
   {
     id: 2,
-    tag: "Hardware y Equipos Kyocera",
-    title: "Equipos de Impresión de Alto Rendimiento",
-    subtitle: "Venta de multifuncionales A3 y A4, tecnología ECOSYS y TASKalfa. Optimiza tu espacio de trabajo con tecnología eficiente y confiable.",
-    ctaPrimaryText: "Ver Catálogo de Equipos",
-    ctaPrimaryAction: "hardware",
-    ctaSecondaryText: "Calculadora de Renta",
+    tag: "Renta y venta de equipos de impresión",
+    title: "El equipo de impresión que tu empresa necesita, en renta o en venta",
+    subtitle: "Multifuncionales e impresoras láser para oficinas, escuelas, despachos y negocios. Te asesoramos para elegir el equipo ideal y te enviamos una cotización a la medida.",
+    ctaPrimaryText: "Ir a la tienda",
+    ctaPrimaryAction: "tienda",
+    ctaSecondaryText: "Solicitar cotización",
     ctaSecondaryAction: "contacto",
-    badgeText: "Tecnología ECOSYS y TASKalfa",
+    badgeText: "Soluciones a la Medida",
     imageUrl: "https://images.unsplash.com/photo-1542744094-3a31f272c490?auto=format&fit=crop&w=1920&q=80",
     features: [
-      "Multifuncionales A3 (hasta 11\" x 17\") y A4 compactos",
-      "Renta 100% deducible de impuestos",
-      "Mantenimiento y tóner original incluidos"
-    ]
-  },
-  {
-    id: 3,
-    tag: "Software y Productividad Documental",
-    title: "Gestión Inteligente y Control de Costos MyQ",
-    subtitle: "Automatiza flujos de trabajo, reduce costos de impresión y protege la información confidencial de tu empresa.",
-    ctaPrimaryText: "Explorar Software Kyocera",
-    ctaPrimaryAction: "#software",
-    ctaSecondaryText: "Contactar Asesor",
-    ctaSecondaryAction: "#contacto",
-    badgeText: "Soluciones de Gestión Digital",
-    imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1920&q=80",
-    features: [
-      "Monitoreo centralizado con Kyocera Fleet Services",
-      "Seguridad documental y auditoría de impresiones",
-      "Integración fluida con sistemas ERP y servidores"
+      "Renta a tu medida: pago mensual según cuánto imprimes",
+      "Venta de equipos: multifuncionales e impresoras para cada tamaño de oficina",
+      "Servicio técnico: mantenimiento y soporte para tu equipo",
+      "Asesoría personalizada: te ayudamos a elegir entre blanco y negro, color, carta o doble carta"
     ]
   }
 ];
 
 export const TRUST_METRICS = [
   {
-    value: "+30",
-    label: "Años de Experiencia",
-    description: "Liderando soluciones de impresión y gestión documental en México"
+    value: "",
+    label: "Renta a tu medida",
+    description: "pago mensual según cuánto imprimes"
   },
   {
-    value: "+2,000",
-    label: "Clientes Satisfechos",
-    description: "Empresas, corporativos, escuelas y despachos a nivel nacional"
+    value: "",
+    label: "Venta de equipos",
+    description: "multifuncionales e impresoras para cada tamaño de oficina"
   },
   {
-    value: "< 24h",
-    label: "Respuesta Técnica",
-    description: "Garantía de asistencia técnica y soporte en sitio"
+    value: "",
+    label: "Servicio técnico",
+    description: "mantenimiento y soporte para tu equipo"
   },
   {
-    value: "100%",
-    label: "Original Kyocera",
-    description: "Consumibles certificados, cilindros cerámicos y refacciones genuinas"
+    value: "",
+    label: "Asesoría personalizada",
+    description: "te ayudamos a elegir entre blanco y negro, color, carta o doble carta"
   }
 ];
 
