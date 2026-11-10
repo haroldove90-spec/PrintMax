@@ -135,7 +135,7 @@ VALUES (
         "id": 1,
         "tag": "Presentación / Marca y Experiencia",
         "title": "Innovación y Tecnología Kyocera en México",
-        "subtitle": "Más de 30 años respaldando el éxito y la productividad de tu empresa con soluciones documentales de vanguardia.",
+        "subtitle": "Respaldando el éxito y la productividad de tu empresa con soluciones documentales de vanguardia.",
         "ctaPrimaryText": "Explorar Soluciones",
         "ctaPrimaryAction": "hardware",
         "ctaSecondaryText": "Ir a Tienda en Línea",

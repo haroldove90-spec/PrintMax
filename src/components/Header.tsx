@@ -58,39 +58,37 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-50 bg-[#182F4F] text-white border-b border-[#394B61] shadow-xl font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Top micro bar in #000000 for corporate contact & PWA notice */}
-      <div className="bg-[#000000] text-slate-300 text-[11px] py-1.5 px-4 sm:px-6 lg:px-8 border-b border-[#182F4F]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <span className="inline-flex items-center space-x-1.5 font-semibold text-white">
-              <span className="w-2 h-2 rounded-full bg-[#F27C36] animate-pulse" />
-              <span>LUMESA · Renta y venta de equipos de impresión</span>
-            </span>
+      <div className="bg-[#000000] text-slate-300 text-[10px] sm:text-[11px] py-1.5 px-3 sm:px-6 lg:px-8 border-b border-[#182F4F] overflow-hidden">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center space-x-1.5 min-w-0 truncate">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F27C36] animate-pulse shrink-0" />
+            <span className="truncate font-semibold text-white">LUMESA · Renta y venta de equipos de impresión</span>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <a href="tel:4448123000" className="hover:text-white transition flex items-center space-x-1">
+          <div className="flex items-center space-x-3 shrink-0 text-slate-200">
+            <a href="tel:4448123000" className="hover:text-white transition whitespace-nowrap">
               <span>Tel: (444) 812-3000</span>
             </a>
-            <span className="text-slate-600 hidden sm:inline">•</span>
-            <span className="hidden sm:inline text-[#F27C36] font-semibold">01 800 KYOCERA</span>
+            <span className="text-slate-600 hidden md:inline">•</span>
+            <span className="hidden md:inline text-[#F27C36] font-semibold">01 800 KYOCERA</span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 gap-3">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
           
           {/* Logo (Clean, completely un-encapsulated - Navigates to Online Store / Home) */}
-          <div className="shrink-0 flex items-center">
+          <div className="shrink-0 flex items-center min-w-0">
             <button
-              onClick={() => onSelectSection('tienda')}
-              className="flex items-center group focus:outline-none p-0 bg-transparent border-0"
-              title="LUMESA - Tienda Oficial"
+              onClick={() => onSelectSection('inicio')}
+              className="flex items-center group focus:outline-none p-0 bg-transparent border-0 cursor-pointer"
+              title="LUMESA"
             >
               <img
                 src="/lumesalogo.png"
                 alt="LUMESA"
-                className="h-10 sm:h-12 w-auto object-contain transition duration-200 group-hover:opacity-90 drop-shadow-sm select-none"
+                className="h-8 sm:h-10 md:h-12 w-auto max-w-[120px] sm:max-w-[160px] md:max-w-[200px] object-contain transition duration-200 group-hover:opacity-90 drop-shadow-sm select-none"
                 onError={(e) => {
                   e.currentTarget.src = "https://appdesignproyectos.com/lumesalogo.png";
                 }}
@@ -98,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Desktop Navigation Menu in requested order: Inicio, Nosotros, Renta / Venta, Software, Tienda en línea, Contacto */}
+          {/* Desktop Navigation Menu */}
           <nav className="hidden lg:flex items-center space-x-1 xl:space-x-1.5">
             {navLinks.map((link) => {
               const isActive = activeSection === link.id || (link.id === 'renta_venta' && (activeSection as string) === 'hardware');
@@ -106,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   key={link.id}
                   onClick={() => onSelectSection(link.id)}
-                  className={`px-3 py-2 text-xs xl:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-200 ${
+                  className={`px-3 py-2 text-xs xl:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-200 cursor-pointer ${
                     isActive
                       ? 'bg-[#394B61] text-white border border-[#F27C36]/60 shadow-sm'
                       : 'text-slate-200 hover:text-white hover:bg-[#394B61]/50'
@@ -120,12 +118,12 @@ export const Header: React.FC<HeaderProps> = ({
             })}
           </nav>
 
-          {/* Action Buttons in requested order: Icono Panel Admin, Icono Instalar App, Icono Carrito, Boton COTIZAR */}
-          <div className="flex items-center space-x-2 shrink-0">
-            {/* 7. Icono ( Panel admin ) - Only icon, no text */}
+          {/* Action Buttons: Responsive for mobile and desktop */}
+          <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
+            {/* Panel admin button: visible on md+, on mobile available in hamburger drawer */}
             <button
               onClick={onOpenAdmin}
-              className={`p-2.5 rounded-xl border transition flex items-center justify-center shadow-sm shrink-0 ${
+              className={`hidden md:flex p-2 sm:p-2.5 rounded-xl border transition items-center justify-center shadow-sm shrink-0 cursor-pointer ${
                 activeSection === 'admin'
                   ? 'bg-[#F27C36] text-white border-[#F27C36] shadow-[#F27C36]/20 ring-1 ring-[#F27C36]'
                   : 'bg-[#394B61] hover:bg-[#000000] text-white border-[#394B61] hover:border-[#F27C36]'
@@ -136,41 +134,47 @@ export const Header: React.FC<HeaderProps> = ({
               <ShieldCheck className="w-5 h-5 text-[#F27C36]" />
             </button>
 
-            {/* 8. Icono ( instalar app ) - Only icon, no text */}
-            <PWAInstallButton variant="header" />
+            {/* PWA Install Button: visible on lg+, on mobile available in hamburger drawer */}
+            <div className="hidden lg:block">
+              <PWAInstallButton variant="header" />
+            </div>
 
-            {/* 9. Icono ( Carrito de compras ) - Only icon + counter */}
+            {/* Carrito de compras: ALWAYS VISIBLE */}
             <button
               onClick={onOpenCart}
-              className="relative p-2.5 rounded-xl bg-[#394B61] hover:bg-[#000000] text-white border border-[#394B61] hover:border-[#F27C36] transition flex items-center justify-center shadow-sm shrink-0"
+              className="relative p-2 sm:p-2.5 rounded-xl bg-[#394B61] hover:bg-[#000000] text-white border border-[#394B61] hover:border-[#F27C36] transition flex items-center justify-center shadow-sm shrink-0 cursor-pointer"
               aria-label={`Carrito de compras con ${totalCartCount} productos`}
               title="Ver Carrito de Compras"
             >
-              <ShoppingCart className="w-5 h-5 text-white" />
+              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               {totalCartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#F27C36] text-white text-[11px] font-bold flex items-center justify-center shadow-lg shadow-[#F27C36]/50 animate-pulse">
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] sm:min-w-[20px] h-4.5 sm:h-5 px-1 rounded-full bg-[#F27C36] text-white text-[10px] sm:text-[11px] font-bold flex items-center justify-center shadow-lg animate-pulse">
                   {totalCartCount}
                 </span>
               )}
             </button>
 
-            {/* 10. Boton: COTIZAR */}
+            {/* Botón COTIZAR: ALWAYS VISIBLE */}
             <button
               onClick={onOpenQuickQuote}
-              className="inline-flex items-center space-x-1.5 bg-[#F27C36] hover:bg-[#d96624] active:bg-[#c2591b] text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tracking-wider uppercase transition shadow-md shrink-0"
+              className="inline-flex items-center space-x-1 sm:space-x-1.5 bg-[#F27C36] hover:bg-[#d96624] active:bg-[#c2591b] text-white px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-extrabold tracking-wider uppercase transition shadow-md shrink-0 cursor-pointer"
               title="Solicitar Cotización Inmediata"
             >
               <span>COTIZAR</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 hidden sm:inline" />
             </button>
 
-            {/* Mobile Hamburger Menu Toggle */}
+            {/* Mobile Hamburger Menu Toggle: ALWAYS CLEARLY VISIBLE ON MOBILE (< lg) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-slate-200 hover:text-white bg-[#394B61] border border-[#394B61] transition ml-1"
-              aria-label="Abrir menú"
+              className="lg:hidden p-2 sm:p-2.5 rounded-xl text-white bg-[#394B61] hover:bg-[#2b3c50] border border-[#394B61] transition shrink-0 cursor-pointer flex items-center justify-center ml-0.5"
+              aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú de navegación"}
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5 text-[#F27C36]" />
+              ) : (
+                <Menu className="w-5 h-5 text-white" />
+              )}
             </button>
           </div>
         </div>

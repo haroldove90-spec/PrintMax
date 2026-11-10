@@ -88,32 +88,32 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides, show
         })}
 
         {/* Content Container */}
-        <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 w-full">
+        <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 md:py-24 w-full">
           <div className="max-w-3xl">
             {/* Tag / Category Badge */}
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#182F4F]/90 border border-[#394B61] text-slate-200 text-xs sm:text-sm font-semibold mb-6 backdrop-blur-md">
-              <Sparkles className="w-4 h-4 text-[#F27C36]" />
-              <span>{current.tag}</span>
+            <div className="inline-flex flex-wrap items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-[#182F4F]/90 border border-[#394B61] text-slate-200 text-xs sm:text-sm font-semibold mb-4 sm:mb-6 backdrop-blur-md max-w-full">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F27C36] shrink-0" />
+              <span className="truncate">{current.tag}</span>
               <span className="text-white/30">•</span>
-              <span className="text-[#F27C36] font-medium">{current.badgeText}</span>
+              <span className="text-[#F27C36] font-medium truncate">{current.badgeText}</span>
             </div>
 
             {/* Slide Title */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black text-white tracking-tight leading-[1.12] mb-6">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black text-white tracking-tight leading-tight mb-4 sm:mb-6 break-words">
               <FormattedText text={current.title} />
             </h1>
 
             {/* Subtitle */}
-            <div className="text-base sm:text-lg lg:text-xl text-slate-200 leading-relaxed font-normal mb-8 max-w-2xl">
+            <div className="text-sm sm:text-base md:text-lg lg:text-xl text-slate-200 leading-relaxed font-normal mb-6 sm:mb-8 max-w-2xl break-words">
               <FormattedText text={current.subtitle} />
             </div>
 
             {/* Feature Bullets */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-8 sm:mb-10">
               {current.features && current.features.map((feat: string, idx: number) => (
-                <div key={idx} className="flex items-start space-x-2.5 bg-black/40 backdrop-blur-sm p-2 rounded-xl border border-white/5">
-                  <CheckCircle2 className="w-5 h-5 text-[#F27C36] shrink-0 mt-0.5" />
-                  <span className="text-xs sm:text-sm text-slate-100 font-medium leading-snug">
+                <div key={idx} className="flex items-start space-x-2.5 bg-black/40 backdrop-blur-sm p-2.5 rounded-xl border border-white/5">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#F27C36] shrink-0 mt-0.5" />
+                  <span className="text-xs sm:text-sm text-slate-100 font-medium leading-snug break-words">
                     <FormattedText text={feat} />
                   </span>
                 </div>
@@ -121,10 +121,10 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides, show
             </div>
 
             {/* Action Buttons: Navigate directly to separate section */}
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <button
                 onClick={() => onNavigate(getSlideNavigationTarget(current.ctaPrimaryAction, 'renta_venta'))}
-                className="inline-flex items-center space-x-2.5 bg-[#F27C36] hover:bg-[#d96624] text-white px-7 py-3.5 rounded-xl font-black text-xs sm:text-sm tracking-wider uppercase transition shadow-xl transform hover:-translate-y-0.5 cursor-pointer"
+                className="inline-flex items-center justify-center space-x-2.5 bg-[#F27C36] hover:bg-[#d96624] text-white px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl font-black text-xs sm:text-sm tracking-wider uppercase transition shadow-xl transform active:scale-95 cursor-pointer"
               >
                 <span>{current.ctaPrimaryText || 'Ver Catálogo de Equipos'}</span>
                 <ArrowRight className="w-4 h-4 text-white" />
@@ -132,7 +132,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides, show
 
               <button
                 onClick={() => onNavigate(getSlideNavigationTarget(current.ctaSecondaryAction, 'contacto'))}
-                className="inline-flex items-center space-x-2 bg-[#182F4F]/90 hover:bg-[#182F4F] text-slate-100 hover:text-white border border-[#394B61] hover:border-[#F27C36] px-6 py-3.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer"
+                className="inline-flex items-center justify-center space-x-2 bg-[#182F4F]/90 hover:bg-[#182F4F] text-slate-100 hover:text-white border border-[#394B61] hover:border-[#F27C36] px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer"
               >
                 <span>{current.ctaSecondaryText || 'Calculadora de Renta'}</span>
               </button>

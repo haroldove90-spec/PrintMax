@@ -574,26 +574,26 @@ export default function App() {
 
       {/* Breadcrumb Navigation when viewing an internal separate section (hidden on Home / Tienda) */}
       {activeSection !== 'tienda' && activeSection !== 'inicio' && activeSection !== 'admin' && (
-        <div className="bg-[#182F4F] text-white border-b border-[#394B61] py-3 px-4 sm:px-6 lg:px-8 shadow-sm">
-          <div className="max-w-7xl mx-auto flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-2 text-slate-300">
+        <div className="bg-[#182F4F] text-white border-b border-[#394B61] py-2.5 sm:py-3 px-3 sm:px-6 lg:px-8 shadow-sm overflow-hidden">
+          <div className="max-w-7xl mx-auto flex items-center justify-between text-xs gap-2 min-w-0">
+            <div className="flex items-center space-x-1.5 sm:space-x-2 text-slate-300 min-w-0 truncate">
               <button 
                 onClick={() => navigateToSection('tienda')}
-                className="hover:text-white transition"
+                className="hover:text-white transition shrink-0"
               >
-                Tienda (Inicio)
+                Tienda
               </button>
-              <ChevronRight className="w-3.5 h-3.5 text-[#F27C36]" />
-              <span className="text-[#F27C36] font-bold">
+              <ChevronRight className="w-3.5 h-3.5 text-[#F27C36] shrink-0" />
+              <span className="text-[#F27C36] font-bold truncate">
                 {sectionTitles[activeSection]}
               </span>
             </div>
 
             <button
               onClick={() => navigateToSection('tienda')}
-              className="text-slate-300 hover:text-white flex items-center space-x-1"
+              className="text-slate-300 hover:text-white flex items-center space-x-1 shrink-0 text-[11px] sm:text-xs"
             >
-              <span>← Volver a la Tienda</span>
+              <span>← Volver</span>
             </button>
           </div>
         </div>

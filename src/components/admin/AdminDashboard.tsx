@@ -2263,7 +2263,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <button
-                type="submit"
+                type="button"
+                onClick={() => handleSaveCMS()}
                 disabled={cmsSaving}
                 className="px-6 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96726] text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer disabled:opacity-50"
               >
@@ -2666,8 +2667,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={editableContent.slides[activeSlideEditor].tag}
                     onChange={(e) => {
-                      const updatedSlides = [...editableContent.slides];
-                      updatedSlides[activeSlideEditor].tag = e.target.value;
+                      const updatedSlides = editableContent.slides.map((s, idx) =>
+                        idx === activeSlideEditor ? { ...s, tag: e.target.value } : s
+                      );
                       setEditableContent({ ...editableContent, slides: updatedSlides });
                     }}
                     className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
@@ -2682,8 +2684,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={editableContent.slides[activeSlideEditor].badgeText || ''}
                     onChange={(e) => {
-                      const updatedSlides = [...editableContent.slides];
-                      updatedSlides[activeSlideEditor].badgeText = e.target.value;
+                      const updatedSlides = editableContent.slides.map((s, idx) =>
+                        idx === activeSlideEditor ? { ...s, badgeText: e.target.value } : s
+                      );
                       setEditableContent({ ...editableContent, slides: updatedSlides });
                     }}
                     placeholder="Ej: Tecnología ECOSYS y TASKalfa"
@@ -2699,8 +2702,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="text"
                     value={editableContent.slides[activeSlideEditor].title}
                     onChange={(e) => {
-                      const updatedSlides = [...editableContent.slides];
-                      updatedSlides[activeSlideEditor].title = e.target.value;
+                      const updatedSlides = editableContent.slides.map((s, idx) =>
+                        idx === activeSlideEditor ? { ...s, title: e.target.value } : s
+                      );
                       setEditableContent({ ...editableContent, slides: updatedSlides });
                     }}
                     className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
@@ -2715,8 +2719,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     rows={2}
                     value={editableContent.slides[activeSlideEditor].subtitle}
                     onChange={(e) => {
-                      const updatedSlides = [...editableContent.slides];
-                      updatedSlides[activeSlideEditor].subtitle = e.target.value;
+                      const updatedSlides = editableContent.slides.map((s, idx) =>
+                        idx === activeSlideEditor ? { ...s, subtitle: e.target.value } : s
+                      );
                       setEditableContent({ ...editableContent, slides: updatedSlides });
                     }}
                     className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
@@ -2746,8 +2751,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           type="text"
                           value={editableContent.slides[activeSlideEditor].ctaPrimaryText || ''}
                           onChange={(e) => {
-                            const updatedSlides = [...editableContent.slides];
-                            updatedSlides[activeSlideEditor].ctaPrimaryText = e.target.value;
+                            const updatedSlides = editableContent.slides.map((s, idx) =>
+                              idx === activeSlideEditor ? { ...s, ctaPrimaryText: e.target.value } : s
+                            );
                             setEditableContent({ ...editableContent, slides: updatedSlides });
                           }}
                           placeholder="Ver Catálogo de Equipos"
@@ -2759,8 +2765,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <select
                           value={editableContent.slides[activeSlideEditor].ctaPrimaryAction || 'hardware'}
                           onChange={(e) => {
-                            const updatedSlides = [...editableContent.slides];
-                            updatedSlides[activeSlideEditor].ctaPrimaryAction = e.target.value;
+                            const updatedSlides = editableContent.slides.map((s, idx) =>
+                              idx === activeSlideEditor ? { ...s, ctaPrimaryAction: e.target.value } : s
+                            );
                             setEditableContent({ ...editableContent, slides: updatedSlides });
                           }}
                           className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
@@ -2785,8 +2792,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           type="text"
                           value={editableContent.slides[activeSlideEditor].ctaSecondaryText || ''}
                           onChange={(e) => {
-                            const updatedSlides = [...editableContent.slides];
-                            updatedSlides[activeSlideEditor].ctaSecondaryText = e.target.value;
+                            const updatedSlides = editableContent.slides.map((s, idx) =>
+                              idx === activeSlideEditor ? { ...s, ctaSecondaryText: e.target.value } : s
+                            );
                             setEditableContent({ ...editableContent, slides: updatedSlides });
                           }}
                           placeholder="Calculadora de Renta"
@@ -2798,8 +2806,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <select
                           value={editableContent.slides[activeSlideEditor].ctaSecondaryAction || 'contacto'}
                           onChange={(e) => {
-                            const updatedSlides = [...editableContent.slides];
-                            updatedSlides[activeSlideEditor].ctaSecondaryAction = e.target.value;
+                            const updatedSlides = editableContent.slides.map((s, idx) =>
+                              idx === activeSlideEditor ? { ...s, ctaSecondaryAction: e.target.value } : s
+                            );
                             setEditableContent({ ...editableContent, slides: updatedSlides });
                           }}
                           className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
@@ -2850,8 +2859,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             onChange={(e) => {
                               const updatedFeatures = [...(editableContent.slides[activeSlideEditor].features || [])];
                               updatedFeatures[fIdx] = e.target.value;
-                              const updatedSlides = [...editableContent.slides];
-                              updatedSlides[activeSlideEditor].features = updatedFeatures;
+                              const updatedSlides = editableContent.slides.map((s, idx) =>
+                                idx === activeSlideEditor ? { ...s, features: updatedFeatures } : s
+                              );
                               setEditableContent({ ...editableContent, slides: updatedSlides });
                             }}
                             className="flex-1 text-xs bg-transparent text-white focus:outline-none font-medium"
@@ -2905,12 +2915,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     type="url"
                     value={editableContent.slides[activeSlideEditor].imageUrl}
                     onChange={(e) => {
-                      const updatedSlides = [...editableContent.slides];
-                      updatedSlides[activeSlideEditor].imageUrl = e.target.value;
+                      const updatedSlides = editableContent.slides.map((s, idx) =>
+                        idx === activeSlideEditor ? { ...s, imageUrl: e.target.value } : s
+                      );
                       setEditableContent({ ...editableContent, slides: updatedSlides });
                     }}
                     className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36] font-mono"
                   />
+                </div>
+
+                {/* BOTÓN DIRECTO DE GUARDADO DEL SLIDER */}
+                <div className="sm:col-span-2 pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0a1420] p-4 rounded-2xl border border-[#394B61]">
+                  <div className="text-xs text-slate-300 flex items-center space-x-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Guarda los cambios de esta diapositiva directamente en Supabase y memoria local.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveCMS()}
+                    disabled={cmsSaving}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96726] text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer disabled:opacity-50"
+                  >
+                    {cmsSaving ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                        <span>Guardando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 text-white" />
+                        <span>Guardar Cambios del Slider</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
@@ -4633,7 +4670,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span className="text-[10px] text-slate-400">Guarda en Supabase & LocalStorage</span>
               </div>
               <button
-                type="submit"
+                type="button"
+                onClick={() => handleSaveCMS()}
                 disabled={cmsSaving}
                 className="px-5 py-2.5 rounded-xl bg-[#F27C36] hover:bg-[#d96726] text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer disabled:opacity-50"
               >
