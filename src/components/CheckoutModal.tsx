@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   CheckCircle2, 
@@ -11,7 +11,8 @@ import {
   Truck, 
   Lock,
   ArrowRight,
-  Receipt
+  Receipt,
+  Sparkles
 } from 'lucide-react';
 import { CartItem, OrderDetails, PaymentConfig, DiscountCoupon } from '../types';
 
@@ -23,6 +24,7 @@ interface CheckoutModalProps {
   onOrderCreated?: (order: OrderDetails) => void;
   paymentConfig?: PaymentConfig;
   coupons?: DiscountCoupon[];
+  whatsappPhone?: string;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -32,7 +34,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   onClearCart,
   onOrderCreated,
   paymentConfig,
-  coupons = []
+  coupons = [],
+  whatsappPhone = '524448123000'
 }) => {
   const [formData, setFormData] = useState({
     customerName: '',
@@ -56,6 +59,32 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState<OrderDetails | null>(null);
   const [mpProcessing, setMpProcessing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmedOrder(null);
+      setIsSubmitting(false);
+      setAppliedCoupon(null);
+      setCouponCodeInput('');
+      setCouponError(null);
+    }
+  }, [isOpen]);
+
+  const handleFillDemoData = () => {
+    setFormData((prev) => ({
+      ...prev,
+      customerName: prev.customerName || 'Ing. Roberto Mendoza',
+      companyName: prev.companyName || 'Soluciones Industriales del Centro S.A. de C.V.',
+      rfc: prev.rfc || 'SIC080412XYZ',
+      email: prev.email || 'compras@solucionescentro.mx',
+      phone: prev.phone || '444 812 3456',
+      address: prev.address || 'Av. Venustiano Carranza #1450, Col. Tequisquiapan',
+      city: prev.city || 'San Luis Potosí',
+      state: prev.state || 'San Luis Potosí',
+      postalCode: prev.postalCode || '78230',
+      notes: prev.notes || 'Simulación de compra en línea — entrega en recepción.'
+    }));
+  };
 
   if (!isOpen) return null;
 
@@ -169,8 +198,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   };
 
   const getWhatsAppLink = (order: OrderDetails) => {
+    const cleanPhone = (whatsappPhone || '524448123000').replace(/\D/g, '') || '524448123000';
     const message = `Hola LUMESA Kyocera México, he generado el pedido ${order.orderId} a nombre de ${order.customerName} (${order.companyName}) por un total de $${order.total.toLocaleString('es-MX')} MXN. Solicito seguimiento de entrega y factura CFDI.`;
-    return `https://wa.me/524448123000?text=${encodeURIComponent(message)}`;
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
   };
 
   return (
@@ -192,10 +222,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
             <div className="min-w-0">
               <h3 className="text-sm sm:text-base md:text-lg font-bold truncate">
-                {confirmedOrder ? 'Confirmación de Pedido Oficial' : 'Finalizar Pedido y Facturación (CFDI 4.0)'}
+                {confirmedOrder ? 'Confirmación de Pedido (Simulación Exitosa)' : 'Simulador de Compra y Facturación (CFDI 4.0)'}
               </h3>
               <p className="text-[11px] sm:text-xs text-slate-400 truncate">
-                Distribuidor Autorizado Kyocera • San Luis Potosí & Nacional
+                Distribuidor Autorizado Kyocera • Simulación de Compra Segura
               </p>
             </div>
           </div>
@@ -347,6 +377,28 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Scrollable Fields */}
             <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-5">
+              {/* Simulation Banner + Product Summary */}
+              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="text-xs text-amber-900">
+                  <div className="font-bold flex items-center space-x-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Simulación de Compra en Línea (Sin cargo bancario real)</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 mt-0.5">
+                    {items.length > 0
+                      ? `${items.reduce((acc, it) => acc + it.quantity, 0)} equipo(s) en orden: ${items.map((it) => `${it.quantity}x ${it.product.name}`).join(', ')}`
+                      : 'Agregue un equipo para simular su pedido.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleFillDemoData}
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[11px] font-bold transition shrink-0"
+                >
+                  Rellenar datos de prueba
+                </button>
+              </div>
+
               {/* Step 1: Contact and Billing CFDI 4.0 */}
               <div>
                 <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 flex items-center space-x-1.5">

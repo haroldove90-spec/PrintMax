@@ -10,17 +10,22 @@ import {
   Download, 
   Printer, 
   Layers, 
-  Cpu
+  Cpu,
+  MessageCircle,
+  CreditCard
 } from 'lucide-react';
 import { Product } from '../types';
+import { allowsSale, allowsRent, buildRentalWhatsAppUrl } from '../utils/productHelpers';
 
 interface ProductDetailModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
   onAddToCart: (product: Product, type?: 'compra' | 'renta') => void;
+  onBuyNow: (product: Product) => void;
   isCompared: boolean;
   onToggleCompare: (product: Product) => void;
+  whatsappPhone?: string;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
@@ -28,8 +33,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   isOpen,
   onClose,
   onAddToCart,
+  onBuyNow,
   isCompared,
-  onToggleCompare
+  onToggleCompare,
+  whatsappPhone
 }) => {
   if (!isOpen || !product) return null;
 
@@ -213,54 +220,77 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
               {/* Pricing & CTA */}
               <div className="border-t border-slate-200 pt-4">
-                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-4">
-                  <div>
-                    <span className="text-xs text-slate-500 block">
-                      {product.price > 0 ? 'Precio de Compra Directa (con IVA)' : 'Cotización Personalizada'}
-                    </span>
-                    {product.price > 0 ? (
-                      <span className="text-2xl font-black text-slate-900">
-                        ${product.price.toLocaleString('es-MX')} <span className="text-xs text-slate-500 font-normal">MXN</span>
+                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-4 gap-2">
+                  {allowsSale(product) && (
+                    <div>
+                      <span className="text-xs text-slate-500 block">
+                        {product.price > 0 ? 'Precio de Compra Directa (con IVA)' : 'Venta Directa'}
                       </span>
-                    ) : (
-                      <span className="text-xl font-black text-slate-900">
-                        Solicitar Cotización
-                      </span>
-                    )}
-                  </div>
+                      {product.price > 0 ? (
+                        <span className="text-2xl font-black text-slate-900">
+                          ${product.price.toLocaleString('es-MX')} <span className="text-xs text-slate-500 font-normal">MXN</span>
+                        </span>
+                      ) : (
+                        <span className="text-xl font-black text-slate-900">
+                          Disponible para Compra
+                        </span>
+                      )}
+                    </div>
+                  )}
 
-                  {product.rentalPriceMonthly && (
-                    <div className="mt-2 sm:mt-0 text-left sm:text-right">
-                      <span className="text-xs text-blue-600 font-bold block">Opción de Renta Empresarial</span>
-                      <span className="text-xl font-black text-[#F27C36]">
-                        ${product.rentalPriceMonthly.toLocaleString('es-MX')} <span className="text-xs text-slate-600 font-normal">MXN / mes</span>
-                      </span>
+                  {allowsRent(product) && (
+                    <div className={allowsSale(product) ? 'mt-2 sm:mt-0 text-left sm:text-right' : ''}>
+                      <span className="text-xs text-emerald-700 font-bold block">Disponible en Renta Empresarial</span>
+                      {product.rentalPriceMonthly && product.rentalPriceMonthly > 0 ? (
+                        <span className="text-xl font-black text-[#F27C36]">
+                          ${product.rentalPriceMonthly.toLocaleString('es-MX')} <span className="text-xs text-slate-600 font-normal">MXN / mes</span>
+                        </span>
+                      ) : (
+                        <span className="text-sm font-bold text-emerald-700">
+                          Solicitar informes vía WhatsApp
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    onClick={() => {
-                      onAddToCart(product, 'compra');
-                      onClose();
-                    }}
-                    className="py-3 px-4 rounded-xl bg-[#182F4F] hover:bg-[#394B61] text-white font-bold text-xs sm:text-sm border border-[#394B61] hover:border-[#F27C36] transition flex items-center justify-center space-x-2 shadow-md cursor-pointer"
-                  >
-                    <ShoppingCart className="w-4 h-4 text-[#F27C36]" />
-                    <span>Añadir a Carrito</span>
-                  </button>
+                <div className="flex flex-wrap gap-2">
+                  {allowsSale(product) && (
+                    <>
+                      <button
+                        onClick={() => {
+                          onBuyNow(product);
+                          onClose();
+                        }}
+                        className="flex-1 min-w-[150px] py-3 px-4 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm transition flex items-center justify-center space-x-2 shadow-md cursor-pointer"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>Comprar Ahora</span>
+                      </button>
 
-                  {product.rentalPriceMonthly && (
-                    <button
-                      onClick={() => {
-                        onAddToCart(product, 'renta');
-                        onClose();
-                      }}
-                      className="py-3 px-4 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white font-bold text-xs sm:text-sm transition text-center shadow-md shadow-[#F27C36]/20 cursor-pointer"
+                      <button
+                        onClick={() => {
+                          onAddToCart(product, 'compra');
+                          onClose();
+                        }}
+                        className="py-3 px-4 rounded-xl bg-[#182F4F] hover:bg-[#394B61] text-white font-bold text-xs sm:text-sm border border-[#394B61] hover:border-[#F27C36] transition flex items-center justify-center space-x-2 shadow-md cursor-pointer"
+                      >
+                        <ShoppingCart className="w-4 h-4 text-[#F27C36]" />
+                        <span>Añadir a Carrito</span>
+                      </button>
+                    </>
+                  )}
+
+                  {allowsRent(product) && (
+                    <a
+                      href={buildRentalWhatsAppUrl(product, whatsappPhone)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 min-w-[200px] py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center space-x-2 shadow-md"
                     >
-                      Rentar Equipo
-                    </button>
+                      <MessageCircle className="w-4 h-4 shrink-0" />
+                      <span>Solicitar Informes por WhatsApp</span>
+                    </a>
                   )}
 
                   <button

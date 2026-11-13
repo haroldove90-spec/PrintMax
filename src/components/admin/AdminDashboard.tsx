@@ -88,8 +88,10 @@ import {
   FooterConfig,
   FooterLinkItem,
   AppSection,
-  CoverageConfig
+  CoverageConfig,
+  ProductListingType
 } from '../../types';
+import { getProductListingType, getListingTypeLabel } from '../../utils/productHelpers';
 import { DEFAULT_VISIBILITY, INITIAL_SITE_CONTENT, DEFAULT_FOOTER_CONFIG, DEFAULT_COVERAGE, normalizeHeroSlides } from '../../data/initialContent';
 import { FormattedText } from '../FormattedText';
 
@@ -100,7 +102,7 @@ interface AdminDashboardProps {
   products: Product[];
   onSaveProduct: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
-  onImportProducts: (imported: Product[], mode: 'merge' | 'replace') => Promise<void> | void;
+  onImportProducts: (imported: Product[], mode: 'merge' | 'replace') => Promise<{ supabaseSynced?: boolean; supabaseError?: string } | void> | void;
   onClearAllProducts: () => Promise<void> | void;
   onViewProductModal: (product: Product) => void;
   orders: OrderDetails[];
@@ -185,6 +187,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState<string>('todos');
   const [productStatusFilter, setProductStatusFilter] = useState<'todos' | 'activos' | 'desactivados'>('todos');
+  const [productModalityFilter, setProductModalityFilter] = useState<'todos' | ProductListingType>('todos');
 
   // Product Import Modal State
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -515,6 +518,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (productCategoryFilter !== 'todos' && p.category !== productCategoryFilter) return false;
     if (productStatusFilter === 'activos' && p.active === false) return false;
     if (productStatusFilter === 'desactivados' && p.active !== false) return false;
+    if (productModalityFilter !== 'todos' && getProductListingType(p) !== productModalityFilter) return false;
     if (productSearch.trim()) {
       const q = productSearch.toLowerCase();
       return (
@@ -618,6 +622,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onSaveProduct(duplicated);
   };
 
+  const handleChangeProductListingType = (product: Product, newType: ProductListingType) => {
+    onSaveProduct({
+      ...product,
+      listingType: newType
+    });
+  };
+
   const handleSelectImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -641,11 +652,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (!importParseResult || importParseResult.products.length === 0) return;
     setImportingToDb(true);
     try {
-      await onImportProducts(importParseResult.products, importMode);
-      setCatalogNotice(
-        `¡Base de datos importada! Se cargaron ${importParseResult.products.length} productos y se sincronizaron con Supabase.`
-      );
-      setTimeout(() => setCatalogNotice(null), 6000);
+      const res = await onImportProducts(importParseResult.products, importMode);
+      if (res && res.supabaseSynced === false && res.supabaseError) {
+        setCatalogNotice(
+          `Se importaron ${importParseResult.products.length} productos en la tienda local, pero hubo una advertencia al sincronizar con Supabase: ${res.supabaseError}`
+        );
+      } else {
+        setCatalogNotice(
+          `¡Base de datos importada! Se cargaron ${importParseResult.products.length} de ${importParseResult.totalRowsRead} filas leídas y se sincronizaron con Supabase.`
+        );
+      }
+      setTimeout(() => setCatalogNotice(null), 8000);
       setIsImportModalOpen(false);
       setImportParseResult(null);
       setImportFileName('');
@@ -1354,7 +1371,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Filter Bar */}
             <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 grid grid-cols-1 sm:grid-cols-12 gap-3">
-              <div className="sm:col-span-5 relative">
+              <div className="sm:col-span-4 relative">
                 <input
                   type="text"
                   placeholder="Filtrar por nombre, SKU o consumible..."
@@ -1365,7 +1382,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <Search className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-2.5" />
               </div>
 
-              <div className="sm:col-span-4">
+              <div className="sm:col-span-3">
                 <select
                   value={productCategoryFilter}
                   onChange={(e) => setProductCategoryFilter(e.target.value)}
@@ -1382,13 +1399,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <div className="sm:col-span-3">
                 <select
+                  value={productModalityFilter}
+                  onChange={(e) => setProductModalityFilter(e.target.value as 'todos' | ProductListingType)}
+                  className="w-full text-xs bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="todos">Venta / Renta (Todos)</option>
+                  <option value="venta">Solo Venta ({products.filter(p => getProductListingType(p) === 'venta').length})</option>
+                  <option value="renta">Solo Renta ({products.filter(p => getProductListingType(p) === 'renta').length})</option>
+                  <option value="ambos">Venta y Renta ({products.filter(p => getProductListingType(p) === 'ambos').length})</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <select
                   value={productStatusFilter}
                   onChange={(e) => setProductStatusFilter(e.target.value as 'todos' | 'activos' | 'desactivados')}
                   className="w-full text-xs bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
                 >
-                  <option value="todos">Todos los Estados ({products.length})</option>
+                  <option value="todos">Todos ({products.length})</option>
                   <option value="activos">Activos ({products.filter(p => p.active !== false).length})</option>
-                  <option value="desactivados">Desactivados ({products.filter(p => p.active === false).length})</option>
+                  <option value="desactivados">Ocultos ({products.filter(p => p.active === false).length})</option>
                 </select>
               </div>
             </div>
@@ -1435,7 +1465,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <tr className="bg-black border-b border-neutral-800 text-neutral-400 font-bold uppercase tracking-wider text-[10px]">
                         <th className="py-3.5 px-4">Producto / SKU</th>
                         <th className="py-3.5 px-4">Categoría / Tipo</th>
-                        <th className="py-3.5 px-4">Precio Venta</th>
+                        <th className="py-3.5 px-4">Modalidad</th>
+                        <th className="py-3.5 px-4">Precios</th>
                         <th className="py-3.5 px-4 text-center">Stock SLP</th>
                         <th className="py-3.5 px-4 text-center">Estado Tienda</th>
                         <th className="py-3.5 px-4 text-right">Acciones</th>
@@ -1444,7 +1475,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <tbody className="divide-y divide-neutral-800/80">
                       {filteredProducts.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-neutral-500">
+                          <td colSpan={7} className="py-8 text-center text-neutral-500">
                             No hay productos que coincidan con el filtro seleccionado.
                           </td>
                         </tr>
@@ -1454,6 +1485,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           const isLowStock = stockCount <= (p.minStockAlert ?? 2) && stockCount > 0;
                           const isOutOfStock = stockCount === 0 || !p.inStock;
                           const isActive = p.active !== false;
+                          const listingType = getProductListingType(p);
 
                           return (
                             <tr key={p.id} className={`hover:bg-neutral-900/50 transition ${!isActive ? 'opacity-60' : ''}`}>
@@ -1498,19 +1530,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </div>
                               </td>
 
+                              <td className="py-3 px-4">
+                                <select
+                                  value={listingType}
+                                  onChange={(e) => handleChangeProductListingType(p, e.target.value as ProductListingType)}
+                                  className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg border cursor-pointer focus:outline-none ${
+                                    listingType === 'renta'
+                                      ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700'
+                                      : listingType === 'ambos'
+                                      ? 'bg-amber-950/70 text-amber-300 border-amber-700'
+                                      : 'bg-blue-950/70 text-blue-300 border-blue-700'
+                                  }`}
+                                  title="Asignar modalidad en tienda (Venta, Renta o Ambos)"
+                                >
+                                  <option value="venta">Solo Venta</option>
+                                  <option value="renta">Solo Renta (WhatsApp)</option>
+                                  <option value="ambos">Venta y Renta</option>
+                                </select>
+                              </td>
+
                               <td className="py-3 px-4 font-mono font-bold text-white">
-                                {p.price > 0 ? (
-                                  <span>${p.price.toLocaleString('es-MX')} MXN</span>
-                                ) : (
-                                  <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">
-                                    Sin precio ($0)
-                                  </span>
+                                {listingType !== 'renta' && (
+                                  p.price > 0 ? (
+                                    <span>${p.price.toLocaleString('es-MX')} MXN</span>
+                                  ) : (
+                                    <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">
+                                      Venta: Por cotizar
+                                    </span>
+                                  )
                                 )}
-                                {p.rentalPriceMonthly ? (
-                                  <div className="text-[10px] text-neutral-400 font-normal mt-0.5">
-                                    Renta: ${p.rentalPriceMonthly.toLocaleString('es-MX')}/mes
+                                {(listingType === 'renta' || listingType === 'ambos') && (
+                                  <div className="text-[10px] text-emerald-400 font-normal mt-0.5">
+                                    {p.rentalPriceMonthly
+                                      ? `Renta: $${p.rentalPriceMonthly.toLocaleString('es-MX')}/mes`
+                                      : 'Renta: Informes WhatsApp'}
                                   </div>
-                                ) : null}
+                                )}
                               </td>
 
                               <td className="py-3 px-4 text-center">
@@ -1728,6 +1783,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <th className="p-2.5">SKU / Modelo</th>
                                 <th className="p-2.5">Nombre</th>
                                 <th className="p-2.5">Categoría</th>
+                                <th className="p-2.5">Modalidad</th>
                                 <th className="p-2.5">Tipo</th>
                                 <th className="p-2.5">Velocidad</th>
                                 <th className="p-2.5">Consumibles</th>
@@ -1739,6 +1795,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   <td className="p-2.5 font-mono text-blue-400">{item.code}</td>
                                   <td className="p-2.5 font-bold text-white">{item.name}</td>
                                   <td className="p-2.5 text-neutral-300">{item.categoryLabel}</td>
+                                  <td className="p-2.5 text-emerald-300 font-semibold">{getListingTypeLabel(getProductListingType(item))}</td>
                                   <td className="p-2.5 text-neutral-300">{item.specs.tipoImpresion}</td>
                                   <td className="p-2.5 text-neutral-300">{item.specs.velocidad}</td>
                                   <td className="p-2.5 text-neutral-400 truncate max-w-[180px]">{item.specs.consumiblesPrincipales}</td>

@@ -419,6 +419,22 @@ export default function App() {
     setIsCheckoutOpen(true);
   };
 
+  const handleBuyNow = (product: Product) => {
+    setCartItems((prevItems) => {
+      const existingIndex = prevItems.findIndex(
+        (item) => item.product.id === product.id && item.acquisitionType === 'compra'
+      );
+      if (existingIndex > -1) {
+        return prevItems;
+      }
+      return [...prevItems, { product, quantity: 1, acquisitionType: 'compra' }];
+    });
+    setSelectedProduct(null);
+    setIsComparatorOpen(false);
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  };
+
   // When customer completes checkout, register order into Admin Dashboard & Supabase
   const handleOrderCreated = (newOrder: OrderDetails) => {
     setOrders((prev) => [newOrder, ...prev]);
@@ -483,11 +499,21 @@ export default function App() {
     deleteProductFromSupabase(productId).catch((e) => console.warn('Supabase deleteProduct error:', e));
   };
 
-  const handleImportProducts = async (imported: Product[], mode: 'merge' | 'replace') => {
+  const handleImportProducts = async (
+    imported: Product[],
+    mode: 'merge' | 'replace'
+  ): Promise<{ supabaseSynced: boolean; supabaseError?: string }> => {
     let nextProducts: Product[];
+    let itemsToUpsert: Product[];
+
     if (mode === 'replace') {
       await deleteAllProductsFromSupabase();
-      nextProducts = imported;
+      const deduped = new Map<string, Product>();
+      for (const item of imported) {
+        deduped.set(item.id, item);
+      }
+      nextProducts = Array.from(deduped.values());
+      itemsToUpsert = nextProducts;
     } else {
       const mapById = new Map<string, Product>();
       const idByCode = new Map<string, string>();
@@ -495,17 +521,23 @@ export default function App() {
         mapById.set(existing.id, existing);
         idByCode.set(existing.code.trim().toLowerCase(), existing.id);
       }
+      const touchedById = new Map<string, Product>();
       for (const item of imported) {
         const matchedId = idByCode.get(item.code.trim().toLowerCase()) || item.id;
-        mapById.set(matchedId, { ...item, id: matchedId });
+        const normalized = { ...item, id: matchedId };
+        mapById.set(matchedId, normalized);
+        touchedById.set(matchedId, normalized);
       }
       nextProducts = Array.from(mapById.values());
+      itemsToUpsert = Array.from(touchedById.values());
     }
+
     setProducts(nextProducts);
-    const res = await saveProductsBatchToSupabase(mode === 'replace' ? nextProducts : imported);
+    const res = await saveProductsBatchToSupabase(itemsToUpsert);
     if (!res.success && res.error) {
       console.warn('Supabase batch import warning:', res.error);
     }
+    return { supabaseSynced: res.success, supabaseError: res.error };
   };
 
   const handleClearAllProducts = async () => {
@@ -758,9 +790,11 @@ export default function App() {
           <OnlineStoreSection
             products={activePublicProducts}
             onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
             onOpenProductDetail={(prod) => setSelectedProduct(prod)}
             initialSearchQuery={searchQuery}
             categories={siteContent.storeCategories}
+            whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
           />
         )}
 
@@ -771,11 +805,13 @@ export default function App() {
           <HardwareCatalog
             products={activePublicProducts}
             onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
             onOpenProductDetail={(prod) => setSelectedProduct(prod)}
             comparedProducts={comparedProducts}
             onToggleCompare={handleToggleCompare}
             onOpenComparator={() => setIsComparatorOpen(true)}
             content={siteContent.hardwareSection}
+            whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
           />
         )}
 
@@ -922,6 +958,7 @@ export default function App() {
         onOrderCreated={handleOrderCreated}
         paymentConfig={siteContent.paymentConfig}
         coupons={siteContent.coupons}
+        whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
       />
 
       <ProductDetailModal
@@ -929,8 +966,10 @@ export default function App() {
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
         isCompared={selectedProduct ? comparedProducts.some((p) => p.id === selectedProduct.id) : false}
         onToggleCompare={handleToggleCompare}
+        whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
       />
 
       <ProductComparatorModal
@@ -940,6 +979,8 @@ export default function App() {
         onRemoveProduct={handleRemoveCompared}
         onClearAll={handleClearAllCompared}
         onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+        whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
       />
 
       {/* Admin Specific Modals */}

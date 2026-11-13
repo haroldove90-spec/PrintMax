@@ -11,7 +11,8 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { Product, ProductCategory, StoreCategory } from '../../types';
+import { Product, ProductCategory, ProductListingType, StoreCategory } from '../../types';
+import { getProductListingType } from '../../utils/productHelpers';
 import { uploadProductImageToSupabase } from '../../lib/supabase';
 
 interface ProductFormModalProps {
@@ -40,6 +41,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     code: '',
     category: 'multifuncionales-a4',
     categoryLabel: 'Multifuncional A4',
+    listingType: 'venta',
     price: 0,
     rentalPriceMonthly: undefined,
     badge: '',
@@ -87,6 +89,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       const cloned: Product = JSON.parse(JSON.stringify(productToEdit));
       setFormData({
         ...cloned,
+        listingType: getProductListingType(cloned),
         active: cloned.active !== false
       });
       setConnectivityText(
@@ -156,6 +159,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
     const isColor = formData.specs?.color ?? false;
 
+    const finalListingType: ProductListingType = formData.listingType || 'venta';
+
     const finalProduct: Product = {
       id: formData.id || `prod-${Date.now()}`,
       name: formData.name.trim(),
@@ -165,6 +170,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         categoryOptions.find((c) => c.id === formData.category)?.label ||
         formData.categoryLabel ||
         'Hardware',
+      listingType: finalListingType,
       price: Number(formData.price) || 0,
       rentalPriceMonthly: formData.rentalPriceMonthly ? Number(formData.rentalPriceMonthly) : undefined,
       badge: formData.badge?.trim() || undefined,
@@ -352,40 +358,101 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </div>
             </div>
 
-            {/* Pricing */}
-            <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Modalidad (Venta / Renta) y Precios */}
+            <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-1">
-                  Precio de Venta ($ MXN con IVA)
+                <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">
+                  Modalidad en Tienda (Venta / Renta) *
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={formData.price ?? 0}
-                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                  className="w-full text-sm font-black bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500 font-mono"
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    {
+                      id: 'venta' as ProductListingType,
+                      title: 'Solo Venta',
+                      desc: 'Simulación de compra en línea y carrito'
+                    },
+                    {
+                      id: 'renta' as ProductListingType,
+                      title: 'Solo Renta',
+                      desc: 'Botón de informes por WhatsApp con el nombre del equipo'
+                    },
+                    {
+                      id: 'ambos' as ProductListingType,
+                      title: 'Venta y Renta',
+                      desc: 'Permite compra en línea o informes de renta por WhatsApp'
+                    }
+                  ].map((opt) => {
+                    const selected = (formData.listingType || 'venta') === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, listingType: opt.id })}
+                        className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                          selected
+                            ? 'bg-blue-950/60 border-blue-500 text-white shadow-md ring-1 ring-blue-500/40'
+                            : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                        }`}
+                      >
+                        <div className="text-xs font-bold flex items-center justify-between">
+                          <span>{opt.title}</span>
+                          {selected && (
+                            <span className="w-2 h-2 rounded-full bg-blue-400" />
+                          )}
+                        </div>
+                        <div className="text-[10px] text-neutral-400 mt-1 leading-snug">
+                          {opt.desc}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-1">
-                  Precio de Renta Mensual ($ MXN/mes - Opcional)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  placeholder="Dejar vacío o en 0 si solo es venta"
-                  value={formData.rentalPriceMonthly || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      rentalPriceMonthly: e.target.value ? Number(e.target.value) : undefined
-                    })
-                  }
-                  className="w-full text-sm font-black bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500 font-mono"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-800/80">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-1">
+                    Precio de Venta ($ MXN con IVA)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={formData.price ?? 0}
+                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                    className="w-full text-sm font-black bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500 font-mono"
+                  />
+                  {(formData.listingType === 'renta') && (
+                    <span className="text-[10px] text-neutral-500 mt-1 block">
+                      Oculto en la tienda mientras esté en modo "Solo Renta".
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-1">
+                    Precio de Renta Mensual ($ MXN/mes - Opcional)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="Opcional: dejar vacío para cotizar por WhatsApp"
+                    value={formData.rentalPriceMonthly || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        rentalPriceMonthly: e.target.value ? Number(e.target.value) : undefined
+                      })
+                    }
+                    className="w-full text-sm font-black bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500 font-mono"
+                  />
+                  {(formData.listingType === 'renta' || formData.listingType === 'ambos') && (
+                    <span className="text-[10px] text-emerald-400 mt-1 block">
+                      Se mostrará el botón de WhatsApp para solicitar informes de renta.
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 

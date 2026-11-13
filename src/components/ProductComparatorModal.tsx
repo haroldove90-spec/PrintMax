@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, Trash2, ShoppingCart, Check, FileSpreadsheet } from 'lucide-react';
+import { X, Trash2, ShoppingCart, Check, FileSpreadsheet, MessageCircle } from 'lucide-react';
 import { Product } from '../types';
+import { allowsSale, allowsRent, buildRentalWhatsAppUrl } from '../utils/productHelpers';
 
 interface ProductComparatorModalProps {
   isOpen: boolean;
@@ -9,6 +10,8 @@ interface ProductComparatorModalProps {
   onRemoveProduct: (productId: string) => void;
   onClearAll: () => void;
   onAddToCart: (product: Product, type?: 'compra' | 'renta') => void;
+  onBuyNow: (product: Product) => void;
+  whatsappPhone?: string;
 }
 
 export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
@@ -17,7 +20,9 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
   comparedProducts,
   onRemoveProduct,
   onClearAll,
-  onAddToCart
+  onAddToCart,
+  onBuyNow,
+  whatsappPhone
 }) => {
   if (!isOpen) return null;
 
@@ -140,22 +145,42 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
                             {p.code}
                           </span>
                           
-                          <div className="text-base font-extrabold text-[#F27C36]">
-                            ${p.price.toLocaleString('es-MX')} MXN
-                          </div>
-                          {p.rentalPriceMonthly && (
-                            <span className="text-[11px] text-slate-600 block">
-                              Renta: ${p.rentalPriceMonthly.toLocaleString('es-MX')}/mes
+                          {allowsSale(p) && (
+                            <div className="text-base font-extrabold text-[#F27C36]">
+                              {p.price > 0 ? `$${p.price.toLocaleString('es-MX')} MXN` : 'Compra Directa'}
+                            </div>
+                          )}
+                          {allowsRent(p) && (
+                            <span className="text-[11px] text-emerald-700 font-semibold block">
+                              {p.rentalPriceMonthly ? `Renta: $${p.rentalPriceMonthly.toLocaleString('es-MX')}/mes` : 'Disponible en Renta'}
                             </span>
                           )}
 
-                          <button
-                            onClick={() => onAddToCart(p, 'compra')}
-                            className="mt-3 w-full py-2 px-3 bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1 cursor-pointer"
-                          >
-                            <ShoppingCart className="w-3.5 h-3.5" />
-                            <span>Comprar</span>
-                          </button>
+                          <div className="mt-3 space-y-1.5">
+                            {allowsSale(p) && (
+                              <button
+                                onClick={() => {
+                                  onBuyNow(p);
+                                  onClose();
+                                }}
+                                className="w-full py-2 px-3 bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1 cursor-pointer"
+                              >
+                                <ShoppingCart className="w-3.5 h-3.5" />
+                                <span>Comprar</span>
+                              </button>
+                            )}
+                            {allowsRent(p) && (
+                              <a
+                                href={buildRentalWhatsAppUrl(p, whatsappPhone)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                <span>Informes WhatsApp</span>
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </th>
                     ))}

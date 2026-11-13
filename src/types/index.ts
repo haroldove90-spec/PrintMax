@@ -49,12 +49,15 @@ export interface ProductSpec {
   dimensiones?: string;
 }
 
+export type ProductListingType = 'venta' | 'renta' | 'ambos';
+
 export interface Product {
   id: string;
   name: string;
   code: string;
   category: ProductCategory;
   categoryLabel: string;
+  listingType?: ProductListingType;
   price: number;
   rentalPriceMonthly?: number;
   badge?: string;

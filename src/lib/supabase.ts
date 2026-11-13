@@ -117,29 +117,45 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
     }
 
     if (Array.isArray(data)) {
-      return data.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        code: item.code,
-        category: item.category,
-        categoryLabel: item.category_label || item.categoryLabel || '',
-        price: Number(item.price || 0),
-        rentalPriceMonthly: item.rental_price_monthly ? Number(item.rental_price_monthly) : undefined,
-        badge: item.badge || undefined,
-        shortDescription: item.short_description || item.shortDescription || '',
-        description: item.description || '',
-        image: item.image || '',
-        specs: typeof item.specs === 'string' ? JSON.parse(item.specs) : (item.specs || {}),
-        features: Array.isArray(item.features) ? item.features : [],
-        active: item.active !== undefined ? Boolean(item.active) : true,
-        inStock: Boolean(item.in_stock ?? item.inStock ?? true),
-        stockQuantity: item.stock_quantity !== undefined && item.stock_quantity !== null ? Number(item.stock_quantity) : item.stockQuantity,
-        minStockAlert: item.min_stock_alert !== undefined && item.min_stock_alert !== null ? Number(item.min_stock_alert) : item.minStockAlert,
-        datasheetUrl: item.datasheet_url || item.datasheetUrl || undefined,
-        rating: Number(item.rating || 5.0),
-        reviewsCount: Number(item.reviews_count || item.reviewsCount || 0),
-        originalRef: item.original_ref || item.originalRef || undefined
-      }));
+      return data.map((item: any) => {
+        const parsedSpecs = typeof item.specs === 'string' ? JSON.parse(item.specs) : (item.specs || {});
+        const price = Number(item.price || 0);
+        const rentalPriceMonthly = item.rental_price_monthly ? Number(item.rental_price_monthly) : undefined;
+        const specListing = parsedSpecs?.listingType || item.listing_type;
+        const listingType =
+          specListing === 'venta' || specListing === 'renta' || specListing === 'ambos'
+            ? specListing
+            : (rentalPriceMonthly && rentalPriceMonthly > 0 && price <= 0
+                ? 'renta'
+                : rentalPriceMonthly && rentalPriceMonthly > 0
+                ? 'ambos'
+                : 'venta');
+
+        return {
+          id: item.id,
+          name: item.name,
+          code: item.code,
+          category: item.category,
+          categoryLabel: item.category_label || item.categoryLabel || '',
+          listingType,
+          price,
+          rentalPriceMonthly,
+          badge: item.badge || undefined,
+          shortDescription: item.short_description || item.shortDescription || '',
+          description: item.description || '',
+          image: item.image || '',
+          specs: parsedSpecs,
+          features: Array.isArray(item.features) ? item.features : [],
+          active: item.active !== undefined ? Boolean(item.active) : true,
+          inStock: Boolean(item.in_stock ?? item.inStock ?? true),
+          stockQuantity: item.stock_quantity !== undefined && item.stock_quantity !== null ? Number(item.stock_quantity) : item.stockQuantity,
+          minStockAlert: item.min_stock_alert !== undefined && item.min_stock_alert !== null ? Number(item.min_stock_alert) : item.minStockAlert,
+          datasheetUrl: item.datasheet_url || item.datasheetUrl || undefined,
+          rating: Number(item.rating || 5.0),
+          reviewsCount: Number(item.reviews_count || item.reviewsCount || 0),
+          originalRef: item.original_ref || item.originalRef || undefined
+        };
+      });
     }
     return [];
   } catch (err) {
@@ -149,6 +165,13 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
 }
 
 function mapProductToDbRow(product: Product) {
+  const listingType = product.listingType || (
+    product.rentalPriceMonthly && product.rentalPriceMonthly > 0 && !(product.price > 0)
+      ? 'renta'
+      : product.rentalPriceMonthly && product.rentalPriceMonthly > 0
+      ? 'ambos'
+      : 'venta'
+  );
   return {
     id: product.id,
     name: product.name,
@@ -161,7 +184,10 @@ function mapProductToDbRow(product: Product) {
     short_description: product.shortDescription || '',
     description: product.description || '',
     image: product.image || '',
-    specs: product.specs || {},
+    specs: {
+      ...(product.specs || {}),
+      listingType
+    },
     features: product.features || [],
     active: product.active !== false,
     in_stock: product.inStock ?? true,
@@ -197,10 +223,17 @@ export async function saveProductsBatchToSupabase(
 ): Promise<{ success: boolean; count: number; error?: string }> {
   if (!productsList.length) return { success: true, count: 0 };
   try {
+    // Deduplicate by id so PostgreSQL ON CONFLICT DO UPDATE never fails on duplicate IDs
+    const uniqueById = new Map<string, Product>();
+    for (const p of productsList) {
+      uniqueById.set(p.id, p);
+    }
+    const dedupedList = Array.from(uniqueById.values());
+
     const chunkSize = 50;
     let totalSaved = 0;
-    for (let i = 0; i < productsList.length; i += chunkSize) {
-      const chunk = productsList.slice(i, i + chunkSize).map(mapProductToDbRow);
+    for (let i = 0; i < dedupedList.length; i += chunkSize) {
+      const chunk = dedupedList.slice(i, i + chunkSize).map(mapProductToDbRow);
       const { error } = await supabase
         .from('products')
         .upsert(chunk, { onConflict: 'id' });

@@ -6,29 +6,35 @@ import {
   Plus, 
   Maximize2,
   ShoppingCart,
-  Zap
+  Zap,
+  MessageCircle
 } from 'lucide-react';
 import { Product, SiteContent } from '../types';
 import { FormattedText } from './FormattedText';
+import { allowsSale, allowsRent, buildRentalWhatsAppUrl } from '../utils/productHelpers';
 
 interface HardwareCatalogProps {
   products: Product[];
   onAddToCart: (product: Product, type?: 'compra' | 'renta') => void;
+  onBuyNow: (product: Product) => void;
   onOpenProductDetail: (product: Product) => void;
   comparedProducts: Product[];
   onToggleCompare: (product: Product) => void;
   onOpenComparator: () => void;
   content?: SiteContent['hardwareSection'];
+  whatsappPhone?: string;
 }
 
 export const HardwareCatalog: React.FC<HardwareCatalogProps> = ({
   products,
   onAddToCart,
+  onBuyNow,
   onOpenProductDetail,
   comparedProducts,
   onToggleCompare,
   onOpenComparator,
-  content
+  content,
+  whatsappPhone
 }) => {
   const [activeTab, setActiveTab] = useState<'a3' | 'a4' | 'impresoras' | 'produccion'>('a3');
 
@@ -258,49 +264,64 @@ export const HardwareCatalog: React.FC<HardwareCatalogProps> = ({
                   {/* Pricing and Action */}
                   <div>
                     <div className="mb-4">
-                      <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
-                        {product.price > 0 ? 'Precio de Venta (con IVA)' : 'Cotización Directa'}
-                      </div>
-                      <div className="text-xl font-extrabold text-white">
-                        {product.price > 0 ? (
-                          <>
-                            ${product.price.toLocaleString('es-MX')} <span className="text-xs text-neutral-400 font-normal">MXN</span>
-                          </>
-                        ) : (
-                          <span className="text-base text-[#F27C36]">Solicitar Cotización</span>
-                        )}
-                      </div>
-                      {product.rentalPriceMonthly && (
-                        <div className="text-xs font-semibold text-[#F27C36] mt-0.5">
-                          O Renta desde: <span className="text-white font-bold">${product.rentalPriceMonthly.toLocaleString('es-MX')} MXN/mes</span>
+                      {allowsSale(product) && (
+                        <>
+                          <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
+                            {product.price > 0 ? 'Precio de Venta (con IVA)' : 'Venta Directa'}
+                          </div>
+                          <div className="text-xl font-extrabold text-white">
+                            {product.price > 0 ? (
+                              <>
+                                ${product.price.toLocaleString('es-MX')} <span className="text-xs text-neutral-400 font-normal">MXN</span>
+                              </>
+                            ) : (
+                              <span className="text-base text-[#F27C36]">Disponible para Compra</span>
+                            )}
+                          </div>
+                        </>
+                      )}
+                      {allowsRent(product) && (
+                        <div className={`text-xs font-semibold text-emerald-400 ${allowsSale(product) ? 'mt-1' : ''}`}>
+                          {product.rentalPriceMonthly && product.rentalPriceMonthly > 0 ? (
+                            <>
+                              Renta desde: <span className="text-white font-bold">${product.rentalPriceMonthly.toLocaleString('es-MX')} MXN/mes</span>
+                            </>
+                          ) : (
+                            'Disponible en Renta (Informes por WhatsApp)'
+                          )}
                         </div>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => onAddToCart(product, 'compra')}
-                        className="py-2.5 px-3 rounded-xl bg-[#182F4F] hover:bg-[#394B61] text-white text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-[#394B61] hover:border-[#F27C36]"
-                      >
-                        <ShoppingCart className="w-3.5 h-3.5 text-[#F27C36]" />
-                        <span>Comprar</span>
-                      </button>
-
-                      {product.rentalPriceMonthly ? (
+                    <div className="grid grid-cols-1 gap-2">
+                      {allowsSale(product) && (
                         <button
-                          onClick={() => onAddToCart(product, 'renta')}
-                          className="py-2.5 px-3 rounded-xl bg-[#000000] hover:bg-[#182F4F] text-white border border-[#394B61] hover:border-[#F27C36] text-xs font-bold transition flex items-center justify-center space-x-1"
+                          onClick={() => onBuyNow(product)}
+                          className="py-2.5 px-3 rounded-xl bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-md cursor-pointer"
                         >
-                          <span>Rentar</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => onOpenProductDetail(product)}
-                          className="py-2.5 px-3 rounded-xl bg-[#182F4F] hover:bg-[#394B61] text-white text-xs font-semibold transition text-center border border-[#394B61]"
-                        >
-                          Ficha Técnica
+                          <ShoppingCart className="w-3.5 h-3.5 text-white" />
+                          <span>Comprar Ahora</span>
                         </button>
                       )}
+
+                      {allowsRent(product) && (
+                        <a
+                          href={buildRentalWhatsAppUrl(product, whatsappPhone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-md"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Solicitar Informes por WhatsApp</span>
+                        </a>
+                      )}
+
+                      <button
+                        onClick={() => onOpenProductDetail(product)}
+                        className="py-2 px-3 rounded-xl bg-[#182F4F] hover:bg-[#394B61] text-white text-xs font-semibold transition text-center border border-[#394B61] cursor-pointer"
+                      >
+                        Ver Ficha Técnica
+                      </button>
                     </div>
                   </div>
                 </div>

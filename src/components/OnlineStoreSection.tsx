@@ -10,24 +10,31 @@ import {
   RotateCcw,
   Sparkles,
   FileDown,
-  Printer
+  Printer,
+  MessageCircle,
+  CreditCard
 } from 'lucide-react';
 import { Product, ProductCategory, StoreCategory } from '../types';
+import { allowsSale, allowsRent, buildRentalWhatsAppUrl } from '../utils/productHelpers';
 
 interface OnlineStoreSectionProps {
   products: Product[];
   onAddToCart: (product: Product, type?: 'compra' | 'renta') => void;
+  onBuyNow: (product: Product) => void;
   onOpenProductDetail: (product: Product) => void;
   initialSearchQuery?: string;
   categories?: StoreCategory[];
+  whatsappPhone?: string;
 }
 
 export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
   products,
   onAddToCart,
+  onBuyNow,
   onOpenProductDetail,
   initialSearchQuery = '',
-  categories: storeCategoriesProp
+  categories: storeCategoriesProp,
+  whatsappPhone
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
   const [colorFilter, setColorFilter] = useState<'all' | 'color' | 'mono'>('all');
@@ -361,58 +368,93 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                     {/* Price & Action */}
                     <div>
                       <div className="pt-3 border-t border-[#394B61] mb-3">
-                        <div className="text-[10px] text-slate-300 uppercase tracking-wider">
-                          {product.price > 0 ? 'Precio Neto (con IVA)' : 'Cotización Directa'}
-                        </div>
-                        <div className="text-lg font-black text-white">
-                          {product.price > 0 ? (
-                            <>
-                              ${product.price.toLocaleString('es-MX')} <span className="text-xs text-slate-300 font-normal">MXN</span>
-                            </>
-                          ) : (
-                            <span className="text-base text-[#F27C36]">Solicitar Cotización</span>
-                          )}
-                        </div>
-                        {product.rentalPriceMonthly && (
-                          <div className="text-[11px] text-[#F27C36] font-medium mt-0.5">
-                            Renta: ${product.rentalPriceMonthly.toLocaleString('es-MX')} / mes
+                        {allowsSale(product) && (
+                          <>
+                            <div className="text-[10px] text-slate-300 uppercase tracking-wider">
+                              {product.price > 0 ? 'Precio de Venta (con IVA)' : 'Venta Directa'}
+                            </div>
+                            <div className="text-lg font-black text-white">
+                              {product.price > 0 ? (
+                                <>
+                                  ${product.price.toLocaleString('es-MX')} <span className="text-xs text-slate-300 font-normal">MXN</span>
+                                </>
+                              ) : (
+                                <span className="text-base text-[#F27C36]">Disponible para Compra</span>
+                              )}
+                            </div>
+                          </>
+                        )}
+
+                        {allowsRent(product) && (
+                          <div className={allowsSale(product) ? 'mt-1.5 pt-1.5 border-t border-[#394B61]/50' : ''}>
+                            <div className="text-[10px] text-emerald-300 uppercase tracking-wider font-bold">
+                              Disponible en Renta
+                            </div>
+                            {product.rentalPriceMonthly && product.rentalPriceMonthly > 0 ? (
+                              <div className="text-sm font-extrabold text-emerald-300">
+                                ${product.rentalPriceMonthly.toLocaleString('es-MX')} <span className="text-[11px] font-normal text-slate-300">MXN / mes</span>
+                              </div>
+                            ) : (
+                              <div className="text-xs font-semibold text-emerald-300">
+                                Plan a la medida vía WhatsApp
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
 
                       <div className="space-y-1.5">
-                        {/* Primary button: LUMESA Orange */}
-                        <button
-                          onClick={() => handleAddToCartWithFeedback(product, 'compra')}
-                          disabled={!product.inStock}
-                          className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 ${
-                            !product.inStock
-                              ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                              : isJustAdded
-                                ? 'bg-emerald-700 text-white shadow-md'
-                                : 'bg-[#F27C36] hover:bg-[#d96624] text-white shadow-md'
-                          }`}
-                        >
-                          {isJustAdded ? (
-                            <>
-                              <Check className="w-4 h-4 text-white" />
-                              <span>¡Agregado al Carrito!</span>
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingCart className="w-4 h-4 text-white" />
-                              <span>{product.inStock ? 'Añadir al Carrito' : 'Sin Existencia'}</span>
-                            </>
-                          )}
-                        </button>
+                        {allowsSale(product) && (
+                          <>
+                            <button
+                              onClick={() => onBuyNow(product)}
+                              disabled={!product.inStock}
+                              className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer ${
+                                !product.inStock
+                                  ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                                  : 'bg-[#F27C36] hover:bg-[#d96624] text-white shadow-md'
+                              }`}
+                            >
+                              <CreditCard className="w-4 h-4 text-white" />
+                              <span>{product.inStock ? 'Comprar Ahora' : 'Sin Existencia'}</span>
+                            </button>
 
-                        {product.rentalPriceMonthly && product.inStock && (
-                          <button
-                            onClick={() => handleAddToCartWithFeedback(product, 'renta')}
-                            className="w-full py-1.5 px-3 rounded-xl text-xs font-medium text-slate-200 hover:text-white bg-[#000000]/60 hover:bg-[#394B61] border border-[#394B61] transition text-center"
+                            <button
+                              onClick={() => handleAddToCartWithFeedback(product, 'compra')}
+                              disabled={!product.inStock}
+                              className={`w-full py-1.5 px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5 border cursor-pointer ${
+                                !product.inStock
+                                  ? 'bg-neutral-900 text-neutral-600 border-neutral-800 cursor-not-allowed'
+                                  : isJustAdded
+                                    ? 'bg-emerald-700 text-white border-emerald-600'
+                                    : 'bg-[#000000]/60 hover:bg-[#394B61] text-slate-200 hover:text-white border-[#394B61]'
+                              }`}
+                            >
+                              {isJustAdded ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-white" />
+                                  <span>¡Agregado al Carrito!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ShoppingCart className="w-3.5 h-3.5 text-[#F27C36]" />
+                                  <span>Añadir al Carrito</span>
+                                </>
+                              )}
+                            </button>
+                          </>
+                        )}
+
+                        {allowsRent(product) && (
+                          <a
+                            href={buildRentalWhatsAppUrl(product, whatsappPhone)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-2.5 px-3 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/60 transition flex items-center justify-center space-x-1.5 shadow-md"
                           >
-                            Agregar como Renta Mensual
-                          </button>
+                            <MessageCircle className="w-4 h-4 shrink-0" />
+                            <span>Solicitar Informes por WhatsApp</span>
+                          </a>
                         )}
                       </div>
                     </div>
