@@ -23,15 +23,18 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
 
   const specRows = [
     { label: 'Categoría', getValue: (p: Product) => p.categoryLabel },
-    { label: 'Color / Monocromático', getValue: (p: Product) => p.specs.color ? 'A Todo Color y B&N' : 'Monocromático (B&N)' },
-    { label: 'Velocidad de Impresión', getValue: (p: Product) => p.specs.velocidad },
-    { label: 'Formato Máximo', getValue: (p: Product) => p.specs.formato },
-    { label: 'Resolución de Salida', getValue: (p: Product) => p.specs.resolucion },
-    { label: 'Ciclo Mensual de Trabajo', getValue: (p: Product) => p.specs.cicloMensual },
-    { label: 'Capacidad de Papel', getValue: (p: Product) => p.specs.capacidadPapel },
-    { label: 'Dúplex Automático', getValue: (p: Product) => p.specs.duplex ? 'Sí (Incluido)' : 'No' },
-    { label: 'Conectividad de Red', getValue: (p: Product) => p.specs.conectividad ? p.specs.conectividad.join(', ') : 'Red estándar' },
-    { label: 'Tecnología de Tinta', getValue: (p: Product) => p.specs.tipoTinta }
+    { label: 'Tipo de Impresión', getValue: (p: Product) => p.specs.tipoImpresion || (p.specs.color ? 'Color' : 'Monocromo (B&N)') },
+    { label: 'Velocidad Carta (ppm)', getValue: (p: Product) => p.specs.velocidad || '—' },
+    { label: 'Resolución', getValue: (p: Product) => p.specs.resolucion || '—' },
+    { label: 'Ciclo Máx. Mensual', getValue: (p: Product) => p.specs.cicloMensual || '—' },
+    { label: 'Volumen Rec. Mensual', getValue: (p: Product) => p.specs.volumenRecomendado || '—' },
+    { label: 'Pantalla', getValue: (p: Product) => p.specs.pantalla || '—' },
+    { label: 'Memoria', getValue: (p: Product) => p.specs.memoria || '—' },
+    { label: 'Funciones Principales', getValue: (p: Product) => p.specs.funcionesPrincipales || '—' },
+    { label: 'Conectividad / Interfaces', getValue: (p: Product) => p.specs.conectividad ? p.specs.conectividad.join(', ') : '—' },
+    { label: 'Consumibles Principales', getValue: (p: Product) => p.specs.consumiblesPrincipales || p.specs.tipoTinta || '—' },
+    { label: 'Dimensiones (An x Pr x Al)', getValue: (p: Product) => p.specs.dimensiones || '—' },
+    { label: 'Peso', getValue: (p: Product) => p.specs.peso || '—' }
   ];
 
   return (
@@ -119,11 +122,17 @@ export const ProductComparatorModal: React.FC<ProductComparatorModalProps> = ({
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                           
-                          <img
-                            src={p.image}
-                            alt={p.name}
-                            className="h-28 mx-auto object-contain mb-3"
-                          />
+                          {p.image ? (
+                            <img
+                              src={p.image}
+                              alt={p.name}
+                              className="h-28 mx-auto object-contain mb-3"
+                            />
+                          ) : (
+                            <div className="h-28 flex items-center justify-center text-slate-300 mb-3">
+                              <FileSpreadsheet className="w-10 h-10" />
+                            </div>
+                          )}
                           <h4 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
                             {p.name}
                           </h4>

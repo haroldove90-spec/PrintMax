@@ -67,17 +67,24 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             
             {/* Left: Product Image & Badges */}
             <div className="md:col-span-5 flex flex-col items-center">
-              <div className="w-full bg-slate-50 rounded-2xl border border-slate-200 p-6 flex items-center justify-center mb-4 relative">
+              <div className="w-full bg-slate-50 rounded-2xl border border-slate-200 p-6 flex items-center justify-center mb-4 relative min-h-[190px]">
                 {product.badge && (
                   <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-black tracking-wide bg-slate-900 text-white shadow-sm">
                     {product.badge}
                   </span>
                 )}
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="max-h-64 w-auto object-contain"
-                />
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="max-h-64 w-auto object-contain"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-slate-400 py-8">
+                    <Printer className="w-16 h-16 mb-2 text-slate-300" />
+                    <span className="text-xs font-medium">Sin imagen cargada</span>
+                  </div>
+                )}
               </div>
 
               {/* Guarantees */}
@@ -129,35 +136,75 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     <Cpu className="w-4 h-4 text-blue-600" />
                     <span>Ficha de Especificaciones Técnicas</span>
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
                     <div>
-                      <span className="text-slate-500 block">Velocidad:</span>
-                      <span className="font-bold text-slate-800">{product.specs.velocidad}</span>
+                      <span className="text-slate-500 block">Tipo de impresión:</span>
+                      <span className="font-bold text-slate-800">
+                        {product.specs.tipoImpresion || (product.specs.color ? 'Color' : 'Monocromo (B&N)')}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">Formato de papel:</span>
-                      <span className="font-bold text-slate-800">{product.specs.formato}</span>
+                      <span className="text-slate-500 block">Velocidad:</span>
+                      <span className="font-bold text-slate-800">{product.specs.velocidad || 'No especificado'}</span>
                     </div>
                     <div>
                       <span className="text-slate-500 block">Resolución:</span>
-                      <span className="font-bold text-slate-800">{product.specs.resolucion}</span>
+                      <span className="font-bold text-slate-800">{product.specs.resolucion || 'No especificado'}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">Ciclo mensual:</span>
-                      <span className="font-bold text-slate-800">{product.specs.cicloMensual}</span>
+                      <span className="text-slate-500 block">Ciclo máx. mensual:</span>
+                      <span className="font-bold text-slate-800">{product.specs.cicloMensual || 'No especificado'}</span>
                     </div>
+                    {product.specs.volumenRecomendado && (
+                      <div>
+                        <span className="text-slate-500 block">Volumen rec. mensual:</span>
+                        <span className="font-bold text-slate-800">{product.specs.volumenRecomendado}</span>
+                      </div>
+                    )}
+                    {product.specs.pantalla && (
+                      <div>
+                        <span className="text-slate-500 block">Pantalla:</span>
+                        <span className="font-bold text-slate-800">{product.specs.pantalla}</span>
+                      </div>
+                    )}
+                    {product.specs.memoria && (
+                      <div>
+                        <span className="text-slate-500 block">Memoria:</span>
+                        <span className="font-bold text-slate-800">{product.specs.memoria}</span>
+                      </div>
+                    )}
                     <div>
-                      <span className="text-slate-500 block">Capacidad de papel:</span>
-                      <span className="font-bold text-slate-800">{product.specs.capacidadPapel}</span>
+                      <span className="text-slate-500 block">Formato de papel:</span>
+                      <span className="font-bold text-slate-800">{product.specs.formato || 'Carta / Oficio'}</span>
                     </div>
-                    <div>
-                      <span className="text-slate-500 block">Dúplex automático:</span>
-                      <span className="font-bold text-slate-800">{product.specs.duplex ? 'Sí (Estándar)' : 'No'}</span>
-                    </div>
-                    {product.specs.conectividad && (
+                    {product.specs.funcionesPrincipales && (
                       <div className="sm:col-span-2">
-                        <span className="text-slate-500 block">Conectividad:</span>
+                        <span className="text-slate-500 block">Funciones principales:</span>
+                        <span className="font-bold text-slate-800">{product.specs.funcionesPrincipales}</span>
+                      </div>
+                    )}
+                    {product.specs.conectividad && product.specs.conectividad.length > 0 && (
+                      <div className="sm:col-span-2">
+                        <span className="text-slate-500 block">Conectividad / Interfaces:</span>
                         <span className="font-bold text-slate-800">{product.specs.conectividad.join(', ')}</span>
+                      </div>
+                    )}
+                    {(product.specs.consumiblesPrincipales || product.specs.tipoTinta) && (
+                      <div className="sm:col-span-2">
+                        <span className="text-slate-500 block">Consumibles principales:</span>
+                        <span className="font-bold text-slate-800">{product.specs.consumiblesPrincipales || product.specs.tipoTinta}</span>
+                      </div>
+                    )}
+                    {product.specs.dimensiones && (
+                      <div>
+                        <span className="text-slate-500 block">Dimensiones (An x Pr x Al):</span>
+                        <span className="font-bold text-slate-800">{product.specs.dimensiones}</span>
+                      </div>
+                    )}
+                    {product.specs.peso && (
+                      <div>
+                        <span className="text-slate-500 block">Peso:</span>
+                        <span className="font-bold text-slate-800">{product.specs.peso}</span>
                       </div>
                     )}
                   </div>
@@ -168,10 +215,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <div className="border-t border-slate-200 pt-4">
                 <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-4">
                   <div>
-                    <span className="text-xs text-slate-500 block">Precio de Compra Directa (con IVA)</span>
-                    <span className="text-2xl font-black text-slate-900">
-                      ${product.price.toLocaleString('es-MX')} <span className="text-xs text-slate-500 font-normal">MXN</span>
+                    <span className="text-xs text-slate-500 block">
+                      {product.price > 0 ? 'Precio de Compra Directa (con IVA)' : 'Cotización Personalizada'}
                     </span>
+                    {product.price > 0 ? (
+                      <span className="text-2xl font-black text-slate-900">
+                        ${product.price.toLocaleString('es-MX')} <span className="text-xs text-slate-500 font-normal">MXN</span>
+                      </span>
+                    ) : (
+                      <span className="text-xl font-black text-slate-900">
+                        Solicitar Cotización
+                      </span>
+                    )}
                   </div>
 
                   {product.rentalPriceMonthly && (

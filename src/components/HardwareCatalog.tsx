@@ -193,11 +193,18 @@ export const HardwareCatalog: React.FC<HardwareCatalogProps> = ({
                     <span>{isCompared ? 'En comparador' : 'Comparar'}</span>
                   </button>
 
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="max-h-52 w-auto object-contain transform group-hover:scale-105 transition duration-500"
-                  />
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="max-h-52 w-auto object-contain transform group-hover:scale-105 transition duration-500"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-neutral-500">
+                      <Printer className="w-16 h-16 text-neutral-700 mb-2" />
+                      <span className="text-xs font-mono text-neutral-400">{product.code}</span>
+                    </div>
+                  )}
 
                   <button
                     onClick={() => onOpenProductDetail(product)}
@@ -251,9 +258,17 @@ export const HardwareCatalog: React.FC<HardwareCatalogProps> = ({
                   {/* Pricing and Action */}
                   <div>
                     <div className="mb-4">
-                      <div className="text-[11px] text-neutral-400 uppercase tracking-wide">Precio de Venta (con IVA)</div>
+                      <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
+                        {product.price > 0 ? 'Precio de Venta (con IVA)' : 'Cotización Directa'}
+                      </div>
                       <div className="text-xl font-extrabold text-white">
-                        ${product.price.toLocaleString('es-MX')} <span className="text-xs text-neutral-400 font-normal">MXN</span>
+                        {product.price > 0 ? (
+                          <>
+                            ${product.price.toLocaleString('es-MX')} <span className="text-xs text-neutral-400 font-normal">MXN</span>
+                          </>
+                        ) : (
+                          <span className="text-base text-[#F27C36]">Solicitar Cotización</span>
+                        )}
                       </div>
                       {product.rentalPriceMonthly && (
                         <div className="text-xs font-semibold text-[#F27C36] mt-0.5">

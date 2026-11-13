@@ -23,9 +23,10 @@ CREATE TABLE IF NOT EXISTS public.products (
   badge TEXT,
   short_description TEXT,
   description TEXT,
-  image TEXT NOT NULL,
+  image TEXT NOT NULL DEFAULT '',
   specs JSONB DEFAULT '{}'::jsonb,
   features JSONB DEFAULT '[]'::jsonb,
+  active BOOLEAN DEFAULT true,
   in_stock BOOLEAN DEFAULT true,
   stock_quantity INTEGER DEFAULT 5,
   min_stock_alert INTEGER DEFAULT 2,
@@ -38,9 +39,23 @@ CREATE TABLE IF NOT EXISTS public.products (
 );
 
 -- Migraciones seguras para columnas añadidas
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock_quantity INTEGER DEFAULT 5;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS min_stock_alert INTEGER DEFAULT 2;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS datasheet_url TEXT;
+
+-- Limpieza de productos de muestra antiguos (no afecta productos reales importados)
+DELETE FROM public.products WHERE id IN (
+  'kyocera-taskalfa-3554ci',
+  'kyocera-taskalfa-5054ci',
+  'kyocera-ecosys-m3655idn',
+  'kyocera-ecosys-ma4000cix',
+  'kyocera-ecosys-p3155dn',
+  'kyocera-taskalfa-pro-15000c',
+  'toner-kyocera-tk-8527k',
+  'toner-kyocera-tk-3182',
+  'poliza-anual-mantenimiento-pro'
+);
 
 -- 3. TABLA: orders (Pedidos y cotizaciones de clientes con desglose de factura CFDI 4.0)
 CREATE TABLE IF NOT EXISTS public.orders (
@@ -123,7 +138,26 @@ CREATE POLICY "Permitir creacion y actualizacion de pedidos"
   ON public.orders FOR ALL USING (true) WITH CHECK (true);
 
 -- ==============================================================================
--- DATOS INICIALES: SEED DE CONTENIDO WEB OFICIAL LUMESA (TODO EDITABLE)
+-- 4. STORAGE BUCKET: product-images (Subida directa de imágenes de productos)
+-- ==============================================================================
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Lectura publica de imagenes de productos" ON storage.objects;
+CREATE POLICY "Lectura publica de imagenes de productos"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'product-images');
+
+DROP POLICY IF EXISTS "Subida y gestion de imagenes de productos" ON storage.objects;
+CREATE POLICY "Subida y gestion de imagenes de productos"
+  ON storage.objects FOR ALL
+  USING (bucket_id = 'product-images')
+  WITH CHECK (bucket_id = 'product-images');
+
+-- ==============================================================================
+-- DATOS INICIALES: SEED DE CONTENIDO WEB OFICIAL LUMESA (SIN PRODUCTOS DE MUESTRA)
 -- ==============================================================================
 
 INSERT INTO public.site_content (id, content)
@@ -218,8 +252,9 @@ VALUES (
       }
     ],
     "about": {
+      "badgeText": "Distribuidor Kiosera",
       "headline": "Una empresa potosina de soluciones de impresión",
-      "subheadline": "En LUMESA rentamos y vendemos multifuncionales e impresoras láser Kyocera con atención directa y trato personal en San Luis Potosí.",
+      "subheadline": "Respaldando el éxito y la productividad de tu empresa con soluciones documentales.",
       "queHacemosTitle": "Qué Hacemos",
       "queHacemosText": "En LUMESA rentamos y vendemos multifuncionales e impresoras láser de marca Kyocera. Te ayudamos a elegir el equipo según tu volumen de impresión, si necesitas color o doble carta, y te enviamos una cotización sin compromiso.",
       "queHacemosBullets": [
@@ -369,6 +404,12 @@ VALUES (
       ]
     },
     "footer": {
+      "showBanner": true,
+      "showBrandColumn": true,
+      "showSectionsColumn": false,
+      "showEquiposColumn": true,
+      "showEmpresaColumn": true,
+      "showCopyrightBar": true,
       "bannerTitle": "¿Necesitas un equipo de impresión para tu empresa? Solicita tu cotización.",
       "bannerSubtitle": "Te asesoramos para elegir el equipo ideal y te enviamos una cotización a la medida.",
       "bannerPhone": "(444) 812-3000",
@@ -379,14 +420,21 @@ VALUES (
       "schedule": "Lunes a viernes de 9:00 a 18:00 h",
       "email": "contacto@lumesa.com.mx",
       "sectionsTitle": "Secciones",
+      "sectionsLinks": [
+        { "id": "sec-1", "label": "Inicio", "target": "inicio" },
+        { "id": "sec-2", "label": "Nosotros", "target": "nosotros" },
+        { "id": "sec-3", "label": "Renta / Venta", "target": "renta_venta" },
+        { "id": "sec-4", "label": "Tienda en Línea", "target": "tienda" },
+        { "id": "sec-5", "label": "Contacto", "target": "contacto" }
+      ],
       "equiposTitle": "Equipos & Servicios",
       "equiposLinks": [
-        { "id": "eq-1", "label": "Inicio", "target": "inicio" },
-        { "id": "eq-2", "label": "Nosotros", "target": "nosotros" },
-        { "id": "eq-3", "label": "Tienda en Línea", "target": "tienda" },
-        { "id": "eq-4", "label": "Renta / Venta", "target": "renta_venta" },
-        { "id": "eq-5", "label": "Contacto", "target": "contacto" },
-        { "id": "eq-6", "label": "Aviso de privacidad", "target": "contacto" }
+        { "id": "eq-1", "label": "Multifuncionales A3 Color", "target": "renta_venta" },
+        { "id": "eq-2", "label": "Multifuncionales A4 Compactos", "target": "renta_venta" },
+        { "id": "eq-3", "label": "Impresoras Láser", "target": "renta_venta" },
+        { "id": "eq-4", "label": "Tóner y Consumibles", "target": "tienda" },
+        { "id": "eq-5", "label": "Planes de Renta a tu Medida", "target": "renta_venta" },
+        { "id": "eq-6", "label": "Servicio Técnico y Soporte", "target": "contacto" }
       ],
       "empresaTitle": "Empresa y Atención",
       "empresaLinks": [
@@ -394,7 +442,8 @@ VALUES (
         { "id": "em-2", "label": "Cobertura en San Luis Potosí", "target": "nosotros" },
         { "id": "em-3", "label": "Contacto Directo", "target": "contacto" },
         { "id": "em-4", "label": "Tienda en Línea", "target": "tienda" },
-        { "id": "em-5", "label": "Acceso Admin Autoadministrable →", "target": "admin" }
+        { "id": "em-5", "label": "Aviso de privacidad", "target": "contacto" },
+        { "id": "em-6", "label": "Acceso Admin Autoadministrable →", "target": "admin" }
       ],
       "copyrightText": "© 2026 LUMESA. Todos los derechos reservados. Kyocera, ECOSYS y TASKalfa son marcas registradas de sus respectivos titulares."
     },

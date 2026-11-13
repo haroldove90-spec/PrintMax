@@ -23,15 +23,38 @@ CREATE TABLE IF NOT EXISTS public.products (
   badge TEXT,
   short_description TEXT,
   description TEXT,
-  image TEXT NOT NULL,
+  image TEXT NOT NULL DEFAULT '',
   specs JSONB DEFAULT '{}'::jsonb,
   features JSONB DEFAULT '[]'::jsonb,
+  active BOOLEAN DEFAULT true,
   in_stock BOOLEAN DEFAULT true,
+  stock_quantity INTEGER DEFAULT 5,
+  min_stock_alert INTEGER DEFAULT 2,
+  datasheet_url TEXT,
   rating NUMERIC(3, 2) DEFAULT 5.0,
   reviews_count INTEGER DEFAULT 0,
   original_ref TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Migraciones seguras para columnas añadidas
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock_quantity INTEGER DEFAULT 5;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS min_stock_alert INTEGER DEFAULT 2;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS datasheet_url TEXT;
+
+-- Limpieza de productos de muestra antiguos (no afecta productos reales importados)
+DELETE FROM public.products WHERE id IN (
+  'kyocera-taskalfa-3554ci',
+  'kyocera-taskalfa-5054ci',
+  'kyocera-ecosys-m3655idn',
+  'kyocera-ecosys-ma4000cix',
+  'kyocera-ecosys-p3155dn',
+  'kyocera-taskalfa-pro-15000c',
+  'toner-kyocera-tk-8527k',
+  'toner-kyocera-tk-3182',
+  'poliza-anual-mantenimiento-pro'
 );
 
 -- 3. TABLA: orders (Pedidos y cotizaciones de clientes con desglose de factura CFDI 4.0)
@@ -40,6 +63,8 @@ CREATE TABLE IF NOT EXISTS public.orders (
   customer_name TEXT NOT NULL,
   company_name TEXT,
   rfc TEXT,
+  cfdi_use TEXT,
+  tax_regime TEXT,
   email TEXT NOT NULL,
   phone TEXT,
   address TEXT,
@@ -51,14 +76,29 @@ CREATE TABLE IF NOT EXISTS public.orders (
   subtotal NUMERIC(12, 2) NOT NULL,
   tax NUMERIC(12, 2) NOT NULL,
   shipping NUMERIC(12, 2) DEFAULT 0,
+  discount_coupon TEXT,
+  discount_amount NUMERIC(12, 2) DEFAULT 0,
   total NUMERIC(12, 2) NOT NULL,
   date TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pendiente',
   tracking_number TEXT,
+  invoice_status TEXT DEFAULT 'pendiente',
+  invoice_pdf_url TEXT,
+  invoice_xml_url TEXT,
+  internal_notes TEXT,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS cfdi_use TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS tax_regime TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_coupon TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12, 2) DEFAULT 0;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_status TEXT DEFAULT 'pendiente';
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_pdf_url TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_xml_url TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS internal_notes TEXT;
 
 -- ==============================================================================
 -- POLÍTICAS DE ACCESO (ROW LEVEL SECURITY - RLS)
@@ -97,7 +137,26 @@ CREATE POLICY "Permitir creacion y actualizacion de pedidos"
   ON public.orders FOR ALL USING (true) WITH CHECK (true);
 
 -- ==============================================================================
--- DATOS INICIALES: SEED DE CONTENIDO WEB OFICIAL LUMESA
+-- 4. STORAGE BUCKET: product-images (Subida directa de imágenes de productos)
+-- ==============================================================================
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Lectura publica de imagenes de productos" ON storage.objects;
+CREATE POLICY "Lectura publica de imagenes de productos"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'product-images');
+
+DROP POLICY IF EXISTS "Subida y gestion de imagenes de productos" ON storage.objects;
+CREATE POLICY "Subida y gestion de imagenes de productos"
+  ON storage.objects FOR ALL
+  USING (bucket_id = 'product-images')
+  WITH CHECK (bucket_id = 'product-images');
+
+-- ==============================================================================
+-- DATOS INICIALES: SEED DE CONTENIDO WEB OFICIAL LUMESA (SIN PRODUCTOS DE MUESTRA)
 -- ==============================================================================
 
 INSERT INTO public.site_content (id, content)

@@ -53,7 +53,10 @@ import {
   ToggleLeft,
   ToggleRight,
   FileSpreadsheet,
-  Building2
+  Building2,
+  Upload,
+  Power,
+  Loader2
 } from 'lucide-react';
 import { LUMESA_SUPABASE_SQL } from '../../data/supabaseSql';
 import { 
@@ -65,6 +68,12 @@ import {
   SUPABASE_URL, 
   SUPABASE_ANON_KEY 
 } from '../../lib/supabase';
+import {
+  parseProductFile,
+  exportProductsToCsv,
+  exportProductsToXlsx,
+  ParsedImportResult
+} from '../../utils/productImportExport';
 import { 
   AdminUser, 
   AdminRole, 
@@ -91,6 +100,9 @@ interface AdminDashboardProps {
   products: Product[];
   onSaveProduct: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
+  onImportProducts: (imported: Product[], mode: 'merge' | 'replace') => Promise<void> | void;
+  onClearAllProducts: () => Promise<void> | void;
+  onViewProductModal: (product: Product) => void;
   orders: OrderDetails[];
   onUpdateOrderStatus: (
     orderId: string, 
@@ -117,6 +129,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   products,
   onSaveProduct,
   onDeleteProduct,
+  onImportProducts,
+  onClearAllProducts,
+  onViewProductModal,
   orders,
   onUpdateOrderStatus,
   siteContent,
@@ -169,6 +184,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState<string>('todos');
+  const [productStatusFilter, setProductStatusFilter] = useState<'todos' | 'activos' | 'desactivados'>('todos');
+
+  // Product Import Modal State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importParseResult, setImportParseResult] = useState<ParsedImportResult | null>(null);
+  const [importFileName, setImportFileName] = useState('');
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
+  const [importingToDb, setImportingToDb] = useState(false);
+  const [catalogNotice, setCatalogNotice] = useState<string | null>(null);
 
   // CMS state for web editing
   const [editableContent, setEditableContent] = useState<SiteContent>(() => ({
@@ -185,9 +210,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newChipInput, setNewChipInput] = useState('');
   const [newSoftwareBenefitInput, setNewSoftwareBenefitInput] = useState('');
   const [newEquiposLinkTitle, setNewEquiposLinkTitle] = useState('');
-  const [newEquiposLinkTarget, setNewEquiposLinkTarget] = useState<AppSection>('hardware');
+  const [newEquiposLinkTarget, setNewEquiposLinkTarget] = useState<AppSection>('renta_venta');
   const [newEmpresaLinkTitle, setNewEmpresaLinkTitle] = useState('');
   const [newEmpresaLinkTarget, setNewEmpresaLinkTarget] = useState<AppSection>('nosotros');
+  const [newSectionsLinkTitle, setNewSectionsLinkTitle] = useState('');
+  const [newSectionsLinkTarget, setNewSectionsLinkTarget] = useState<AppSection>('inicio');
 
   // Supabase state
   const [supabaseStatus, setSupabaseStatus] = useState<{
@@ -348,7 +375,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // Footer helpers
-  const currentFooter: FooterConfig = editableContent.footer || DEFAULT_FOOTER_CONFIG;
+  const currentFooter: FooterConfig = {
+    ...DEFAULT_FOOTER_CONFIG,
+    ...(editableContent.footer || {})
+  };
 
   const handleUpdateFooter = (patch: Partial<FooterConfig>) => {
     setEditableContent({
@@ -358,6 +388,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         ...patch
       }
     });
+  };
+
+  const handleToggleFooterCard = async (
+    key: 'showBanner' | 'showBrandColumn' | 'showSectionsColumn' | 'showEquiposColumn' | 'showEmpresaColumn' | 'showCopyrightBar'
+  ) => {
+    const currentValue = key === 'showSectionsColumn'
+      ? currentFooter.showSectionsColumn === true
+      : currentFooter[key] !== false;
+    const updatedFooter: FooterConfig = {
+      ...currentFooter,
+      [key]: !currentValue
+    };
+    const updatedContent: SiteContent = {
+      ...editableContent,
+      footer: updatedFooter,
+      _lastUpdated: Date.now()
+    };
+    setEditableContent(updatedContent);
+    try {
+      await onSaveSiteContent(updatedContent);
+    } catch {}
+  };
+
+  const handleAddSectionsLink = () => {
+    if (!newSectionsLinkTitle.trim()) return;
+    const newLink: FooterLinkItem = {
+      id: `sec-${Date.now()}`,
+      label: newSectionsLinkTitle.trim(),
+      target: newSectionsLinkTarget
+    };
+    handleUpdateFooter({
+      sectionsLinks: [...(currentFooter.sectionsLinks || DEFAULT_FOOTER_CONFIG.sectionsLinks || []), newLink]
+    });
+    setNewSectionsLinkTitle('');
+  };
+
+  const handleRemoveSectionsLink = (index: number) => {
+    const updated = (currentFooter.sectionsLinks || DEFAULT_FOOTER_CONFIG.sectionsLinks || []).filter((_, i) => i !== index);
+    handleUpdateFooter({ sectionsLinks: updated });
   };
 
   const handleAddEquiposLink = () => {
@@ -444,9 +513,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const filteredProducts = products.filter((p) => {
     if (productCategoryFilter !== 'todos' && p.category !== productCategoryFilter) return false;
+    if (productStatusFilter === 'activos' && p.active === false) return false;
+    if (productStatusFilter === 'desactivados' && p.active !== false) return false;
     if (productSearch.trim()) {
       const q = productSearch.toLowerCase();
-      return p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.code.toLowerCase().includes(q) ||
+        (p.specs?.consumiblesPrincipales || '').toLowerCase().includes(q)
+      );
     }
     return true;
   });
@@ -525,6 +600,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
   };
 
+  const handleToggleProductActive = (product: Product) => {
+    onSaveProduct({
+      ...product,
+      active: product.active === false
+    });
+  };
+
   const handleDuplicateProduct = (product: Product) => {
     const duplicated: Product = {
       ...product,
@@ -534,6 +616,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       reviewsCount: 0
     };
     onSaveProduct(duplicated);
+  };
+
+  const handleSelectImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportError(null);
+    setImportParseResult(null);
+    setImportFileName(file.name);
+    try {
+      const parsed = await parseProductFile(file, products, categoriesList);
+      if (parsed.products.length === 0) {
+        setImportError('No se encontraron productos válidos en el archivo.');
+      } else {
+        setImportParseResult(parsed);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setImportError(msg);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!importParseResult || importParseResult.products.length === 0) return;
+    setImportingToDb(true);
+    try {
+      await onImportProducts(importParseResult.products, importMode);
+      setCatalogNotice(
+        `¡Base de datos importada! Se cargaron ${importParseResult.products.length} productos y se sincronizaron con Supabase.`
+      );
+      setTimeout(() => setCatalogNotice(null), 6000);
+      setIsImportModalOpen(false);
+      setImportParseResult(null);
+      setImportFileName('');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setImportError(`Error al importar: ${msg}`);
+    } finally {
+      setImportingToDb(false);
+    }
   };
 
   // Synchronize active tab when switching roles
@@ -696,30 +817,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // CSV Exporters
+  // CSV & Excel Exporters
   const handleExportProductsCsv = () => {
-    const headers = ['ID', 'Nombre', 'Código SKU', 'Categoría', 'Precio Venta', 'Renta Mensual', 'Stock SLP', 'Stock Mínimo Alerta', 'En Existencia', 'Ficha Técnica PDF'];
-    const rows = products.map(p => [
-      `"${p.id}"`,
-      `"${p.name.replace(/"/g, '""')}"`,
-      `"${p.code}"`,
-      `"${p.categoryLabel}"`,
-      p.price,
-      p.rentalPriceMonthly || 0,
-      p.stockQuantity ?? (p.inStock ? 5 : 0),
-      p.minStockAlert ?? 2,
-      p.inStock ? 'SI' : 'NO',
-      `"${p.datasheetUrl || ''}"`
-    ]);
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `lumesa_catalogo_productos_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportProductsToCsv(products);
+  };
+
+  const handleExportProductsXlsx = () => {
+    exportProductsToXlsx(products);
   };
 
   const handleExportOrdersCsv = () => {
@@ -1171,42 +1275,89 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* ========================================================= */}
         {activeTab === 'productos' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-white">
                   Catálogo de Productos de la Tienda en Línea
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-                  Suba nuevos equipos, controle stock físico en SLP, umbrales de alerta y enlaces a fichas técnicas PDF Kyocera.
+                  Importa tu base de datos (CSV / Excel), exporta, visualiza, edita, sube imágenes a Supabase, activa/desactiva o elimina productos.
                 </p>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => {
+                    setImportError(null);
+                    setImportParseResult(null);
+                    setImportFileName('');
+                    setIsImportModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer"
+                  title="Importar base de datos de productos desde CSV o Excel"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Importar Base de Datos</span>
+                </button>
+
                 <button
                   onClick={handleExportProductsCsv}
-                  className="px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-700 hover:border-emerald-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition"
-                  title="Descargar catálogo completo en formato CSV para Excel"
+                  disabled={products.length === 0}
+                  className="px-3.5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-neutral-200 border border-neutral-700 hover:border-emerald-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer"
+                  title="Descargar base de datos completa en formato CSV"
                 >
                   <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
                   <span>Exportar CSV</span>
                 </button>
 
                 <button
+                  onClick={handleExportProductsXlsx}
+                  disabled={products.length === 0}
+                  className="px-3.5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-neutral-200 border border-neutral-700 hover:border-emerald-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer"
+                  title="Descargar base de datos completa en formato Excel (.xlsx)"
+                >
+                  <Download className="w-4 h-4 text-emerald-400" />
+                  <span>Exportar Excel</span>
+                </button>
+
+                <button
                   onClick={onOpenNewProductModal}
-                  className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white border border-neutral-700 hover:border-blue-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition"
+                  className="px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white border border-neutral-700 hover:border-blue-500 font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg transition cursor-pointer"
                 >
                   <Plus className="w-4 h-4 text-blue-500" />
-                  <span>+ Subir Nuevo Producto</span>
+                  <span>Nuevo Producto</span>
                 </button>
+
+                {products.length > 0 && (
+                  <button
+                    onClick={() => {
+                      if (confirm(`¿Vaciar los ${products.length} productos del catálogo actual y de Supabase? Esta acción no se puede deshacer.`)) {
+                        onClearAllProducts();
+                      }
+                    }}
+                    className="px-3.5 py-2.5 rounded-xl bg-neutral-900 hover:bg-red-950 text-red-400 border border-neutral-800 hover:border-red-700 font-bold text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer"
+                    title="Eliminar todos los productos del catálogo"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Vaciar</span>
+                  </button>
+                )}
               </div>
             </div>
 
+            {catalogNotice && (
+              <div className="p-3.5 rounded-2xl bg-emerald-950/80 border border-emerald-700 text-emerald-200 text-xs font-bold flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{catalogNotice}</span>
+              </div>
+            )}
+
             {/* Filter Bar */}
-            <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="relative w-full sm:w-80">
+            <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 grid grid-cols-1 sm:grid-cols-12 gap-3">
+              <div className="sm:col-span-5 relative">
                 <input
                   type="text"
-                  placeholder="Filtrar por nombre o SKU..."
+                  placeholder="Filtrar por nombre, SKU o consumible..."
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                   className="w-full text-xs bg-neutral-900 text-white pl-8 pr-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
@@ -1214,150 +1365,424 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <Search className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-2.5" />
               </div>
 
-              <select
-                value={productCategoryFilter}
-                onChange={(e) => setProductCategoryFilter(e.target.value)}
-                className="w-full sm:w-64 text-xs bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
-              >
-                <option value="todos">Todas las Categorías ({products.length})</option>
-                {categoriesList.map(cat => (
-                  <option key={cat.id} value={cat.slug}>
-                    {cat.name} ({products.filter(p => p.category === cat.slug).length})
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="sm:col-span-4">
+                <select
+                  value={productCategoryFilter}
+                  onChange={(e) => setProductCategoryFilter(e.target.value)}
+                  className="w-full text-xs bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="todos">Todas las Categorías ({products.length})</option>
+                  {categoriesList.map(cat => (
+                    <option key={cat.id} value={cat.slug}>
+                      {cat.name} ({products.filter(p => p.category === cat.slug).length})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Products Table */}
-            <div className="rounded-3xl border border-neutral-800 overflow-hidden bg-neutral-950 shadow-2xl">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-black border-b border-neutral-800 text-neutral-400 font-bold uppercase tracking-wider text-[10px]">
-                      <th className="py-3.5 px-4">Producto / Modelo</th>
-                      <th className="py-3.5 px-4">Categoría</th>
-                      <th className="py-3.5 px-4">Precio Venta</th>
-                      <th className="py-3.5 px-4">Renta Mensual</th>
-                      <th className="py-3.5 px-4 text-center">Stock SLP</th>
-                      <th className="py-3.5 px-4 text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800/80">
-                    {filteredProducts.map((p) => {
-                      const stockCount = p.stockQuantity ?? (p.inStock ? 5 : 0);
-                      const isLowStock = stockCount <= (p.minStockAlert ?? 2) && stockCount > 0;
-                      const isOutOfStock = stockCount === 0 || !p.inStock;
-
-                      return (
-                        <tr key={p.id} className="hover:bg-neutral-900/50 transition">
-                          <td className="py-3 px-4">
-                            <div className="flex items-center space-x-3">
-                              <img
-                                src={p.image}
-                                alt={p.name}
-                                className="w-11 h-11 object-contain rounded-xl bg-black border border-neutral-800 p-1 shrink-0"
-                              />
-                              <div>
-                                <div className="font-bold text-white flex items-center space-x-1.5">
-                                  <span>{p.name}</span>
-                                  {p.datasheetUrl && (
-                                    <span className="text-[10px] text-sky-400 bg-sky-950 px-1.5 py-0.2 rounded border border-sky-800" title="Cuenta con ficha técnica PDF">
-                                      PDF
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="font-mono text-[10px] text-blue-400">{p.code}</div>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-900 text-neutral-300 border border-neutral-800">
-                              {p.categoryLabel}
-                            </span>
-                          </td>
-
-                          <td className="py-3 px-4 font-mono font-bold text-white">
-                            ${p.price.toLocaleString('es-MX')} MXN
-                          </td>
-
-                          <td className="py-3 px-4 font-mono text-neutral-300">
-                            {p.rentalPriceMonthly 
-                              ? `$${p.rentalPriceMonthly.toLocaleString('es-MX')}/mes`
-                              : <span className="text-neutral-500">—</span>}
-                          </td>
-
-                          <td className="py-3 px-4 text-center">
-                            <div className="inline-flex items-center space-x-1.5 bg-neutral-900 p-1 rounded-xl border border-neutral-800">
-                              <button
-                                onClick={() => handleQuickAdjustStock(p, -1)}
-                                className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center transition"
-                                title="Reducir stock (-1)"
-                              >
-                                -
-                              </button>
-                              <span className={`px-2 py-0.5 rounded-md font-mono font-bold text-xs ${
-                                isOutOfStock 
-                                  ? 'bg-red-950 text-red-400 border border-red-800' 
-                                  : isLowStock 
-                                    ? 'bg-amber-950 text-amber-300 border border-amber-700 animate-pulse' 
-                                    : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                              }`}>
-                                {stockCount} pzas
-                              </span>
-                              <button
-                                onClick={() => handleQuickAdjustStock(p, 1)}
-                                className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center transition"
-                                title="Aumentar stock (+1)"
-                              >
-                                +
-                              </button>
-                            </div>
-                            {isLowStock && (
-                              <div className="text-[10px] text-amber-400 mt-1 font-bold">
-                                ⚠️ Stock bajo (Alerta: ≤{p.minStockAlert ?? 2})
-                              </div>
-                            )}
-                          </td>
-
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex items-center justify-end space-x-1.5">
-                              <button
-                                onClick={() => onOpenEditProductModal(p)}
-                                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-blue-500 transition"
-                                title="Editar producto"
-                              >
-                                <Edit3 className="w-3.5 h-3.5 text-blue-400" />
-                              </button>
-
-                              <button
-                                onClick={() => handleDuplicateProduct(p)}
-                                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 transition"
-                                title="Duplicar producto"
-                              >
-                                <Copy className="w-3.5 h-3.5 text-blue-400" />
-                              </button>
-
-                              <button
-                                onClick={() => {
-                                  if (confirm(`¿Eliminar definitivamente el producto ${p.name}?`)) {
-                                    onDeleteProduct(p.id);
-                                  }
-                                }}
-                                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-400 hover:text-red-400 border border-neutral-800 transition"
-                                title="Eliminar producto"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="sm:col-span-3">
+                <select
+                  value={productStatusFilter}
+                  onChange={(e) => setProductStatusFilter(e.target.value as 'todos' | 'activos' | 'desactivados')}
+                  className="w-full text-xs bg-neutral-900 text-white px-3 py-2 rounded-xl border border-neutral-800 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="todos">Todos los Estados ({products.length})</option>
+                  <option value="activos">Activos ({products.filter(p => p.active !== false).length})</option>
+                  <option value="desactivados">Desactivados ({products.filter(p => p.active === false).length})</option>
+                </select>
               </div>
             </div>
+
+            {/* Products Table or Empty State */}
+            {products.length === 0 ? (
+              <div className="p-10 rounded-3xl border border-dashed border-neutral-700 bg-neutral-950 text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mx-auto text-blue-400">
+                  <Database className="w-7 h-7" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">Catálogo vacío y listo para tu base de datos</h3>
+                  <p className="text-xs text-neutral-400 max-w-md mx-auto mt-1">
+                    Se han eliminado todos los productos de muestra. Sube tu archivo CSV o Excel (.xlsx) para importar tus productos directamente a la tienda y a Supabase.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      setImportError(null);
+                      setImportParseResult(null);
+                      setImportFileName('');
+                      setIsImportModalOpen(true);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center space-x-2 shadow-lg transition cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Importar Archivo CSV / Excel</span>
+                  </button>
+                  <button
+                    onClick={onOpenNewProductModal}
+                    className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-700 font-bold text-xs sm:text-sm flex items-center space-x-2 transition cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 text-blue-400" />
+                    <span>Crear Producto Manualmente</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-neutral-800 overflow-hidden bg-neutral-950 shadow-2xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-black border-b border-neutral-800 text-neutral-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="py-3.5 px-4">Producto / SKU</th>
+                        <th className="py-3.5 px-4">Categoría / Tipo</th>
+                        <th className="py-3.5 px-4">Precio Venta</th>
+                        <th className="py-3.5 px-4 text-center">Stock SLP</th>
+                        <th className="py-3.5 px-4 text-center">Estado Tienda</th>
+                        <th className="py-3.5 px-4 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800/80">
+                      {filteredProducts.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-neutral-500">
+                            No hay productos que coincidan con el filtro seleccionado.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredProducts.map((p) => {
+                          const stockCount = p.stockQuantity ?? (p.inStock ? 5 : 0);
+                          const isLowStock = stockCount <= (p.minStockAlert ?? 2) && stockCount > 0;
+                          const isOutOfStock = stockCount === 0 || !p.inStock;
+                          const isActive = p.active !== false;
+
+                          return (
+                            <tr key={p.id} className={`hover:bg-neutral-900/50 transition ${!isActive ? 'opacity-60' : ''}`}>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-11 h-11 rounded-xl bg-black border border-neutral-800 p-1 shrink-0 flex items-center justify-center overflow-hidden">
+                                    {p.image ? (
+                                      <img
+                                        src={p.image}
+                                        alt={p.name}
+                                        className="w-full h-full object-contain"
+                                      />
+                                    ) : (
+                                      <ImageIcon className="w-5 h-5 text-neutral-600" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-white flex items-center space-x-1.5">
+                                      <span>{p.name}</span>
+                                      {p.datasheetUrl && (
+                                        <span className="text-[10px] text-sky-400 bg-sky-950 px-1.5 py-0.2 rounded border border-sky-800" title="Cuenta con ficha técnica PDF">
+                                          PDF
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="font-mono text-[10px] text-blue-400">{p.code}</div>
+                                    {p.specs?.velocidad && (
+                                      <div className="text-[10px] text-neutral-400 mt-0.5">
+                                        {p.specs.velocidad} {p.specs?.resolucion ? `• ${p.specs.resolucion}` : ''}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-900 text-neutral-300 border border-neutral-800 inline-block">
+                                  {p.categoryLabel || p.category}
+                                </span>
+                                <div className="text-[10px] text-neutral-400 mt-1">
+                                  {p.specs?.tipoImpresion || (p.specs?.color ? 'Color' : 'Monocromo (B&N)')}
+                                </div>
+                              </td>
+
+                              <td className="py-3 px-4 font-mono font-bold text-white">
+                                {p.price > 0 ? (
+                                  <span>${p.price.toLocaleString('es-MX')} MXN</span>
+                                ) : (
+                                  <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">
+                                    Sin precio ($0)
+                                  </span>
+                                )}
+                                {p.rentalPriceMonthly ? (
+                                  <div className="text-[10px] text-neutral-400 font-normal mt-0.5">
+                                    Renta: ${p.rentalPriceMonthly.toLocaleString('es-MX')}/mes
+                                  </div>
+                                ) : null}
+                              </td>
+
+                              <td className="py-3 px-4 text-center">
+                                <div className="inline-flex items-center space-x-1.5 bg-neutral-900 p-1 rounded-xl border border-neutral-800">
+                                  <button
+                                    onClick={() => handleQuickAdjustStock(p, -1)}
+                                    className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center transition"
+                                    title="Reducir stock (-1)"
+                                  >
+                                    -
+                                  </button>
+                                  <span className={`px-2 py-0.5 rounded-md font-mono font-bold text-xs ${
+                                    isOutOfStock 
+                                      ? 'bg-red-950 text-red-400 border border-red-800' 
+                                      : isLowStock 
+                                        ? 'bg-amber-950 text-amber-300 border border-amber-700 animate-pulse' 
+                                        : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                                  }`}>
+                                    {stockCount} pzas
+                                  </span>
+                                  <button
+                                    onClick={() => handleQuickAdjustStock(p, 1)}
+                                    className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center transition"
+                                    title="Aumentar stock (+1)"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </td>
+
+                              <td className="py-3 px-4 text-center">
+                                <button
+                                  onClick={() => handleToggleProductActive(p)}
+                                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center space-x-1 border transition cursor-pointer ${
+                                    isActive
+                                      ? 'bg-emerald-950 text-emerald-300 border-emerald-700 hover:bg-emerald-900'
+                                      : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
+                                  }`}
+                                  title={isActive ? 'Clic para desactivar (ocultar de la tienda)' : 'Clic para activar en tienda'}
+                                >
+                                  <Power className="w-3 h-3" />
+                                  <span>{isActive ? 'Activo' : 'Desactivado'}</span>
+                                </button>
+                              </td>
+
+                              <td className="py-3 px-4 text-right">
+                                <div className="flex items-center justify-end space-x-1.5">
+                                  <button
+                                    onClick={() => onViewProductModal(p)}
+                                    className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-emerald-500 transition cursor-pointer"
+                                    title="Ver ficha técnica completa"
+                                  >
+                                    <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                                  </button>
+
+                                  <button
+                                    onClick={() => onOpenEditProductModal(p)}
+                                    className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-blue-500 transition cursor-pointer"
+                                    title="Editar producto y subir imagen"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 text-blue-400" />
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleDuplicateProduct(p)}
+                                    className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 transition cursor-pointer"
+                                    title="Duplicar producto"
+                                  >
+                                    <Copy className="w-3.5 h-3.5 text-blue-400" />
+                                  </button>
+
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`¿Eliminar definitivamente el producto ${p.name}?`)) {
+                                        onDeleteProduct(p.id);
+                                      }
+                                    }}
+                                    className="p-1.5 rounded-lg bg-neutral-900 text-neutral-400 hover:text-red-400 border border-neutral-800 transition cursor-pointer"
+                                    title="Borrar producto"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Modal de Importación de Base de Datos (CSV / Excel) */}
+            {isImportModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+                <div
+                  onClick={() => !importingToDb && setIsImportModalOpen(false)}
+                  className="fixed inset-0 bg-black/85 backdrop-blur-md"
+                />
+                <div className="relative bg-neutral-950 text-white rounded-3xl border border-neutral-800 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10">
+                  <div className="px-6 py-4 bg-black border-b border-neutral-800 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 rounded-xl bg-blue-600/20 border border-blue-500/40 text-blue-400">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-white">Importar Base de Datos de Productos</h3>
+                        <p className="text-xs text-neutral-400">
+                          Compatible con archivos CSV (.csv) y Excel (.xlsx, .xls) con tus columnas técnicas
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => !importingToDb && setIsImportModalOpen(false)}
+                      className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs">
+                    {/* File Selector */}
+                    <div className="p-5 rounded-2xl bg-black border border-dashed border-neutral-700 text-center space-y-3">
+                      <FileSpreadsheet className="w-10 h-10 text-emerald-400 mx-auto" />
+                      <div>
+                        <p className="text-sm font-bold text-white">
+                          {importFileName ? `Archivo seleccionado: ${importFileName}` : 'Selecciona tu archivo CSV o Excel'}
+                        </p>
+                        <p className="text-[11px] text-neutral-400 mt-1">
+                          Detecta automáticamente las columnas SKU / Modelo, Nombre del Producto, Categoría, Tipo de Impresión, Velocidad, Resolución, Ciclo Máx., Volumen Rec., Pantalla, Memoria, Funciones, Conectividad, Consumibles, Dimensiones, Peso y precios/stock si existen.
+                        </p>
+                      </div>
+                      <label className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold cursor-pointer transition">
+                        <Upload className="w-4 h-4" />
+                        <span>Elegir Archivo (.csv, .xlsx, .xls)</span>
+                        <input
+                          type="file"
+                          accept=".csv,.xlsx,.xls"
+                          onChange={handleSelectImportFile}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {importError && (
+                      <div className="p-3.5 rounded-xl bg-red-950/70 border border-red-800 text-red-300 flex items-center space-x-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{importError}</span>
+                      </div>
+                    )}
+
+                    {importParseResult && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <label className={`p-3.5 rounded-xl border cursor-pointer flex items-start space-x-2.5 ${
+                            importMode === 'merge' ? 'bg-blue-950/40 border-blue-500' : 'bg-neutral-900 border-neutral-800'
+                          }`}>
+                            <input
+                              type="radio"
+                              name="importMode"
+                              checked={importMode === 'merge'}
+                              onChange={() => setImportMode('merge')}
+                              className="mt-0.5"
+                            />
+                            <div>
+                              <div className="font-bold text-white">Agregar y Actualizar por SKU (Recomendado)</div>
+                              <div className="text-[11px] text-neutral-400">
+                                Crea los productos nuevos y actualiza los existentes que coincidan por SKU sin borrar imágenes ni precios ya configurados.
+                              </div>
+                            </div>
+                          </label>
+
+                          <label className={`p-3.5 rounded-xl border cursor-pointer flex items-start space-x-2.5 ${
+                            importMode === 'replace' ? 'bg-amber-950/40 border-amber-500' : 'bg-neutral-900 border-neutral-800'
+                          }`}>
+                            <input
+                              type="radio"
+                              name="importMode"
+                              checked={importMode === 'replace'}
+                              onChange={() => setImportMode('replace')}
+                              className="mt-0.5"
+                            />
+                            <div>
+                              <div className="font-bold text-white">Reemplazar Todo el Catálogo</div>
+                              <div className="text-[11px] text-neutral-400">
+                                Borra los productos anteriores y deja únicamente los {importParseResult.products.length} productos de este archivo.
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-800 text-emerald-300 font-semibold flex items-center justify-between">
+                          <span>
+                            ✓ Se leyeron {importParseResult.products.length} productos listos para importar.
+                          </span>
+                          <span className="text-[11px] text-emerald-400">
+                            {importParseResult.detectedColumns.length} columnas detectadas
+                          </span>
+                        </div>
+
+                        {importParseResult.warnings.length > 0 && (
+                          <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-800 text-amber-300 space-y-1">
+                            {importParseResult.warnings.map((w, idx) => (
+                              <div key={idx}>• {w}</div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="rounded-2xl border border-neutral-800 overflow-hidden max-h-64 overflow-y-auto">
+                          <table className="w-full text-left border-collapse text-[11px]">
+                            <thead className="bg-black text-neutral-400 sticky top-0">
+                              <tr>
+                                <th className="p-2.5">SKU / Modelo</th>
+                                <th className="p-2.5">Nombre</th>
+                                <th className="p-2.5">Categoría</th>
+                                <th className="p-2.5">Tipo</th>
+                                <th className="p-2.5">Velocidad</th>
+                                <th className="p-2.5">Consumibles</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-neutral-800 bg-neutral-900/40">
+                              {importParseResult.products.map((item, idx) => (
+                                <tr key={idx}>
+                                  <td className="p-2.5 font-mono text-blue-400">{item.code}</td>
+                                  <td className="p-2.5 font-bold text-white">{item.name}</td>
+                                  <td className="p-2.5 text-neutral-300">{item.categoryLabel}</td>
+                                  <td className="p-2.5 text-neutral-300">{item.specs.tipoImpresion}</td>
+                                  <td className="p-2.5 text-neutral-300">{item.specs.velocidad}</td>
+                                  <td className="p-2.5 text-neutral-400 truncate max-w-[180px]">{item.specs.consumiblesPrincipales}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="px-6 py-4 bg-black border-t border-neutral-800 flex items-center justify-between">
+                    <button
+                      type="button"
+                      disabled={importingToDb}
+                      onClick={() => setIsImportModalOpen(false)}
+                      className="px-4 py-2 rounded-xl border border-neutral-800 text-neutral-400 hover:text-white text-xs font-bold transition"
+                    >
+                      Cancelar
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={!importParseResult || importParseResult.products.length === 0 || importingToDb}
+                      onClick={handleConfirmImport}
+                      className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-bold flex items-center space-x-2 transition cursor-pointer"
+                    >
+                      {importingToDb ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Importando a Supabase...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Confirmar Importación ({importParseResult?.products.length || 0} productos)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -3137,6 +3562,66 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="space-y-6">
+                {/* Encabezado Principal: Pestaña / Etiqueta, Título y Subtítulo de Nosotros */}
+                <div className="p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
+                  <div className="flex items-center justify-between border-b border-[#394B61] pb-2">
+                    <span className="text-xs font-bold text-[#F27C36] uppercase tracking-wider flex items-center space-x-2">
+                      <Building2 className="w-4 h-4 text-[#F27C36]" />
+                      <span>Encabezado Superior de "Nosotros" (Pestaña y Título Principal)</span>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-200 mb-1">
+                        Pestaña / Etiqueta Superior (Ej. Distribuidor Kiosera)
+                      </label>
+                      <input
+                        type="text"
+                        value={editableContent.about.badgeText ?? 'Distribuidor Kiosera'}
+                        onChange={(e) => setEditableContent({
+                          ...editableContent,
+                          about: { ...editableContent.about, badgeText: e.target.value }
+                        })}
+                        placeholder="Distribuidor Kiosera"
+                        className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-200 mb-1">
+                        Título Principal de la Sección
+                      </label>
+                      <input
+                        type="text"
+                        value={editableContent.about.headline}
+                        onChange={(e) => setEditableContent({
+                          ...editableContent,
+                          about: { ...editableContent.about, headline: e.target.value }
+                        })}
+                        placeholder="Una empresa potosina de soluciones de impresión"
+                        className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-200 mb-1">
+                        Subtítulo / Descripción Principal bajo el Título
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={editableContent.about.subheadline}
+                        onChange={(e) => setEditableContent({
+                          ...editableContent,
+                          about: { ...editableContent.about, subheadline: e.target.value }
+                        })}
+                        placeholder="Respaldando el éxito y la productividad de tu empresa con soluciones documentales."
+                        className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Campo 1: Qué Hacemos */}
                 <div className="p-4 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-2">
                   <div className="flex items-center justify-between">
@@ -4267,16 +4752,92 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
+              {/* Control Maestro de Visibilidad de Tarjetas del Pie de Página */}
+              <div className="p-5 rounded-2xl bg-[#000000]/80 border border-[#394B61] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-2 gap-2">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                      <Eye className="w-4 h-4 text-[#F27C36]" />
+                      <span>Activar / Desactivar Cada Tarjeta del Pie de Página</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Encienda o apague individualmente cada bloque o columna visible en el pie de página de la web.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {([
+                    { key: 'showBanner', title: '1. Banner Superior Soporte', desc: 'Franja negra con botón WhatsApp y Teléfono' },
+                    { key: 'showBrandColumn', title: '2. Tarjeta Marca y Contacto', desc: 'Logo, descripción, ciudad, horario y correo' },
+                    { key: 'showSectionsColumn', title: '3. Tarjeta "Secciones"', desc: 'Desactivada por defecto para evitar duplicados' },
+                    { key: 'showEquiposColumn', title: '4. Tarjeta "Equipos & Servicios"', desc: 'Multifuncionales, tóner, renta y soporte' },
+                    { key: 'showEmpresaColumn', title: '5. Tarjeta "Empresa y Atención"', desc: 'Nosotros, cobertura, contacto y acceso admin' },
+                    { key: 'showCopyrightBar', title: '6. Barra Inferior Copyright', desc: 'Derechos reservados y botón volver arriba' }
+                  ] as const).map((card) => {
+                    const isActive = card.key === 'showSectionsColumn'
+                      ? currentFooter.showSectionsColumn === true
+                      : currentFooter[card.key] !== false;
+                    return (
+                      <div
+                        key={card.key}
+                        className={`p-3.5 rounded-xl border transition flex items-start justify-between gap-2 ${
+                          isActive
+                            ? 'bg-[#182F4F]/80 border-emerald-500/50'
+                            : 'bg-[#182F4F]/25 border-slate-700/70 opacity-85'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-white truncate">{card.title}</div>
+                          <div className="text-[10px] text-slate-300 mt-0.5 leading-snug">{card.desc}</div>
+                          <div className={`text-[10px] font-bold mt-1.5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`}>
+                            {isActive ? '● Activa en la Web' : '○ Desactivada (Oculta)'}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isActive}
+                          onClick={() => handleToggleFooterCard(card.key)}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                            isActive ? 'bg-[#F27C36]' : 'bg-slate-700'
+                          }`}
+                          title={isActive ? 'Desactivar esta tarjeta' : 'Activar esta tarjeta'}
+                        >
+                          <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            isActive ? 'translate-x-5' : 'translate-x-0'
+                          }`} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* 1. Banner Superior de Asesoría & Soporte */}
               <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
-                <div className="border-b border-[#394B61] pb-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
-                    <ShieldCheck className="w-4 h-4 text-[#F27C36]" />
-                    <span>1. Banner Superior de Soporte Rápido</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-300 mt-0.5">
-                    Franja horizontal que aparece en la parte superior del pie de página con llamado a la acción.
-                  </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-2 gap-2">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                      <ShieldCheck className="w-4 h-4 text-[#F27C36]" />
+                      <span>1. Banner Superior de Soporte Rápido</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Franja horizontal que aparece en la parte superior del pie de página con llamado a la acción.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFooterCard('showBanner')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 border transition cursor-pointer shrink-0 ${
+                      currentFooter.showBanner !== false
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {currentFooter.showBanner !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    <span>{currentFooter.showBanner !== false ? 'Tarjeta Activa' : 'Oculta'}</span>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4289,7 +4850,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       value={currentFooter.bannerTitle}
                       onChange={(e) => handleUpdateFooter({ bannerTitle: e.target.value })}
                       className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                      placeholder="¿Necesita asesoría o equipamiento Kyocera para su empresa?"
+                      placeholder="¿Necesitas un equipo de impresión para tu empresa? Solicita tu cotización."
                     />
                   </div>
 
@@ -4302,7 +4863,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       value={currentFooter.bannerSubtitle}
                       onChange={(e) => handleUpdateFooter({ bannerSubtitle: e.target.value })}
                       className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                      placeholder="LUMESA ofrece soluciones documentales de vanguardia..."
+                      placeholder="Te asesoramos para elegir el equipo ideal y te enviamos una cotización a la medida."
                     />
                   </div>
 
@@ -4328,7 +4889,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       value={currentFooter.bannerWhatsAppText}
                       onChange={(e) => handleUpdateFooter({ bannerWhatsAppText: e.target.value })}
                       className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                      placeholder="WhatsApp de Atención"
+                      placeholder="Solicitar Cotización por WhatsApp"
                     />
                   </div>
                 </div>
@@ -4336,14 +4897,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               {/* 2. Columna 1: Branding y Datos de Contacto Directo */}
               <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
-                <div className="border-b border-[#394B61] pb-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
-                    <Building2 className="w-4 h-4 text-[#F27C36]" />
-                    <span>2. Columna 1: Identidad & Datos de Contacto (Bajo el Logo LUMESA)</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-300 mt-0.5">
-                    Párrafo corporativo, ubicación, horarios y correo oficial mostrados en la primera columna del pie de página.
-                  </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-2 gap-2">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                      <Building2 className="w-4 h-4 text-[#F27C36]" />
+                      <span>2. Tarjeta Identidad & Datos de Contacto (Bajo el Logo LUMESA)</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Párrafo corporativo, ubicación, horarios y correo oficial mostrados en la primera columna del pie de página.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFooterCard('showBrandColumn')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 border transition cursor-pointer shrink-0 ${
+                      currentFooter.showBrandColumn !== false
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {currentFooter.showBrandColumn !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    <span>{currentFooter.showBrandColumn !== false ? 'Tarjeta Activa' : 'Oculta'}</span>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4352,24 +4927,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       Descripción Corporativa
                     </label>
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={currentFooter.description}
                       onChange={(e) => handleUpdateFooter({ description: e.target.value })}
                       className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                      placeholder="Con más de tres décadas respaldando a empresas en México..."
+                      placeholder="LUMESA · Renta y venta de equipos de impresión en San Luis Potosí."
                     />
                   </div>
 
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Dirección Sede
+                      Dirección / Ubicación
                     </label>
                     <input
                       type="text"
                       value={currentFooter.address}
                       onChange={(e) => handleUpdateFooter({ address: e.target.value })}
                       className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                      placeholder="San Luis Potosí, S.L.P., México. C.P. 78230"
+                      placeholder="San Luis Potosí, S.L.P., México"
                     />
                   </div>
 
@@ -4382,7 +4957,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       value={currentFooter.schedule}
                       onChange={(e) => handleUpdateFooter({ schedule: e.target.value })}
                       className="w-full text-xs sm:text-sm bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36]"
-                      placeholder="Lunes a Viernes: 09:00 a 18:00 hrs"
+                      placeholder="Lunes a viernes de 9:00 a 18:00 h"
                     />
                   </div>
 
@@ -4406,17 +4981,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="border-b border-[#394B61] pb-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
                     <Tag className="w-4 h-4 text-[#F27C36]" />
-                    <span>3. Títulos de las 3 Columnas de Navegación</span>
+                    <span>3. Títulos de las Columnas de Navegación</span>
                   </h4>
                   <p className="text-[11px] text-slate-300 mt-0.5">
-                    Encabezados con línea naranja visible para cada bloque de enlaces.
+                    Encabezados con línea naranja visible para cada tarjeta de enlaces del pie de página.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Título Columna 2
+                      Título Tarjeta Secciones
                     </label>
                     <input
                       type="text"
@@ -4429,7 +5004,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Título Columna 3
+                      Título Tarjeta Equipos & Servicios
                     </label>
                     <input
                       type="text"
@@ -4442,7 +5017,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                   <div>
                     <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Título Columna 4
+                      Título Tarjeta Empresa y Atención
                     </label>
                     <input
                       type="text"
@@ -4455,18 +5030,131 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              {/* 4. Enlaces Editables de Columna 3 (Equipos & Servicios) */}
+              {/* Tarjeta 3B: Enlaces Editables de Tarjeta "Secciones" */}
+              <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-2 gap-2">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
+                      <Layers className="w-4 h-4 text-[#F27C36]" />
+                      <span>4. Tarjeta "{currentFooter.sectionsTitle || 'Secciones'}"</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Esta tarjeta se encuentra desactivada por defecto para evitar repetir secciones. Actívela o edite sus enlaces si lo desea.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFooterCard('showSectionsColumn')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 border transition cursor-pointer shrink-0 ${
+                      currentFooter.showSectionsColumn === true
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {currentFooter.showSectionsColumn === true ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    <span>{currentFooter.showSectionsColumn === true ? 'Tarjeta Activa' : 'Oculta (Desactivada)'}</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {(currentFooter.sectionsLinks || DEFAULT_FOOTER_CONFIG.sectionsLinks || []).map((link, idx) => (
+                    <div key={link.id || idx} className="flex flex-col sm:flex-row sm:items-center gap-2 bg-[#182F4F] p-3 rounded-xl border border-[#394B61]">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={link.label}
+                          onChange={(e) => {
+                            const updated = [...(currentFooter.sectionsLinks || DEFAULT_FOOTER_CONFIG.sectionsLinks || [])];
+                            updated[idx] = { ...updated[idx], label: e.target.value };
+                            handleUpdateFooter({ sectionsLinks: updated });
+                          }}
+                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61] font-semibold"
+                          placeholder="Texto del enlace..."
+                        />
+                      </div>
+                      <div className="w-full sm:w-48">
+                        <select
+                          value={link.target}
+                          onChange={(e) => {
+                            const updated = [...(currentFooter.sectionsLinks || DEFAULT_FOOTER_CONFIG.sectionsLinks || [])];
+                            updated[idx] = { ...updated[idx], target: e.target.value as AppSection };
+                            handleUpdateFooter({ sectionsLinks: updated });
+                          }}
+                          className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
+                        >
+                          <option value="inicio">Inicio</option>
+                          <option value="nosotros">Nosotros</option>
+                          <option value="renta_venta">Renta / Venta</option>
+                          <option value="tienda">Tienda en Línea</option>
+                          <option value="contacto">Contacto</option>
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSectionsLink(idx)}
+                        className="p-2 rounded-lg text-rose-400 hover:text-white hover:bg-rose-900 transition cursor-pointer shrink-0 self-end sm:self-center"
+                        title="Eliminar este enlace"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#182F4F]/60 border border-dashed border-[#394B61] flex flex-col sm:flex-row items-center gap-2.5">
+                  <input
+                    type="text"
+                    value={newSectionsLinkTitle}
+                    onChange={(e) => setNewSectionsLinkTitle(e.target.value)}
+                    placeholder="Nuevo enlace para Secciones..."
+                    className="flex-1 text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61] w-full"
+                  />
+                  <select
+                    value={newSectionsLinkTarget}
+                    onChange={(e) => setNewSectionsLinkTarget(e.target.value as AppSection)}
+                    className="text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61] w-full sm:w-48"
+                  >
+                    <option value="inicio">Inicio</option>
+                    <option value="nosotros">Nosotros</option>
+                    <option value="renta_venta">Renta / Venta</option>
+                    <option value="tienda">Tienda en Línea</option>
+                    <option value="contacto">Contacto</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddSectionsLink}
+                    className="px-4 py-2 rounded-lg bg-[#F27C36] hover:bg-[#d96624] text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shrink-0 w-full sm:w-auto justify-center"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar Enlace</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 5. Enlaces Editables de Tarjeta Equipos & Servicios */}
               <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-2 gap-2">
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
                       <Printer className="w-4 h-4 text-[#F27C36]" />
-                      <span>4. Enlaces de Columna 3 ({currentFooter.equiposTitle || 'Equipos & Servicios'})</span>
+                      <span>5. Tarjeta "{currentFooter.equiposTitle || 'Equipos & Servicios'}"</span>
                     </h4>
                     <p className="text-[11px] text-slate-300 mt-0.5">
-                      Modifique los textos y la sección a la que apunta cada enlace.
+                      Modifique los enlaces de equipos y servicios, o active/desactive esta tarjeta.
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFooterCard('showEquiposColumn')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 border transition cursor-pointer shrink-0 ${
+                      currentFooter.showEquiposColumn !== false
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {currentFooter.showEquiposColumn !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    <span>{currentFooter.showEquiposColumn !== false ? 'Tarjeta Activa' : 'Oculta'}</span>
+                  </button>
                 </div>
 
                 <div className="space-y-2.5">
@@ -4495,8 +5183,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           }}
                           className="w-full text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61]"
                         >
-                          <option value="hardware">Renta / Venta (Hardware)</option>
                           <option value="renta_venta">Renta / Venta</option>
+                          <option value="hardware">Renta / Venta (Hardware)</option>
                           <option value="tienda">Tienda en Línea</option>
                           <option value="contacto">Contacto & Cotización</option>
                           <option value="nosotros">Nosotros</option>
@@ -4515,7 +5203,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   ))}
                 </div>
 
-                {/* Formulario para agregar nuevo enlace a Columna 3 */}
+                {/* Formulario para agregar nuevo enlace a Equipos & Servicios */}
                 <div className="p-3.5 rounded-xl bg-[#182F4F]/60 border border-dashed border-[#394B61] flex flex-col sm:flex-row items-center gap-2.5">
                   <input
                     type="text"
@@ -4529,8 +5217,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     onChange={(e) => setNewEquiposLinkTarget(e.target.value as AppSection)}
                     className="text-xs bg-[#000000] text-white px-3 py-2 rounded-lg border border-[#394B61] w-full sm:w-48"
                   >
-                    <option value="hardware">Renta / Venta (Hardware)</option>
                     <option value="renta_venta">Renta / Venta</option>
+                    <option value="hardware">Renta / Venta (Hardware)</option>
                     <option value="tienda">Tienda en Línea</option>
                     <option value="contacto">Contacto</option>
                     <option value="nosotros">Nosotros</option>
@@ -4546,18 +5234,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              {/* 5. Enlaces Editables de Columna 4 (Empresa y Atención) */}
+              {/* 6. Enlaces Editables de Tarjeta Empresa y Atención */}
               <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-2 gap-2">
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
                       <Users className="w-4 h-4 text-[#F27C36]" />
-                      <span>5. Enlaces de Columna 4 ({currentFooter.empresaTitle || 'Empresa y Atención'})</span>
+                      <span>6. Tarjeta "{currentFooter.empresaTitle || 'Empresa y Atención'}"</span>
                     </h4>
                     <p className="text-[11px] text-slate-300 mt-0.5">
-                      Modifique los textos y la sección a la que apunta cada enlace.
+                      Modifique los textos y la sección a la que apunta cada enlace, o active/desactive esta tarjeta.
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFooterCard('showEmpresaColumn')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 border transition cursor-pointer shrink-0 ${
+                      currentFooter.showEmpresaColumn !== false
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {currentFooter.showEmpresaColumn !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    <span>{currentFooter.showEmpresaColumn !== false ? 'Tarjeta Activa' : 'Oculta'}</span>
+                  </button>
                 </div>
 
                 <div className="space-y-2.5">
@@ -4605,7 +5305,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   ))}
                 </div>
 
-                {/* Formulario para agregar nuevo enlace a Columna 4 */}
+                {/* Formulario para agregar nuevo enlace a Empresa y Atención */}
                 <div className="p-3.5 rounded-xl bg-[#182F4F]/60 border border-dashed border-[#394B61] flex flex-col sm:flex-row items-center gap-2.5">
                   <input
                     type="text"
@@ -4636,13 +5336,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              {/* 6. Barra Inferior de Derechos Reservados (Copyright) */}
+              {/* 7. Barra Inferior de Derechos Reservados (Copyright) */}
               <div className="p-5 rounded-2xl bg-[#000000]/60 border border-[#394B61] space-y-3">
-                <div className="border-b border-[#394B61] pb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#394B61] pb-2 gap-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-[#F27C36] flex items-center space-x-2">
                     <Sparkles className="w-4 h-4 text-[#F27C36]" />
-                    <span>6. Barra Inferior de Derechos Reservados (Copyright)</span>
+                    <span>7. Barra Inferior de Derechos Reservados (Copyright)</span>
                   </h4>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFooterCard('showCopyrightBar')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 border transition cursor-pointer shrink-0 ${
+                      currentFooter.showCopyrightBar !== false
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {currentFooter.showCopyrightBar !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    <span>{currentFooter.showCopyrightBar !== false ? 'Barra Activa' : 'Oculta'}</span>
+                  </button>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">

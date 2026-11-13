@@ -1,5 +1,5 @@
 import { SiteContent, OrderDetails, AdminUser, ContentVisibility, FooterConfig, CoverageConfig, HeroSlide } from '../types';
-import { HERO_SLIDES, TRUST_METRICS, PRODUCTS, SOFTWARE_SOLUTIONS } from './mockData';
+import { HERO_SLIDES, TRUST_METRICS, SOFTWARE_SOLUTIONS } from './mockData';
 
 export const DEFAULT_COVERAGE: CoverageConfig = {
   tag: "Cobertura",
@@ -9,6 +9,12 @@ export const DEFAULT_COVERAGE: CoverageConfig = {
 };
 
 export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
+  showBanner: true,
+  showBrandColumn: true,
+  showSectionsColumn: false,
+  showEquiposColumn: true,
+  showEmpresaColumn: true,
+  showCopyrightBar: true,
   bannerTitle: "¿Necesitas un equipo de impresión para tu empresa? Solicita tu cotización.",
   bannerSubtitle: "Te asesoramos para elegir el equipo ideal y te enviamos una cotización a la medida.",
   bannerPhone: "(444) 812-3000",
@@ -19,14 +25,21 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   schedule: "Lunes a viernes de 9:00 a 18:00 h",
   email: "contacto@lumesa.com.mx",
   sectionsTitle: "Secciones",
+  sectionsLinks: [
+    { id: "sec-1", label: "Inicio", target: "inicio" },
+    { id: "sec-2", label: "Nosotros", target: "nosotros" },
+    { id: "sec-3", label: "Renta / Venta", target: "renta_venta" },
+    { id: "sec-4", label: "Tienda en Línea", target: "tienda" },
+    { id: "sec-5", label: "Contacto", target: "contacto" }
+  ],
   equiposTitle: "Equipos & Servicios",
   equiposLinks: [
-    { id: "eq-1", label: "Inicio", target: "inicio" },
-    { id: "eq-2", label: "Nosotros", target: "nosotros" },
-    { id: "eq-3", label: "Tienda en Línea", target: "tienda" },
-    { id: "eq-4", label: "Renta / Venta", target: "renta_venta" },
-    { id: "eq-5", label: "Contacto", target: "contacto" },
-    { id: "eq-6", label: "Aviso de privacidad", target: "contacto" }
+    { id: "eq-1", label: "Multifuncionales A3 Color", target: "renta_venta" },
+    { id: "eq-2", label: "Multifuncionales A4 Compactos", target: "renta_venta" },
+    { id: "eq-3", label: "Impresoras Láser", target: "renta_venta" },
+    { id: "eq-4", label: "Tóner y Consumibles", target: "tienda" },
+    { id: "eq-5", label: "Planes de Renta a tu Medida", target: "renta_venta" },
+    { id: "eq-6", label: "Servicio Técnico y Soporte", target: "contacto" }
   ],
   empresaTitle: "Empresa y Atención",
   empresaLinks: [
@@ -34,7 +47,8 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
     { id: "em-2", label: "Cobertura en San Luis Potosí", target: "nosotros" },
     { id: "em-3", label: "Contacto Directo", target: "contacto" },
     { id: "em-4", label: "Tienda en Línea", target: "tienda" },
-    { id: "em-5", label: "Acceso Admin Autoadministrable →", target: "admin" }
+    { id: "em-5", label: "Aviso de privacidad", target: "contacto" },
+    { id: "em-6", label: "Acceso Admin Autoadministrable →", target: "admin" }
   ],
   copyrightText: "© 2026 LUMESA. Todos los derechos reservados. Kyocera, ECOSYS y TASKalfa son marcas registradas de sus respectivos titulares."
 };
@@ -89,8 +103,9 @@ export const INITIAL_SITE_CONTENT: SiteContent = {
   visibility: DEFAULT_VISIBILITY,
   trustMetrics: TRUST_METRICS,
   about: {
+    badgeText: "Distribuidor Kiosera",
     headline: "Una empresa potosina de soluciones de impresión",
-    subheadline: "En LUMESA rentamos y vendemos multifuncionales e impresoras láser Kyocera con atención directa y trato personal en San Luis Potosí.",
+    subheadline: "Respaldando el éxito y la productividad de tu empresa con soluciones documentales.",
     queHacemosTitle: "Qué Hacemos",
     queHacemosText: "En LUMESA rentamos y vendemos multifuncionales e impresoras láser de marca Kyocera. Te ayudamos a elegir el equipo según tu volumen de impresión, si necesitas color o doble carta, y te enviamos una cotización sin compromiso.",
     queHacemosBullets: [
@@ -338,65 +353,4 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
   }
 ];
 
-export const INITIAL_ORDERS: OrderDetails[] = [
-  {
-    orderId: "KM-849201",
-    customerName: "Ing. Carlos Villalobos",
-    companyName: "Grupo Metalmecánico del Bajío S.A.",
-    rfc: "GMB140922TR4",
-    email: "carlos.v@grupobajio.com.mx",
-    phone: "444 820 4455",
-    address: "Parque Industrial San Luis, Eje 120 #340",
-    city: "San Luis Potosí",
-    state: "San Luis Potosí",
-    postalCode: "78395",
-    paymentMethod: "spei",
-    status: "en_proceso",
-    trackingNumber: "FEDEX-MX-984210",
-    date: "28/10/2026, 11:30",
-    items: [
-      {
-        product: PRODUCTS[0],
-        quantity: 1,
-        acquisitionType: "renta"
-      },
-      {
-        product: PRODUCTS[6], // Tóner TK-8527K
-        quantity: 2,
-        acquisitionType: "compra"
-      }
-    ],
-    subtotal: 7750,
-    tax: 1240,
-    shipping: 0,
-    total: 8990,
-    notes: "Entregar en puerta de almacén 3. Requiere capacitación técnica."
-  },
-  {
-    orderId: "KM-849188",
-    customerName: "Lic. Mariana Escobedo",
-    companyName: "Notaría Pública No. 24",
-    rfc: "ESC920315PL8",
-    email: "mescobedo@notaria24slp.com",
-    phone: "444 815 1200",
-    address: "Calle Los Bravo #410, Centro Histórico",
-    city: "San Luis Potosí",
-    state: "San Luis Potosí",
-    postalCode: "78000",
-    paymentMethod: "tarjeta",
-    status: "confirmado",
-    date: "27/10/2026, 16:45",
-    items: [
-      {
-        product: PRODUCTS[2], // ECOSYS M3655idn
-        quantity: 1,
-        acquisitionType: "compra"
-      }
-    ],
-    subtotal: 43800,
-    tax: 7008,
-    shipping: 0,
-    total: 50808,
-    notes: "Factura urgente para cierre de mes."
-  }
-];
+export const INITIAL_ORDERS: OrderDetails[] = [];

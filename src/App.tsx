@@ -26,7 +26,9 @@ import {
   saveSiteContentToSupabase,
   fetchProductsFromSupabase,
   saveProductToSupabase,
+  saveProductsBatchToSupabase,
   deleteProductFromSupabase,
+  deleteAllProductsFromSupabase,
   fetchOrdersFromSupabase,
   saveOrderToSupabase,
   updateOrderStatusInSupabase
@@ -82,10 +84,27 @@ export default function App() {
   // ==========================================
   // AUTO-ADMINISTRABLE PERSISTENT STATE
   // ==========================================
+  const LEGACY_SAMPLE_PRODUCT_IDS = new Set([
+    'kyocera-taskalfa-3554ci',
+    'kyocera-taskalfa-5054ci',
+    'kyocera-ecosys-m3655idn',
+    'kyocera-ecosys-ma4000cix',
+    'kyocera-ecosys-p3155dn',
+    'kyocera-taskalfa-pro-15000c',
+    'toner-kyocera-tk-8527k',
+    'toner-kyocera-tk-3182',
+    'poliza-anual-mantenimiento-pro'
+  ]);
+
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem('lumesa_products');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((p: Product) => !LEGACY_SAMPLE_PRODUCT_IDS.has(p.id));
+        }
+      }
     } catch {
       // fallback
     }
@@ -149,9 +168,9 @@ export default function App() {
           storeCategories: parsed.storeCategories || INITIAL_SITE_CONTENT.storeCategories,
           paymentConfig: parsed.paymentConfig || INITIAL_SITE_CONTENT.paymentConfig,
           coupons: parsed.coupons || INITIAL_SITE_CONTENT.coupons,
-          showTrustMetrics: parsed.showTrustMetrics ?? visibility.showTrustMetrics,
+          showTrustMetrics: parsed.showTrustMetrics ?? visibility.showTrustMetrics ?? false,
           visibility,
-          _lastUpdated: parsed._lastUpdated || Date.now()
+          _lastUpdated: parsed._lastUpdated || 0
         };
         return updatedContent;
       }
@@ -241,7 +260,7 @@ export default function App() {
             const mergedVisibility = {
               ...INITIAL_SITE_CONTENT.visibility,
               ...(cloudContent.visibility || {}),
-              showTrustMetrics: cloudContent.showTrustMetrics ?? cloudContent.visibility?.showTrustMetrics ?? true
+              showTrustMetrics: cloudContent.showTrustMetrics ?? cloudContent.visibility?.showTrustMetrics ?? false
             };
             const updatedContent: SiteContent = {
               ...INITIAL_SITE_CONTENT,
@@ -289,8 +308,11 @@ export default function App() {
             } catch {}
           }
         }
-        if (cloudProducts && cloudProducts.length > 0) {
-          setProducts(cloudProducts);
+        if (cloudProducts !== null) {
+          const cleanedCloudProducts = cloudProducts.filter(
+            (p) => !LEGACY_SAMPLE_PRODUCT_IDS.has(p.id)
+          );
+          setProducts(cleanedCloudProducts);
         }
         if (cloudOrders && cloudOrders.length > 0) {
           setOrders(cloudOrders);
@@ -304,22 +326,13 @@ export default function App() {
   }, []);
 
   // Cart state
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      product: products[0] || PRODUCTS[0],
-      quantity: 1,
-      acquisitionType: 'renta'
-    }
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   // Public modals
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [comparedProducts, setComparedProducts] = useState<Product[]>([
-    products[0] || PRODUCTS[0],
-    products[2] || PRODUCTS[2]
-  ]);
+  const [comparedProducts, setComparedProducts] = useState<Product[]>([]);
   const [isComparatorOpen, setIsComparatorOpen] = useState(false);
 
   // Admin modals
@@ -469,6 +482,39 @@ export default function App() {
     setProducts((prev) => prev.filter((p) => p.id !== productId));
     deleteProductFromSupabase(productId).catch((e) => console.warn('Supabase deleteProduct error:', e));
   };
+
+  const handleImportProducts = async (imported: Product[], mode: 'merge' | 'replace') => {
+    let nextProducts: Product[];
+    if (mode === 'replace') {
+      await deleteAllProductsFromSupabase();
+      nextProducts = imported;
+    } else {
+      const mapById = new Map<string, Product>();
+      const idByCode = new Map<string, string>();
+      for (const existing of products) {
+        mapById.set(existing.id, existing);
+        idByCode.set(existing.code.trim().toLowerCase(), existing.id);
+      }
+      for (const item of imported) {
+        const matchedId = idByCode.get(item.code.trim().toLowerCase()) || item.id;
+        mapById.set(matchedId, { ...item, id: matchedId });
+      }
+      nextProducts = Array.from(mapById.values());
+    }
+    setProducts(nextProducts);
+    const res = await saveProductsBatchToSupabase(mode === 'replace' ? nextProducts : imported);
+    if (!res.success && res.error) {
+      console.warn('Supabase batch import warning:', res.error);
+    }
+  };
+
+  const handleClearAllProducts = async () => {
+    setProducts([]);
+    localStorage.setItem('lumesa_products', JSON.stringify([]));
+    await deleteAllProductsFromSupabase();
+  };
+
+  const activePublicProducts = products.filter((p) => p.active !== false);
 
   const handleUpdateOrderStatus = (
     orderId: string, 
@@ -710,7 +756,7 @@ export default function App() {
         {/* ========================================================= */}
         {activeSection === 'tienda' && (
           <OnlineStoreSection
-            products={products}
+            products={activePublicProducts}
             onAddToCart={handleAddToCart}
             onOpenProductDetail={(prod) => setSelectedProduct(prod)}
             initialSearchQuery={searchQuery}
@@ -723,7 +769,7 @@ export default function App() {
         {/* ========================================================= */}
         {(activeSection === 'renta_venta' || activeSection === 'hardware') && (
           <HardwareCatalog
-            products={products}
+            products={activePublicProducts}
             onAddToCart={handleAddToCart}
             onOpenProductDetail={(prod) => setSelectedProduct(prod)}
             comparedProducts={comparedProducts}
@@ -824,6 +870,9 @@ export default function App() {
             products={products}
             onSaveProduct={handleSaveProduct}
             onDeleteProduct={handleDeleteProduct}
+            onImportProducts={handleImportProducts}
+            onClearAllProducts={handleClearAllProducts}
+            onViewProductModal={(prod) => setSelectedProduct(prod)}
             orders={orders}
             onUpdateOrderStatus={handleUpdateOrderStatus}
             siteContent={siteContent}

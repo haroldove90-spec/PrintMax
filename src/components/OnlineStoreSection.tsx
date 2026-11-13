@@ -9,7 +9,8 @@ import {
   Truck,
   RotateCcw,
   Sparkles,
-  FileDown
+  FileDown,
+  Printer
 } from 'lucide-react';
 import { Product, ProductCategory, StoreCategory } from '../types';
 
@@ -279,11 +280,18 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                       </button>
                     </div>
 
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="max-h-40 w-auto object-contain transform group-hover:scale-105 transition duration-300"
-                    />
+                    {product.image ? (
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="max-h-40 w-auto object-contain transform group-hover:scale-105 transition duration-300"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <Printer className="w-14 h-14 text-[#394B61] mb-1" />
+                        <span className="text-[10px] font-mono text-slate-400">{product.code}</span>
+                      </div>
+                    )}
 
                     {product.inStock ? (
                       <span className={`absolute bottom-2 left-3 text-[10px] font-semibold px-2 py-0.5 rounded-md border flex items-center ${
@@ -353,9 +361,17 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                     {/* Price & Action */}
                     <div>
                       <div className="pt-3 border-t border-[#394B61] mb-3">
-                        <div className="text-[10px] text-slate-300 uppercase tracking-wider">Precio Neto (con IVA)</div>
+                        <div className="text-[10px] text-slate-300 uppercase tracking-wider">
+                          {product.price > 0 ? 'Precio Neto (con IVA)' : 'Cotización Directa'}
+                        </div>
                         <div className="text-lg font-black text-white">
-                          ${product.price.toLocaleString('es-MX')} <span className="text-xs text-slate-300 font-normal">MXN</span>
+                          {product.price > 0 ? (
+                            <>
+                              ${product.price.toLocaleString('es-MX')} <span className="text-xs text-slate-300 font-normal">MXN</span>
+                            </>
+                          ) : (
+                            <span className="text-base text-[#F27C36]">Solicitar Cotización</span>
+                          )}
                         </div>
                         {product.rentalPriceMonthly && (
                           <div className="text-[11px] text-[#F27C36] font-medium mt-0.5">

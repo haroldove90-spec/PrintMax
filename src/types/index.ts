@@ -33,6 +33,12 @@ export interface ProductSpec {
   formato: string;
   resolucion: string;
   cicloMensual: string;
+  volumenRecomendado?: string;
+  pantalla?: string;
+  memoria?: string;
+  funcionesPrincipales?: string;
+  consumiblesPrincipales?: string;
+  tipoImpresion?: string;
   capacidadPapel: string;
   tipoTinta: string;
   conectividad: string[];
@@ -57,6 +63,7 @@ export interface Product {
   image: string;
   specs: ProductSpec;
   features: string[];
+  active?: boolean;
   inStock: boolean;
   stockQuantity?: number;
   minStockAlert?: number;
@@ -226,6 +233,12 @@ export interface FooterLinkItem {
 }
 
 export interface FooterConfig {
+  showBanner?: boolean;
+  showBrandColumn?: boolean;
+  showSectionsColumn?: boolean;
+  showEquiposColumn?: boolean;
+  showEmpresaColumn?: boolean;
+  showCopyrightBar?: boolean;
   bannerTitle: string;
   bannerSubtitle: string;
   bannerPhone: string;
@@ -236,6 +249,7 @@ export interface FooterConfig {
   schedule: string;
   email: string;
   sectionsTitle: string;
+  sectionsLinks?: FooterLinkItem[];
   equiposTitle: string;
   equiposLinks: FooterLinkItem[];
   empresaTitle: string;
@@ -261,6 +275,7 @@ export interface SiteContent {
     description: string;
   }[];
   about: {
+    badgeText?: string;
     headline: string;
     subheadline: string;
     queHacemosTitle: string;

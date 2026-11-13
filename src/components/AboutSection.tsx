@@ -21,8 +21,9 @@ interface AboutSectionProps {
 }
 
 export const AboutSection: React.FC<AboutSectionProps> = ({ content, visibility, onNavigate }) => {
+  const badgeText = content?.badgeText ?? "Distribuidor Kiosera";
   const headline = content?.headline || "Una empresa potosina de soluciones de impresión";
-  const subheadline = content?.subheadline || "En LUMESA rentamos y vendemos multifuncionales e impresoras láser Kyocera con atención directa y trato personal en San Luis Potosí.";
+  const subheadline = content?.subheadline || "Respaldando el éxito y la productividad de tu empresa con soluciones documentales.";
   const queHacemosText = content?.queHacemosText || "En LUMESA rentamos y vendemos multifuncionales e impresoras láser de marca Kyocera. Te ayudamos a elegir el equipo según tu volumen de impresión, si necesitas color o doble carta, y te enviamos una cotización sin compromiso.";
   const sobreNosotrosText1 = content?.sobreNosotrosText1 || "LUMESA nace en San Luis Potosí con una idea sencilla: que cualquier negocio pueda tener equipos de impresión de calidad profesional sin complicaciones. Trabajamos con atención directa y trato personal, desde que eliges tu equipo hasta que lo tienes funcionando en tu oficina.";
   const sobreNosotrosText2 = content?.sobreNosotrosText2 || "";
@@ -88,10 +89,12 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ content, visibility,
         
         {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-black text-white border border-neutral-800 text-xs font-bold uppercase tracking-wider mb-3">
-            <Building2 className="w-3.5 h-3.5 text-blue-500" />
-            <span>Centro Oficial de Distribución Kyocera Japón</span>
-          </div>
+          {badgeText && (
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-black text-white border border-neutral-800 text-xs font-bold uppercase tracking-wider mb-3">
+              <Building2 className="w-3.5 h-3.5 text-blue-500" />
+              <span>{badgeText}</span>
+            </div>
+          )}
           <h2 className="text-3xl sm:text-4xl font-extrabold text-black tracking-tight">
             <FormattedText text={headline} />
           </h2>

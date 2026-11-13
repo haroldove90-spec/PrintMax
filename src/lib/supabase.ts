@@ -102,77 +102,84 @@ export async function saveSiteContentToSupabase(content: SiteContent): Promise<b
 // ==========================================
 // PRODUCTS API
 // ==========================================
+export const SUPABASE_PRODUCT_IMAGES_BUCKET = 'product-images';
+
 export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
   try {
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .order('price', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.warn('Supabase products fetch error:', error.message);
       return null;
     }
 
-    if (data && data.length > 0) {
-      // Map database snake_case or json to Product interface
+    if (Array.isArray(data)) {
       return data.map((item: any) => ({
         id: item.id,
         name: item.name,
         code: item.code,
         category: item.category,
-        categoryLabel: item.category_label || item.categoryLabel,
-        price: Number(item.price),
+        categoryLabel: item.category_label || item.categoryLabel || '',
+        price: Number(item.price || 0),
         rentalPriceMonthly: item.rental_price_monthly ? Number(item.rental_price_monthly) : undefined,
-        badge: item.badge,
+        badge: item.badge || undefined,
         shortDescription: item.short_description || item.shortDescription || '',
         description: item.description || '',
-        image: item.image,
+        image: item.image || '',
         specs: typeof item.specs === 'string' ? JSON.parse(item.specs) : (item.specs || {}),
         features: Array.isArray(item.features) ? item.features : [],
+        active: item.active !== undefined ? Boolean(item.active) : true,
         inStock: Boolean(item.in_stock ?? item.inStock ?? true),
-        stockQuantity: item.stock_quantity !== undefined ? Number(item.stock_quantity) : item.stockQuantity,
-        minStockAlert: item.min_stock_alert !== undefined ? Number(item.min_stock_alert) : item.minStockAlert,
-        datasheetUrl: item.datasheet_url || item.datasheetUrl,
+        stockQuantity: item.stock_quantity !== undefined && item.stock_quantity !== null ? Number(item.stock_quantity) : item.stockQuantity,
+        minStockAlert: item.min_stock_alert !== undefined && item.min_stock_alert !== null ? Number(item.min_stock_alert) : item.minStockAlert,
+        datasheetUrl: item.datasheet_url || item.datasheetUrl || undefined,
         rating: Number(item.rating || 5.0),
         reviewsCount: Number(item.reviews_count || item.reviewsCount || 0),
-        originalRef: item.original_ref || item.originalRef
+        originalRef: item.original_ref || item.originalRef || undefined
       }));
     }
-    return null;
+    return [];
   } catch (err) {
     console.warn('Supabase products exception:', err);
     return null;
   }
 }
 
+function mapProductToDbRow(product: Product) {
+  return {
+    id: product.id,
+    name: product.name,
+    code: product.code,
+    category: product.category,
+    category_label: product.categoryLabel || '',
+    price: Number(product.price) || 0,
+    rental_price_monthly: product.rentalPriceMonthly ? Number(product.rentalPriceMonthly) : null,
+    badge: product.badge || null,
+    short_description: product.shortDescription || '',
+    description: product.description || '',
+    image: product.image || '',
+    specs: product.specs || {},
+    features: product.features || [],
+    active: product.active !== false,
+    in_stock: product.inStock ?? true,
+    stock_quantity: product.stockQuantity ?? (product.inStock ? 5 : 0),
+    min_stock_alert: product.minStockAlert ?? 2,
+    datasheet_url: product.datasheetUrl || null,
+    rating: product.rating ?? 5.0,
+    reviews_count: product.reviewsCount ?? 0,
+    original_ref: product.originalRef || null,
+    updated_at: new Date().toISOString()
+  };
+}
+
 export async function saveProductToSupabase(product: Product): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('products')
-      .upsert({
-        id: product.id,
-        name: product.name,
-        code: product.code,
-        category: product.category,
-        category_label: product.categoryLabel,
-        price: product.price,
-        rental_price_monthly: product.rentalPriceMonthly || null,
-        badge: product.badge || null,
-        short_description: product.shortDescription,
-        description: product.description,
-        image: product.image,
-        specs: product.specs,
-        features: product.features,
-        in_stock: product.inStock,
-        stock_quantity: product.stockQuantity ?? (product.inStock ? 5 : 0),
-        min_stock_alert: product.minStockAlert ?? 2,
-        datasheet_url: product.datasheetUrl || null,
-        rating: product.rating,
-        reviews_count: product.reviewsCount,
-        original_ref: product.originalRef || null,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'id' });
+      .upsert(mapProductToDbRow(product), { onConflict: 'id' });
 
     if (error) {
       console.error('Supabase saveProduct error:', error.message);
@@ -182,6 +189,31 @@ export async function saveProductToSupabase(product: Product): Promise<boolean> 
   } catch (err) {
     console.error('Supabase saveProduct exception:', err);
     return false;
+  }
+}
+
+export async function saveProductsBatchToSupabase(
+  productsList: Product[]
+): Promise<{ success: boolean; count: number; error?: string }> {
+  if (!productsList.length) return { success: true, count: 0 };
+  try {
+    const chunkSize = 50;
+    let totalSaved = 0;
+    for (let i = 0; i < productsList.length; i += chunkSize) {
+      const chunk = productsList.slice(i, i + chunkSize).map(mapProductToDbRow);
+      const { error } = await supabase
+        .from('products')
+        .upsert(chunk, { onConflict: 'id' });
+
+      if (error) {
+        return { success: false, count: totalSaved, error: error.message };
+      }
+      totalSaved += chunk.length;
+    }
+    return { success: true, count: totalSaved };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, count: 0, error: msg };
   }
 }
 
@@ -200,6 +232,75 @@ export async function deleteProductFromSupabase(productId: string): Promise<bool
   } catch (err) {
     console.error('Supabase deleteProduct exception:', err);
     return false;
+  }
+}
+
+export async function deleteAllProductsFromSupabase(): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .neq('id', '');
+
+    if (error) {
+      console.error('Supabase deleteAllProducts error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Supabase deleteAllProducts exception:', err);
+    return false;
+  }
+}
+
+export async function uploadProductImageToSupabase(
+  file: File,
+  skuOrCode?: string
+): Promise<{ url?: string; error?: string }> {
+  try {
+    if (!file.type.startsWith('image/')) {
+      return { error: 'Por favor selecciona un archivo de imagen válido (PNG, JPG, WEBP).' };
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return { error: 'La imagen supera el límite de 5 MB. Comprímela antes de subirla.' };
+    }
+
+    const ext = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+    const cleanSku = (skuOrCode || 'producto')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'producto';
+    const filePath = `productos/${cleanSku}-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(SUPABASE_PRODUCT_IMAGES_BUCKET)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type
+      });
+
+    if (uploadError) {
+      if (uploadError.message.toLowerCase().includes('bucket') || uploadError.message.toLowerCase().includes('not found')) {
+        return {
+          error: `El bucket "${SUPABASE_PRODUCT_IMAGES_BUCKET}" aún no existe en Supabase Storage. Ejecuta el Script SQL actualizado en tu panel Supabase.`
+        };
+      }
+      return { error: `Error al subir imagen a Supabase: ${uploadError.message}` };
+    }
+
+    const { data } = supabase.storage
+      .from(SUPABASE_PRODUCT_IMAGES_BUCKET)
+      .getPublicUrl(filePath);
+
+    if (!data?.publicUrl) {
+      return { error: 'Se subió el archivo pero no se pudo obtener la URL pública.' };
+    }
+
+    return { url: data.publicUrl };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { error: `Error inesperado al subir imagen: ${msg}` };
   }
 }
 
