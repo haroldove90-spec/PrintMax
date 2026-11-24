@@ -149,11 +149,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         </button>
                       </div>
 
-                      <div className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-2 mt-0.5 bg-blue-50 text-blue-700">
-                        {item.acquisitionType === 'renta' ? 'Modalidad Renta Mensual' : 'Compra Definitiva'}
-                      </div>
-
-                      <div className="flex items-center justify-between flex-wrap gap-2 mt-1">
+                      <div className="flex items-center justify-between flex-wrap gap-2 mt-2">
                         {/* Quantity selector */}
                         <div className="flex items-center space-x-1.5 bg-slate-100 rounded-lg p-1">
                           <button
@@ -237,15 +233,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
               )}
               <div className="flex justify-between">
-                <span>I.V.A. (16% Deducible):</span>
+                <span>IVA (16%):</span>
                 <span className="font-semibold text-slate-800">${tax.toLocaleString('es-MX')} MXN</span>
               </div>
               <div className="flex justify-between">
-                <span>Envío a todo México:</span>
-                <span className="font-bold text-emerald-600">Gratis (SLP y Nacional)</span>
+                <span>Envío:</span>
+                <span className="font-semibold text-slate-800">$0 MXN</span>
               </div>
               <div className="flex justify-between text-sm sm:text-base font-extrabold text-slate-900 border-t border-slate-200 pt-1.5">
-                <span>Total Neto:</span>
+                <span>Total:</span>
                 <span className="text-blue-600">${total.toLocaleString('es-MX')} MXN</span>
               </div>
             </div>

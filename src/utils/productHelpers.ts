@@ -31,10 +31,25 @@ export function getListingTypeLabel(mode: ProductListingType): string {
   return 'Solo Venta';
 }
 
+export function getProductBrandAndModel(product: Product): string {
+  const rawName = (product.name || '').trim();
+  if (!rawName) return 'Kyocera';
+  if (/kyocera/i.test(rawName)) return rawName;
+  return `Kyocera ${rawName}`;
+}
+
 export function buildRentalWhatsAppUrl(product: Product, whatsappPhone = '524448123000'): string {
   const cleanDigits = (whatsappPhone || '524448123000').replace(/\D/g, '') || '524448123000';
   const normalizedPhone = cleanDigits.length === 10 ? `52${cleanDigits}` : cleanDigits;
-  const skuSuffix = product.code ? ` (SKU: ${product.code})` : '';
-  const message = `Hola LUMESA, me interesa solicitar informes para rentar el producto: ${product.name}${skuSuffix}. ¿Me podrían brindar información de planes de renta y disponibilidad?`;
+  const brandAndModel = getProductBrandAndModel(product);
+  const message = `Hola, estoy interesado en la renta del equipo ${brandAndModel}. Me gustaría recibir más información.`;
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+}
+
+export function buildPurchaseWhatsAppUrl(product: Product, whatsappPhone = '524448123000'): string {
+  const cleanDigits = (whatsappPhone || '524448123000').replace(/\D/g, '') || '524448123000';
+  const normalizedPhone = cleanDigits.length === 10 ? `52${cleanDigits}` : cleanDigits;
+  const brandAndModel = getProductBrandAndModel(product);
+  const message = `Hola, estoy interesado en la compra del equipo ${brandAndModel}. Me gustaría recibir más información.`;
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 }

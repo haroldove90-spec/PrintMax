@@ -12,6 +12,7 @@ import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { ProductDetailModal } from './components/ProductDetailModal';
+import { ProductPurchaseModal } from './components/ProductPurchaseModal';
 import { ProductComparatorModal } from './components/ProductComparatorModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
@@ -332,6 +333,7 @@ export default function App() {
 
   // Public modals
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [purchaseProduct, setPurchaseProduct] = useState<Product | null>(null);
   const [comparedProducts, setComparedProducts] = useState<Product[]>([]);
   const [isComparatorOpen, setIsComparatorOpen] = useState(false);
 
@@ -420,19 +422,16 @@ export default function App() {
   };
 
   const handleBuyNow = (product: Product) => {
-    setCartItems((prevItems) => {
-      const existingIndex = prevItems.findIndex(
-        (item) => item.product.id === product.id && item.acquisitionType === 'compra'
-      );
-      if (existingIndex > -1) {
-        return prevItems;
-      }
-      return [...prevItems, { product, quantity: 1, acquisitionType: 'compra' }];
-    });
     setSelectedProduct(null);
     setIsComparatorOpen(false);
     setIsCartOpen(false);
-    setIsCheckoutOpen(true);
+    setPurchaseProduct(product);
+  };
+
+  const handleAddFromPurchaseModal = (product: Product, acquisitionType: 'compra' | 'renta' = 'compra') => {
+    handleAddToCart(product, acquisitionType);
+    setPurchaseProduct(null);
+    setIsCartOpen(true);
   };
 
   // When customer completes checkout, register order into Admin Dashboard & Supabase
@@ -940,7 +939,13 @@ export default function App() {
       <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
+        onBackToCart={() => {
+          setIsCheckoutOpen(false);
+          setIsCartOpen(true);
+        }}
         items={cartItems}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
         onClearCart={handleClearCart}
         onOrderCreated={handleOrderCreated}
         paymentConfig={siteContent.paymentConfig}
@@ -956,6 +961,14 @@ export default function App() {
         onBuyNow={handleBuyNow}
         isCompared={selectedProduct ? comparedProducts.some((p) => p.id === selectedProduct.id) : false}
         onToggleCompare={handleToggleCompare}
+        whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
+      />
+
+      <ProductPurchaseModal
+        product={purchaseProduct}
+        isOpen={!!purchaseProduct}
+        onClose={() => setPurchaseProduct(null)}
+        onAddToCart={handleAddFromPurchaseModal}
         whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
       />
 

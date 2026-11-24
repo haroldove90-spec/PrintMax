@@ -64,6 +64,7 @@ export interface Product {
   shortDescription: string;
   description: string;
   image: string;
+  gallery?: string[];
   specs: ProductSpec;
   features: string[];
   active?: boolean;
