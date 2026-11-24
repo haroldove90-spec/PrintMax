@@ -615,10 +615,10 @@ export default function App() {
   const sectionTitles: Record<AppSection, string> = {
     inicio: 'Inicio',
     nosotros: 'Sobre Nosotros & Qué Hacemos',
-    renta_venta: 'Renta / Venta de Equipos',
-    hardware: 'Renta / Venta de Equipos',
+    renta_venta: 'Equipos de Impresión',
+    hardware: 'Equipos de Impresión',
     software: 'Software Kyocera',
-    tienda: 'Tienda en Línea',
+    tienda: 'Equipos de Impresión',
     contacto: 'Contacto & Asesoría Directa',
     admin: 'Panel de Control (Admin Autoadministrable)'
   };
@@ -652,8 +652,8 @@ export default function App() {
         />
       )}
 
-      {/* Breadcrumb Navigation when viewing an internal separate section (hidden on Home / Tienda) */}
-      {activeSection !== 'tienda' && activeSection !== 'inicio' && activeSection !== 'admin' && (
+      {/* Breadcrumb Navigation when viewing an internal separate section (hidden on Home / Equipos / Admin) */}
+      {activeSection !== 'tienda' && activeSection !== 'renta_venta' && activeSection !== 'hardware' && activeSection !== 'inicio' && activeSection !== 'admin' && (
         <div className="bg-[#182F4F] text-white border-b border-[#394B61] py-2.5 sm:py-3 px-3 sm:px-6 lg:px-8 shadow-sm overflow-hidden">
           <div className="max-w-7xl mx-auto flex items-center justify-between text-xs gap-2 min-w-0">
             <div className="flex items-center space-x-1.5 sm:space-x-2 text-slate-300 min-w-0 truncate">
@@ -661,7 +661,7 @@ export default function App() {
                 onClick={() => navigateToSection('tienda')}
                 className="hover:text-white transition shrink-0"
               >
-                Tienda
+                Equipos
               </button>
               <ChevronRight className="w-3.5 h-3.5 text-[#F27C36] shrink-0" />
               <span className="text-[#F27C36] font-bold truncate">
@@ -788,9 +788,9 @@ export default function App() {
         )}
 
         {/* ========================================================= */}
-        {/* 2. SECCIÓN INDEPENDIENTE: TIENDA EN LÍNEA */}
+        {/* 2. SECCIÓN UNIFICADA: EQUIPOS (TIENDA EN LÍNEA / RENTA / VENTA) */}
         {/* ========================================================= */}
-        {activeSection === 'tienda' && (
+        {(activeSection === 'tienda' || activeSection === 'renta_venta' || activeSection === 'hardware') && (
           <OnlineStoreSection
             products={activePublicProducts}
             onAddToCart={handleAddToCart}
@@ -798,23 +798,6 @@ export default function App() {
             onOpenProductDetail={(prod) => setSelectedProduct(prod)}
             initialSearchQuery={searchQuery}
             categories={siteContent.storeCategories}
-            whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
-          />
-        )}
-
-        {/* ========================================================= */}
-        {/* 3. SECCIÓN INDEPENDIENTE: RENTA / VENTA (HARDWARE & EQUIPOS) */}
-        {/* ========================================================= */}
-        {(activeSection === 'renta_venta' || activeSection === 'hardware') && (
-          <HardwareCatalog
-            products={activePublicProducts}
-            onAddToCart={handleAddToCart}
-            onBuyNow={handleBuyNow}
-            onOpenProductDetail={(prod) => setSelectedProduct(prod)}
-            comparedProducts={comparedProducts}
-            onToggleCompare={handleToggleCompare}
-            onOpenComparator={() => setIsComparatorOpen(true)}
-            content={siteContent.hardwareSection}
             whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
           />
         )}

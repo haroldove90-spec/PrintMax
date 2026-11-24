@@ -80,12 +80,12 @@ export const Header: React.FC<HeaderProps> = ({
     setMobileMenuOpen(false);
   };
 
-  const isSolutionsActive =
-    activeSection === 'renta_venta' ||
-    (activeSection as string) === 'hardware' ||
-    activeSection === 'software';
+  const isSolutionsActive = activeSection === 'software';
 
-  const isEquiposActive = activeSection === 'tienda';
+  const isEquiposActive =
+    activeSection === 'tienda' ||
+    activeSection === 'renta_venta' ||
+    (activeSection as string) === 'hardware';
 
   const mobileNavLinks: { id: AppSection; name: string; icon: React.ElementType }[] = [
     { id: 'inicio', name: 'Inicio', icon: Home },
