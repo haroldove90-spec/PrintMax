@@ -1,20 +1,18 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Store, 
-  Search, 
-  ShoppingCart, 
-  Check, 
-  ShieldCheck, 
-  Eye, 
-  Truck,
-  RotateCcw,
-  Sparkles,
-  FileDown,
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  Search,
+  ShoppingCart,
   Printer,
   MessageCircle,
-  CreditCard
+  ChevronDown,
+  ChevronUp,
+  X,
+  Info,
+  Gauge,
+  FileText,
+  SlidersHorizontal
 } from 'lucide-react';
-import { Product, ProductCategory, StoreCategory } from '../types';
+import { Product, StoreCategory } from '../types';
 import { allowsSale, allowsRent, buildRentalWhatsAppUrl } from '../utils/productHelpers';
 
 interface OnlineStoreSectionProps {
@@ -27,445 +25,791 @@ interface OnlineStoreSectionProps {
   whatsappPhone?: string;
 }
 
+type EquipmentTypeKey = 'multifuncionales' | 'impresoras' | 'otros';
+type PrintTechKey = 'color' | 'mono';
+type PaperFormatKey = 'A3' | 'A4';
+type SortOption = 'featured' | 'speed-desc' | 'name-asc' | 'price-asc' | 'price-desc';
+
+function getEquipmentType(product: Product): EquipmentTypeKey {
+  const cat = (product.category || '').toLowerCase();
+  const label = (product.categoryLabel || '').toLowerCase();
+  const name = (product.name || '').toLowerCase();
+  if (
+    cat === 'consumibles' ||
+    cat === 'polizas' ||
+    label.includes('tóner') ||
+    label.includes('toner') ||
+    label.includes('consumible') ||
+    label.includes('póliza') ||
+    label.includes('poliza')
+  ) {
+    return 'otros';
+  }
+  if (
+    cat === 'impresoras' ||
+    (label.includes('impresora') && !label.includes('multifuncional')) ||
+    /\bpa\d/i.test(name) ||
+    /\bp\d{4}/i.test(name)
+  ) {
+    return 'impresoras';
+  }
+  return 'multifuncionales';
+}
+
+function getPrintTech(product: Product): PrintTechKey {
+  const tipo = (product.specs?.tipoImpresion || '').toLowerCase();
+  const name = (product.name || '').toLowerCase();
+  if (product.specs?.color === true) return 'color';
+  if (tipo.includes('color') && !tipo.includes('monocrom') && !tipo.includes('blanco y negro')) {
+    return 'color';
+  }
+  if (/\dci\b|\bcix\b|\bcx\b/.test(name)) {
+    return 'color';
+  }
+  return 'mono';
+}
+
+function getPaperFormat(product: Product): PaperFormatKey | null {
+  const eqType = getEquipmentType(product);
+  if (eqType === 'otros') return null;
+
+  const combined = `${product.category || ''} ${product.categoryLabel || ''} ${product.specs?.formato || ''} ${product.name || ''}`.toLowerCase();
+  if (
+    combined.includes('a3') ||
+    combined.includes('doble carta') ||
+    combined.includes('11 x 17') ||
+    combined.includes('11x17') ||
+    combined.includes('tabloide') ||
+    combined.includes('mz2501')
+  ) {
+    return 'A3';
+  }
+  return 'A4';
+}
+
+function getSpeedValue(product: Product): number {
+  const raw = product.specs?.velocidad || '';
+  const match = raw.match(/(\d+(?:\.\d+)?)/);
+  return match ? Number(match[1]) : 0;
+}
+
+function getSpeedDisplay(product: Product): string {
+  const raw = (product.specs?.velocidad || '').trim();
+  if (!raw) return '—';
+  const match = raw.match(/(\d+(?:\.\d+)?)/);
+  if (match) {
+    return `${match[1]} PPM`;
+  }
+  return raw.toUpperCase();
+}
+
+function getCardSubtitle(product: Product): string {
+  const eqType = getEquipmentType(product);
+  if (eqType === 'otros') {
+    return product.categoryLabel || 'Consumible / Servicio';
+  }
+  const typeText = eqType === 'impresoras' ? 'Impresora' : 'Multifuncional';
+  const format = getPaperFormat(product);
+  const techText = getPrintTech(product) === 'color' ? 'Color' : 'Blanco y negro';
+  return `${typeText}${format ? ` ${format}` : ''} · ${techText}`;
+}
+
 export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
   products,
-  onAddToCart,
   onBuyNow,
   onOpenProductDetail,
   initialSearchQuery = '',
-  categories: storeCategoriesProp,
   whatsappPhone
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('todos');
-  const [colorFilter, setColorFilter] = useState<'all' | 'color' | 'mono'>('all');
+  const [selectedTypes, setSelectedTypes] = useState<EquipmentTypeKey[]>([]);
+  const [selectedTechs, setSelectedTechs] = useState<PrintTechKey[]>([]);
+  const [selectedFormats, setSelectedFormats] = useState<PaperFormatKey[]>([]);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
-  const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'rating'>('featured');
-  const [addedNoticeId, setAddedNoticeId] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('featured');
 
-  React.useEffect(() => {
-    if (initialSearchQuery) {
-      setSearchQuery(initialSearchQuery);
-    }
+  const [openGroups, setOpenGroups] = useState({
+    type: true,
+    tech: true,
+    format: true
+  });
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  useEffect(() => {
+    setSearchQuery(initialSearchQuery);
   }, [initialSearchQuery]);
 
-  const defaultCategories = [
-    { id: 'todos', label: 'Todo el Catálogo' },
-    { id: 'multifuncionales-a3', label: 'Multifuncionales A3' },
-    { id: 'multifuncionales-a4', label: 'Multifuncionales A4' },
-    { id: 'impresoras', label: 'Impresoras Láser' },
-    { id: 'consumibles', label: 'Tóner y Consumibles' },
-    { id: 'polizas', label: 'Pólizas de Servicio' }
-  ];
-
-  const categories = useMemo(() => {
-    if (storeCategoriesProp && storeCategoriesProp.length > 0) {
-      return [
-        { id: 'todos', label: 'Todo el Catálogo' },
-        ...storeCategoriesProp
-          .filter(c => c.active)
-          .sort((a, b) => a.order - b.order)
-          .map(c => ({ id: c.slug, label: c.name }))
-      ];
+  // Dynamic counts computed from the live catalog
+  const facetCounts = useMemo(() => {
+    const counts = {
+      multifuncionales: 0,
+      impresoras: 0,
+      otros: 0,
+      color: 0,
+      mono: 0,
+      A3: 0,
+      A4: 0
+    };
+    for (const p of products) {
+      const eq = getEquipmentType(p);
+      counts[eq] += 1;
+      if (eq !== 'otros') {
+        const tech = getPrintTech(p);
+        counts[tech] += 1;
+        const fmt = getPaperFormat(p);
+        if (fmt === 'A3') counts.A3 += 1;
+        if (fmt === 'A4') counts.A4 += 1;
+      }
     }
-    return defaultCategories;
-  }, [storeCategoriesProp]);
+    return counts;
+  }, [products]);
+
+  const activeFiltersCount =
+    selectedTypes.length + selectedTechs.length + selectedFormats.length;
+
+  const hasAnyFilterOrSearch = activeFiltersCount > 0 || searchQuery.trim().length > 0;
+
+  const toggleType = (key: EquipmentTypeKey) => {
+    setSelectedTypes((prev) =>
+      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
+    );
+  };
+
+  const toggleTech = (key: PrintTechKey) => {
+    setSelectedTechs((prev) =>
+      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
+    );
+  };
+
+  const toggleFormat = (key: PaperFormatKey) => {
+    setSelectedFormats((prev) =>
+      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setSelectedTypes([]);
+    setSelectedTechs([]);
+    setSelectedFormats([]);
+    setSearchQuery('');
+  };
 
   const filteredProducts = useMemo(() => {
     return products
       .filter((product) => {
-        if (selectedCategory !== 'todos' && product.category !== selectedCategory) {
-          return false;
+        if (selectedTypes.length > 0) {
+          const eq = getEquipmentType(product);
+          if (!selectedTypes.includes(eq)) return false;
         }
-        if (colorFilter === 'color' && !product.specs.color) return false;
-        if (colorFilter === 'mono' && product.specs.color) return false;
+        if (selectedTechs.length > 0) {
+          const tech = getPrintTech(product);
+          if (!selectedTechs.includes(tech)) return false;
+        }
+        if (selectedFormats.length > 0) {
+          const fmt = getPaperFormat(product);
+          if (!fmt || !selectedFormats.includes(fmt)) return false;
+        }
         if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase();
+          const q = searchQuery.toLowerCase().trim();
           const matchName = product.name.toLowerCase().includes(q);
-          const matchCode = product.code.toLowerCase().includes(q);
-          const matchDesc = product.description.toLowerCase().includes(q);
-          const matchCat = product.categoryLabel.toLowerCase().includes(q);
-          if (!matchName && !matchCode && !matchDesc && !matchCat) return false;
+          const matchCode = (product.code || '').toLowerCase().includes(q);
+          const matchDesc = (product.description || '').toLowerCase().includes(q);
+          const matchCat = (product.categoryLabel || '').toLowerCase().includes(q);
+          const matchSpeed = (product.specs?.velocidad || '').toLowerCase().includes(q);
+          if (!matchName && !matchCode && !matchDesc && !matchCat && !matchSpeed) {
+            return false;
+          }
         }
         return true;
       })
       .sort((a, b) => {
+        if (sortBy === 'speed-desc') return getSpeedValue(b) - getSpeedValue(a);
+        if (sortBy === 'name-asc') return a.name.localeCompare(b.name, 'es');
         if (sortBy === 'price-asc') return a.price - b.price;
         if (sortBy === 'price-desc') return b.price - a.price;
-        if (sortBy === 'rating') return b.rating - a.rating;
         return 0;
       });
-  }, [products, selectedCategory, colorFilter, searchQuery, sortBy]);
+  }, [products, selectedTypes, selectedTechs, selectedFormats, searchQuery, sortBy]);
 
-  const handleAddToCartWithFeedback = (product: Product, type: 'compra' | 'renta' = 'compra') => {
-    onAddToCart(product, type);
-    setAddedNoticeId(product.id);
-    setTimeout(() => {
-      setAddedNoticeId(null);
-    }, 1800);
-  };
+  const bannerProductImage = useMemo(() => {
+    const withImage = products.find((p) => p.image && p.image.trim().length > 0);
+    return withImage?.image || '';
+  }, [products]);
+
+  const renderFilterGroups = () => (
+    <div className="space-y-5">
+      {/* Tipo de equipo */}
+      <div className="border-b border-slate-200/80 pb-4">
+        <button
+          type="button"
+          onClick={() => setOpenGroups((prev) => ({ ...prev, type: !prev.type }))}
+          className="w-full flex items-center justify-between text-left text-sm font-bold text-[#102540] cursor-pointer"
+        >
+          <span>Tipo de equipo</span>
+          {openGroups.type ? (
+            <ChevronUp className="w-4 h-4 text-slate-500" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-500" />
+          )}
+        </button>
+
+        {openGroups.type && (
+          <div className="mt-3 space-y-2.5">
+            <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none hover:text-[#102540]">
+              <input
+                type="checkbox"
+                checked={selectedTypes.includes('multifuncionales')}
+                onChange={() => toggleType('multifuncionales')}
+                className="w-4 h-4 rounded border-slate-300 text-[#102540] accent-[#102540] cursor-pointer"
+              />
+              <span className="tabular-nums">
+                Multifuncionales ({facetCounts.multifuncionales})
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none hover:text-[#102540]">
+              <input
+                type="checkbox"
+                checked={selectedTypes.includes('impresoras')}
+                onChange={() => toggleType('impresoras')}
+                className="w-4 h-4 rounded border-slate-300 text-[#102540] accent-[#102540] cursor-pointer"
+              />
+              <span className="tabular-nums">
+                Impresoras ({facetCounts.impresoras})
+              </span>
+            </label>
+
+            {facetCounts.otros > 0 && (
+              <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none hover:text-[#102540]">
+                <input
+                  type="checkbox"
+                  checked={selectedTypes.includes('otros')}
+                  onChange={() => toggleType('otros')}
+                  className="w-4 h-4 rounded border-slate-300 text-[#102540] accent-[#102540] cursor-pointer"
+                />
+                <span className="tabular-nums">
+                  Consumibles y Pólizas ({facetCounts.otros})
+                </span>
+              </label>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Tecnología de impresión */}
+      <div className="border-b border-slate-200/80 pb-4">
+        <button
+          type="button"
+          onClick={() => setOpenGroups((prev) => ({ ...prev, tech: !prev.tech }))}
+          className="w-full flex items-center justify-between text-left text-sm font-bold text-[#102540] cursor-pointer"
+        >
+          <span>Tecnología de impresión</span>
+          {openGroups.tech ? (
+            <ChevronUp className="w-4 h-4 text-slate-500" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-500" />
+          )}
+        </button>
+
+        {openGroups.tech && (
+          <div className="mt-3 space-y-2.5">
+            <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none hover:text-[#102540]">
+              <input
+                type="checkbox"
+                checked={selectedTechs.includes('color')}
+                onChange={() => toggleTech('color')}
+                className="w-4 h-4 rounded border-slate-300 text-[#102540] accent-[#102540] cursor-pointer"
+              />
+              <span className="tabular-nums">Color ({facetCounts.color})</span>
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none hover:text-[#102540]">
+              <input
+                type="checkbox"
+                checked={selectedTechs.includes('mono')}
+                onChange={() => toggleTech('mono')}
+                className="w-4 h-4 rounded border-slate-300 text-[#102540] accent-[#102540] cursor-pointer"
+              />
+              <span className="tabular-nums">Blanco y negro ({facetCounts.mono})</span>
+            </label>
+          </div>
+        )}
+      </div>
+
+      {/* Formato de papel */}
+      <div className="pb-2">
+        <button
+          type="button"
+          onClick={() => setOpenGroups((prev) => ({ ...prev, format: !prev.format }))}
+          className="w-full flex items-center justify-between text-left text-sm font-bold text-[#102540] cursor-pointer"
+        >
+          <span>Formato de papel</span>
+          {openGroups.format ? (
+            <ChevronUp className="w-4 h-4 text-slate-500" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-500" />
+          )}
+        </button>
+
+        {openGroups.format && (
+          <div className="mt-3 space-y-2.5">
+            <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none hover:text-[#102540]">
+              <input
+                type="checkbox"
+                checked={selectedFormats.includes('A3')}
+                onChange={() => toggleFormat('A3')}
+                className="w-4 h-4 rounded border-slate-300 text-[#102540] accent-[#102540] cursor-pointer"
+              />
+              <span className="tabular-nums">A3 ({facetCounts.A3})</span>
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none hover:text-[#102540]">
+              <input
+                type="checkbox"
+                checked={selectedFormats.includes('A4')}
+                onChange={() => toggleFormat('A4')}
+                className="w-4 h-4 rounded border-slate-300 text-[#102540] accent-[#102540] cursor-pointer"
+              />
+              <span className="tabular-nums">A4 ({facetCounts.A4})</span>
+            </label>
+          </div>
+        )}
+      </div>
+
+      {/* Clear Filters Button */}
+      <button
+        type="button"
+        onClick={clearAllFilters}
+        disabled={!hasAnyFilterOrSearch}
+        className={`w-full py-2.5 px-4 rounded-full border text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition cursor-pointer ${
+          hasAnyFilterOrSearch
+            ? 'border-slate-300 bg-white text-[#102540] hover:border-[#F27C36] hover:text-[#F27C36] shadow-xs'
+            : 'border-slate-200 bg-slate-50 text-slate-400 cursor-default'
+        }`}
+      >
+        <X className="w-3.5 h-3.5" />
+        <span>Limpiar filtros</span>
+      </button>
+    </div>
+  );
 
   return (
-    <section id="tienda" className="py-20 bg-white text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Store Header Banner */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-8 mb-10 border-b border-slate-200 gap-6">
-          <div>
-            <div className="inline-flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-[#F27C36] mb-1.5">
-              <Store className="w-4 h-4 text-[#F27C36]" />
-              <span>Tienda Oficial en Línea</span>
+    <section
+      id="tienda"
+      className="bg-white text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] min-h-[75vh]"
+    >
+      {/* Top Section Banner ("Equipos de impresión") */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-white via-[#F9FAFC] to-[#EEF2F6] border-b border-slate-200/90">
+        {/* Decorative orange curved sweep on desktop */}
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 600 220"
+          preserveAspectRatio="none"
+          className="hidden md:block absolute right-0 bottom-0 h-full w-[58%] lg:w-[52%] pointer-events-none select-none"
+        >
+          <defs>
+            <linearGradient id="lumesaBannerOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FF8A3D" />
+              <stop offset="100%" stopColor="#E66418" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M120,220 C210,70 360,18 600,14 L600,220 Z"
+            fill="url(#lumesaBannerOrange)"
+          />
+          <path
+            d="M270,220 C340,120 450,82 600,76 L600,220 Z"
+            fill="#F4F6F9"
+            opacity="0.92"
+          />
+        </svg>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex items-center justify-between gap-6">
+          {/* Left: Vertical orange accent + Title & Subtitle */}
+          <div className="flex items-stretch gap-3.5 sm:gap-4 max-w-xl z-10">
+            <span
+              aria-hidden="true"
+              className="w-1.5 rounded-full bg-[#F27C36] shrink-0"
+            />
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-[38px] font-extrabold text-[#102540] tracking-tight leading-tight text-balance">
+                Equipos de impresión
+              </h1>
+              <p className="text-xs sm:text-sm lg:text-base text-slate-600 mt-1.5 leading-relaxed">
+                Conoce nuestra selección de equipos Kyocera disponibles para renta y venta.
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#182F4F] tracking-tight">
-              Catálogo de Multifuncionales, Tóner y Equipos
-            </h1>
-            <p className="text-xs sm:text-sm text-[#394B61] mt-1.5 max-w-xl">
-              Equipos Kyocera y consumibles genuinos con facturación electrónica SAT (CFDI 4.0), garantía directa LUMESA y envío seguro a todo México.
-            </p>
           </div>
 
-          <div className="flex items-center space-x-4 text-xs font-semibold text-[#182F4F]">
-            <span className="flex items-center bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-              <ShieldCheck className="w-4 h-4 text-[#F27C36] mr-1.5" />
-              100% Original Kyocera
-            </span>
-            <span className="flex items-center bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-              <Truck className="w-4 h-4 text-[#F27C36] mr-1.5" />
-              Envío SLP & Nacional
-            </span>
+          {/* Right: Clean Kyocera visual showcase on desktop */}
+          <div className="hidden md:flex items-center justify-end relative z-10 shrink-0 pr-2 lg:pr-6">
+            {bannerProductImage ? (
+              <div className="h-28 lg:h-36 w-52 lg:w-72 flex items-center justify-end">
+                <img
+                  src={bannerProductImage}
+                  alt="Equipo de impresión Kyocera"
+                  referrerPolicy="no-referrer"
+                  className="max-h-full max-w-full object-contain drop-shadow-xl"
+                />
+              </div>
+            ) : (
+              <div className="h-24 lg:h-32 w-48 lg:w-64 rounded-2xl bg-white/90 border border-slate-200/80 shadow-md flex items-center justify-center gap-3 px-5">
+                <Printer className="w-10 h-10 text-[#102540]" />
+                <div className="text-left">
+                  <div className="text-sm font-extrabold text-[#102540] tracking-tight">KYOCERA</div>
+                  <div className="text-xs text-slate-500">ECOSYS & TASKalfa</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Filters and Controls Bar (LUMESA Navy & Slate with vibrant Orange accents) */}
-        <div className="bg-[#182F4F] text-white p-4 sm:p-6 rounded-2xl border border-[#394B61] shadow-xl mb-10 space-y-4">
-          {/* Top row: Categories */}
-          <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none">
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition ${
-                    isSelected
-                      ? 'bg-[#F27C36] text-white shadow-md'
-                      : 'bg-[#000000]/50 text-slate-300 border border-[#394B61] hover:text-white hover:border-[#F27C36]'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
+      {/* Main Content Workspace */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        <div className="flex flex-col lg:flex-row items-start gap-6 xl:gap-8">
+          {/* Desktop Left Sidebar Filters */}
+          <aside
+            aria-label="Filtros de equipos"
+            className="hidden lg:block w-60 xl:w-64 shrink-0 bg-[#F8FAFC] border border-slate-200/90 rounded-2xl p-5 sticky top-24"
+          >
+            <h2 className="text-base font-extrabold text-[#102540] mb-5">
+              Filtrar equipos
+            </h2>
+            {renderFilterGroups()}
+          </aside>
 
-          {/* Bottom row: Search + Color filter + Sort */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-3 border-t border-[#394B61]">
-            {/* Search Input */}
-            <div className="sm:col-span-5 relative">
-              <input
-                type="text"
-                placeholder="Buscar por modelo, SKU o consumible..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#000000]/60 text-sm text-white placeholder-slate-400 pl-10 pr-4 py-2.5 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36] transition"
-              />
-              <Search className="w-4 h-4 text-[#F27C36] absolute left-3.5 top-3.5" />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-3 text-xs text-slate-400 hover:text-white"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
+          {/* Right Column: Search/Sort Bar + Product Grid */}
+          <div className="flex-1 min-w-0 w-full">
+            {/* Desktop Search, Count & Sort Row */}
+            <div className="hidden lg:flex items-center justify-between gap-4 mb-6">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Buscar por modelo (ej. MA3500cix)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white text-sm text-slate-900 placeholder-slate-400 pl-10 pr-9 py-2.5 rounded-xl border border-slate-300/90 focus:outline-none focus:border-[#102540] transition"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
 
-            {/* Color Filter */}
-            <div className="sm:col-span-3 flex items-center bg-[#000000]/60 rounded-xl border border-[#394B61] p-1">
-              <button
-                onClick={() => setColorFilter('all')}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${
-                  colorFilter === 'all' ? 'bg-[#F27C36] text-white shadow-sm' : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                Todos
-              </button>
-              <button
-                onClick={() => setColorFilter('color')}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${
-                  colorFilter === 'color' ? 'bg-[#F27C36] text-white shadow-sm' : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                Color
-              </button>
-              <button
-                onClick={() => setColorFilter('mono')}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${
-                  colorFilter === 'mono' ? 'bg-[#F27C36] text-white shadow-sm' : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                B&N
-              </button>
-            </div>
+              <div className="flex items-center gap-4 shrink-0">
+                <span className="text-sm font-bold text-[#102540] tabular-nums whitespace-nowrap">
+                  {filteredProducts.length}{' '}
+                  {filteredProducts.length === 1 ? 'equipo' : 'equipos'}
+                </span>
 
-            {/* Sort Selector */}
-            <div className="sm:col-span-4 flex items-center space-x-2">
-              <span className="text-xs font-bold text-slate-300 whitespace-nowrap hidden lg:inline">
-                Ordenar:
-              </span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="w-full bg-[#000000]/60 text-xs sm:text-sm text-white py-2.5 px-3 rounded-xl border border-[#394B61] focus:outline-none focus:border-[#F27C36] font-medium"
-              >
-                <option value="featured">Destacados</option>
-                <option value="price-asc">Precio: Menor a Mayor</option>
-                <option value="price-desc">Precio: Mayor a Menor</option>
-                <option value="rating">Mejor Calificados</option>
-              </select>
-            </div>
-          </div>
-        </div>
+                <span aria-hidden="true" className="h-4 w-px bg-slate-300" />
 
-        {/* Results Counter */}
-        <div className="flex justify-between items-center mb-6 text-xs text-slate-500 font-medium">
-          <span>Mostrando <strong>{filteredProducts.length}</strong> productos en existencia</span>
-          {(searchQuery || selectedCategory !== 'todos' || colorFilter !== 'all') && (
-            <button
-              onClick={() => {
-                setSelectedCategory('todos');
-                setColorFilter('all');
-                setSearchQuery('');
-              }}
-              className="text-blue-500 hover:text-blue-600 flex items-center space-x-1"
-            >
-              <RotateCcw className="w-3 h-3 text-blue-500" />
-              <span>Restablecer filtros</span>
-            </button>
-          )}
-        </div>
-
-        {/* Product Cards Grid: BLACK BACKGROUND CARDS with BLUE ICONS ONLY */}
-        {filteredProducts.length === 0 ? (
-          <div className="text-center py-16 bg-black text-white rounded-2xl border border-neutral-800">
-            <p className="text-neutral-300 font-semibold mb-2">No se encontraron productos con los filtros seleccionados.</p>
-            <button
-              onClick={() => {
-                setSelectedCategory('todos');
-                setColorFilter('all');
-                setSearchQuery('');
-              }}
-              className="mt-3 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl border border-neutral-700"
-            >
-              Ver todos los productos
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => {
-              const isJustAdded = addedNoticeId === product.id;
-
-              return (
-                <div
-                  key={product.id}
-                  className="bg-[#182F4F] text-white rounded-2xl border border-[#394B61] hover:border-[#F27C36] hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group"
-                >
-                  {/* Product Image Area inside card */}
-                  <div className="relative bg-[#000000]/40 p-5 flex items-center justify-center h-52 border-b border-[#394B61] overflow-hidden">
-                    {product.badge && (
-                      <span className="absolute top-3 left-3 z-10 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#F27C36] text-white shadow-sm">
-                        {product.badge}
-                      </span>
-                    )}
-
-                    <div className="absolute top-3 right-3 z-10 flex items-center space-x-1">
-                      <button
-                        onClick={() => onOpenProductDetail(product)}
-                        className="p-1.5 rounded-lg bg-[#394B61]/80 text-white hover:text-white hover:bg-[#000000] border border-[#394B61] transition shadow-sm"
-                        title="Vista rápida"
-                      >
-                        <Eye className="w-4 h-4 text-[#F27C36]" />
-                      </button>
-                    </div>
-
-                    {product.image ? (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="max-h-40 w-auto object-contain transform group-hover:scale-105 transition duration-300"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-slate-500">
-                        <Printer className="w-14 h-14 text-[#394B61] mb-1" />
-                        <span className="text-[10px] font-mono text-slate-400">{product.code}</span>
-                      </div>
-                    )}
-
-                    {product.inStock ? (
-                      <span className={`absolute bottom-2 left-3 text-[10px] font-semibold px-2 py-0.5 rounded-md border flex items-center ${
-                        (product.stockQuantity !== undefined && product.stockQuantity <= (product.minStockAlert || 2))
-                          ? 'bg-amber-950/90 text-amber-300 border-amber-600'
-                          : 'bg-[#000000]/80 text-slate-200 border-[#394B61]'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 animate-pulse ${
-                          (product.stockQuantity !== undefined && product.stockQuantity <= (product.minStockAlert || 2))
-                            ? 'bg-amber-400'
-                            : 'bg-[#F27C36]'
-                        }`} />
-                        {product.stockQuantity !== undefined
-                          ? product.stockQuantity <= (product.minStockAlert || 2)
-                            ? `¡Últimas ${product.stockQuantity} pzas en SLP!`
-                            : `${product.stockQuantity} disponibles en SLP`
-                          : 'Stock San Luis Potosí'}
-                      </span>
-                    ) : (
-                      <span className="absolute bottom-2 left-3 text-[10px] font-semibold text-red-300 bg-red-950/90 px-2 py-0.5 rounded-md border border-red-700">
-                        Agotado temporalmente
-                      </span>
-                    )}
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="desktop-sort-select"
+                    className="text-sm text-slate-600 whitespace-nowrap"
+                  >
+                    Ordenar por:
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="desktop-sort-select"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOption)}
+                      className="appearance-none bg-white text-sm font-bold text-[#102540] pl-3.5 pr-9 py-2 rounded-xl border border-[#F27C36]/60 hover:border-[#F27C36] focus:outline-none focus:border-[#F27C36] cursor-pointer transition"
+                    >
+                      <option value="featured">Relevancia</option>
+                      <option value="speed-desc">Velocidad (PPM)</option>
+                      <option value="name-asc">Nombre (A-Z)</option>
+                      <option value="price-asc">Precio: Menor a Mayor</option>
+                      <option value="price-desc">Precio: Mayor a Menor</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-[#F27C36] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
+                </div>
+              </div>
+            </div>
 
-                  {/* Body with crisp typography and orange accents */}
-                  <div className="p-5 flex-1 flex flex-col justify-between bg-[#182F4F]">
-                    <div>
-                      {/* Vibrant Orange text for category label */}
-                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#F27C36] mb-1">
-                        {product.categoryLabel}
-                      </div>
+            {/* Mobile Controls (Matches iPhone Reference Layout) */}
+            <div className="lg:hidden space-y-3 mb-5">
+              {/* Mobile Search Input */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Buscar por modelo (ej. MA3500cix)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white text-sm text-slate-900 placeholder-slate-400 pl-10 pr-9 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#102540] transition"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
 
-                      <h4 
-                        onClick={() => onOpenProductDetail(product)}
-                        className="text-base font-bold text-white hover:text-[#F27C36] transition cursor-pointer mb-1 line-clamp-1"
-                        title={product.name}
-                      >
-                        {product.name}
-                      </h4>
+              {/* Mobile Filter Button + Sort Dropdown Row */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFilterOpen(true)}
+                  className="relative flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl bg-[#102540] hover:bg-[#18355A] text-white text-xs sm:text-sm font-bold transition shadow-xs cursor-pointer"
+                >
+                  <SlidersHorizontal className="w-4 h-4 shrink-0" />
+                  <span className="whitespace-nowrap">Filtrar equipos</span>
+                  {activeFiltersCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#F27C36] text-white text-[11px] font-extrabold flex items-center justify-center tabular-nums shadow-sm">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </button>
 
-                      <p className="text-xs text-slate-300 line-clamp-2 mb-3 leading-relaxed">
-                        {product.shortDescription}
-                      </p>
+                <div className="relative">
+                  <select
+                    aria-label="Ordenar equipos"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    className="w-full h-full appearance-none bg-white text-xs sm:text-sm font-bold text-[#102540] pl-3.5 pr-8 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#F27C36] cursor-pointer"
+                  >
+                    <option value="featured">Ordenar por</option>
+                    <option value="speed-desc">Velocidad (PPM)</option>
+                    <option value="name-asc">Nombre (A-Z)</option>
+                    <option value="price-asc">Menor precio</option>
+                    <option value="price-desc">Mayor precio</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-[#F27C36] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
 
-                      <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                        {product.specs.velocidad && product.category !== 'consumibles' && (
-                          <div className="text-[11px] font-medium text-slate-200 bg-[#394B61]/60 px-2 py-0.5 rounded border border-[#394B61]">
-                            <span className="text-[#F27C36] font-bold mr-1">⚡</span> {product.specs.velocidad}
-                          </div>
-                        )}
-                        {product.datasheetUrl && (
-                          <a
-                            href={product.datasheetUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[11px] font-bold text-sky-300 bg-sky-950/80 hover:bg-sky-900 px-2 py-0.5 rounded border border-sky-700/60 flex items-center space-x-1 transition"
-                            title="Ver ficha técnica en PDF"
+              {/* Mobile Count + Quick Reset */}
+              <div className="flex items-center justify-between pt-0.5">
+                <span className="text-sm font-extrabold text-[#102540] tabular-nums">
+                  {filteredProducts.length}{' '}
+                  {filteredProducts.length === 1 ? 'equipo' : 'equipos'}
+                </span>
+                {hasAnyFilterOrSearch && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="text-xs font-bold text-[#F27C36] hover:text-[#d96624] inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Limpiar filtros</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Product Grid */}
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-16 px-6 bg-[#F8FAFC] rounded-2xl border border-slate-200">
+                <Printer className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-base font-bold text-[#102540] mb-1">
+                  No se encontraron equipos con los filtros seleccionados
+                </p>
+                <p className="text-sm text-slate-500 mb-5">
+                  Prueba ajustando los filtros o restablece para ver el catálogo completo.
+                </p>
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="px-5 py-2.5 rounded-xl bg-[#102540] hover:bg-[#193860] text-white text-sm font-bold transition cursor-pointer"
+                >
+                  Ver todos los equipos ({products.length})
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+                {filteredProducts.map((product) => {
+                  const canRent = allowsRent(product);
+                  const canSale = allowsSale(product);
+                  const speedLabel = getSpeedDisplay(product);
+                  const formatLabel = getPaperFormat(product) || '—';
+                  const subtitle = getCardSubtitle(product);
+
+                  return (
+                    <article
+                      key={product.id}
+                      className="bg-white rounded-2xl border border-slate-200/90 hover:border-slate-300 hover:shadow-lg transition-all duration-200 flex flex-col justify-between p-4 group"
+                    >
+                      <div>
+                        {/* Clean Studio Product Image */}
+                        <button
+                          type="button"
+                          onClick={() => onOpenProductDetail(product)}
+                          className="w-full h-44 sm:h-48 rounded-xl bg-white flex items-center justify-center p-3 mb-3 overflow-hidden cursor-pointer focus:outline-none"
+                          aria-label={`Ver especificaciones de ${product.name}`}
+                        >
+                          {product.image ? (
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              referrerPolicy="no-referrer"
+                              className="max-h-full max-w-full object-contain transition-transform duration-200 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-slate-400">
+                              <Printer className="w-14 h-14 text-slate-300 mb-1.5" />
+                              <span className="text-xs font-mono text-slate-400">
+                                {product.code}
+                              </span>
+                            </div>
+                          )}
+                        </button>
+
+                        {/* Model Title & Clean Subtitle */}
+                        <div className="mb-3">
+                          <h3
+                            onClick={() => onOpenProductDetail(product)}
+                            className="text-[15px] sm:text-base font-extrabold text-[#102540] hover:text-[#F27C36] transition cursor-pointer leading-snug line-clamp-1"
+                            title={product.name}
                           >
-                            <FileDown className="w-3 h-3 text-sky-400" />
-                            <span>PDF Ficha</span>
-                          </a>
-                        )}
-                      </div>
-                    </div>
+                            {product.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                            {subtitle}
+                          </p>
+                        </div>
 
-                    {/* Price & Action */}
-                    <div>
-                      <div className="pt-3 border-t border-[#394B61] mb-3">
-                        {allowsSale(product) && (
-                          <>
-                            <div className="text-[10px] text-slate-300 uppercase tracking-wider">
-                              {product.price > 0 ? 'Precio de Venta (con IVA)' : 'Venta Directa'}
-                            </div>
-                            <div className="text-lg font-black text-white">
-                              {product.price > 0 ? (
-                                <>
-                                  ${product.price.toLocaleString('es-MX')} <span className="text-xs text-slate-300 font-normal">MXN</span>
-                                </>
-                              ) : (
-                                <span className="text-base text-[#F27C36]">Disponible para Compra</span>
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {allowsRent(product) && (
-                          <div className={allowsSale(product) ? 'mt-1.5 pt-1.5 border-t border-[#394B61]/50' : ''}>
-                            <div className="text-[10px] text-emerald-300 uppercase tracking-wider font-bold">
-                              Disponible en Renta
-                            </div>
-                            {product.rentalPriceMonthly && product.rentalPriceMonthly > 0 ? (
-                              <div className="text-sm font-extrabold text-emerald-300">
-                                ${product.rentalPriceMonthly.toLocaleString('es-MX')} <span className="text-[11px] font-normal text-slate-300">MXN / mes</span>
+                        {/* Spec Mini-Boxes: Speed PPM + Format A3/A4 */}
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div className="rounded-lg bg-[#F5F7FA] border border-slate-200/70 px-2.5 py-2 flex items-center gap-2 min-w-0">
+                            <Gauge className="w-4 h-4 text-[#102540] shrink-0" />
+                            <div className="min-w-0">
+                              <div className="text-xs font-extrabold text-[#102540] leading-tight truncate tabular-nums">
+                                {speedLabel}
                               </div>
-                            ) : (
-                              <div className="text-xs font-semibold text-emerald-300">
-                                Plan a la medida vía WhatsApp
+                              <div className="text-[10px] text-slate-500 leading-tight truncate">
+                                Vel. de impresión
                               </div>
-                            )}
+                            </div>
                           </div>
-                        )}
+
+                          <div className="rounded-lg bg-[#F5F7FA] border border-slate-200/70 px-2.5 py-2 flex items-center gap-2 min-w-0">
+                            <FileText className="w-4 h-4 text-[#102540] shrink-0" />
+                            <div className="min-w-0">
+                              <div className="text-xs font-extrabold text-[#102540] leading-tight truncate">
+                                {formatLabel}
+                              </div>
+                              <div className="text-[10px] text-slate-500 leading-tight truncate">
+                                Formato
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Ver especificaciones link */}
+                        <button
+                          type="button"
+                          onClick={() => onOpenProductDetail(product)}
+                          className="w-full py-1.5 mb-3 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-[#F27C36] hover:text-[#d96624] transition cursor-pointer"
+                        >
+                          <Info className="w-3.5 h-3.5 shrink-0" />
+                          <span>Ver especificaciones</span>
+                        </button>
                       </div>
 
-                      <div className="space-y-1.5">
-                        {allowsSale(product) && (
-                          <>
-                            <button
-                              onClick={() => onBuyNow(product)}
-                              disabled={!product.inStock}
-                              className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer ${
-                                !product.inStock
-                                  ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                                  : 'bg-[#F27C36] hover:bg-[#d96624] text-white shadow-md'
-                              }`}
-                            >
-                              <CreditCard className="w-4 h-4 text-white" />
-                              <span>{product.inStock ? 'Comprar Ahora' : 'Sin Existencia'}</span>
-                            </button>
-
-                            <button
-                              onClick={() => handleAddToCartWithFeedback(product, 'compra')}
-                              disabled={!product.inStock}
-                              className={`w-full py-1.5 px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5 border cursor-pointer ${
-                                !product.inStock
-                                  ? 'bg-neutral-900 text-neutral-600 border-neutral-800 cursor-not-allowed'
-                                  : isJustAdded
-                                    ? 'bg-emerald-700 text-white border-emerald-600'
-                                    : 'bg-[#000000]/60 hover:bg-[#394B61] text-slate-200 hover:text-white border-[#394B61]'
-                              }`}
-                            >
-                              {isJustAdded ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 text-white" />
-                                  <span>¡Agregado al Carrito!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <ShoppingCart className="w-3.5 h-3.5 text-[#F27C36]" />
-                                  <span>Añadir al Carrito</span>
-                                </>
-                              )}
-                            </button>
-                          </>
-                        )}
-
-                        {allowsRent(product) && (
+                      {/* Action Buttons (Respects Admin Sale/Rent Assignment) */}
+                      <div className="space-y-2 pt-1">
+                        {canRent && (
                           <a
                             href={buildRentalWhatsAppUrl(product, whatsappPhone)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="w-full py-2.5 px-3 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/60 transition flex items-center justify-center space-x-1.5 shadow-md"
+                            className="w-full py-2.5 px-3 rounded-lg bg-[#169C46] hover:bg-[#13853B] active:bg-[#0F6E30] text-white text-xs sm:text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-xs whitespace-nowrap"
                           >
                             <MessageCircle className="w-4 h-4 shrink-0" />
-                            <span>Solicitar Informes por WhatsApp</span>
+                            <span>Rentar ahora</span>
                           </a>
                         )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
 
+                        {canSale && (
+                          <button
+                            type="button"
+                            onClick={() => onBuyNow(product)}
+                            disabled={!product.inStock}
+                            className={`w-full py-2.5 px-3 rounded-lg text-xs sm:text-[13px] font-bold transition flex items-center justify-center gap-2 whitespace-nowrap ${
+                              product.inStock
+                                ? 'bg-[#102540] hover:bg-[#193860] active:bg-[#0B1B30] text-white shadow-xs cursor-pointer'
+                                : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                            }`}
+                          >
+                            <ShoppingCart className="w-4 h-4 shrink-0" />
+                            <span>{product.inStock ? 'Comprar ahora' : 'Sin existencia'}</span>
+                          </button>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Mobile Filter Drawer / Modal */}
+      {isMobileFilterOpen && (
+        <div
+          className="fixed inset-0 z-50 lg:hidden flex items-end sm:items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Filtrar equipos"
+        >
+          <div
+            onClick={() => setIsMobileFilterOpen(false)}
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
+          />
+
+          <div className="relative z-10 w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-[#102540] text-white">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-[#F27C36]" />
+                <h2 className="text-base font-extrabold">Filtrar equipos</h2>
+                {activeFiltersCount > 0 && (
+                  <span className="text-xs font-bold text-[#F27C36] tabular-nums">
+                    ({activeFiltersCount})
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileFilterOpen(false)}
+                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                aria-label="Cerrar filtros"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5">{renderFilterGroups()}</div>
+
+            <div className="p-4 border-t border-slate-200 bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setIsMobileFilterOpen(false)}
+                className="w-full py-3 rounded-xl bg-[#102540] hover:bg-[#193860] text-white text-sm font-bold transition cursor-pointer tabular-nums"
+              >
+                Ver {filteredProducts.length}{' '}
+                {filteredProducts.length === 1 ? 'equipo' : 'equipos'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

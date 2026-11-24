@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import { 
-  ShoppingCart, 
-  Menu, 
-  X, 
-  ArrowRight,
-  Store,
-  Printer,
-  Calculator,
-  Cpu,
-  Clock,
-  Building2,
-  PhoneCall,
-  Home,
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  ShoppingCart,
+  Menu,
+  X,
+  Search,
+  ChevronDown,
   ShieldCheck,
+  Home,
+  Building2,
+  Printer,
+  Cpu,
+  Store,
+  PhoneCall,
   Globe,
-  KeyRound
+  KeyRound,
+  ArrowRight
 } from 'lucide-react';
 import { AppSection, CartItem, AdminUser, AdminRole } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -29,6 +29,7 @@ interface HeaderProps {
   onSelectRoleAndOpenAdmin?: (role: AdminRole) => void;
   currentUser?: AdminUser | null;
   showSoftware?: boolean;
+  onSearchCatalog?: (query: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -36,191 +37,402 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectSection,
   cartItems,
   onOpenCart,
-  onOpenQuickQuote,
   onOpenAdmin,
   onSelectRoleAndOpenAdmin,
-  currentUser,
-  showSoftware = false
+  showSoftware = false,
+  onSearchCatalog
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [solutionsOpen, setSolutionsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [headerSearch, setHeaderSearch] = useState('');
+
+  const solutionsRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  const navLinks: { id: AppSection; name: string; icon: React.ElementType }[] = [
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (solutionsRef.current && !solutionsRef.current.contains(event.target as Node)) {
+        setSolutionsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = headerSearch.trim();
+    if (onSearchCatalog) {
+      onSearchCatalog(trimmed);
+    } else {
+      onSelectSection('tienda');
+    }
+    setSearchOpen(false);
+    setMobileMenuOpen(false);
+  };
+
+  const isSolutionsActive =
+    activeSection === 'renta_venta' ||
+    (activeSection as string) === 'hardware' ||
+    activeSection === 'software';
+
+  const isEquiposActive = activeSection === 'tienda';
+
+  const mobileNavLinks: { id: AppSection; name: string; icon: React.ElementType }[] = [
     { id: 'inicio', name: 'Inicio', icon: Home },
+    { id: 'tienda', name: 'Equipos (Tienda en Línea)', icon: Store },
+    { id: 'renta_venta', name: 'Soluciones de Renta / Venta', icon: Printer },
+    ...(showSoftware ? [{ id: 'software' as AppSection, name: 'Software Kyocera', icon: Cpu }] : []),
     { id: 'nosotros', name: 'Nosotros', icon: Building2 },
-    { id: 'renta_venta', name: 'Renta / Venta', icon: Printer },
-    ...(showSoftware ? [{ id: 'software' as AppSection, name: 'Software', icon: Cpu }] : []),
-    { id: 'tienda', name: 'Tienda en Línea', icon: Store },
-    { id: 'contacto', name: 'Contacto', icon: PhoneCall },
+    { id: 'contacto', name: 'Contacto', icon: PhoneCall }
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-[#182F4F] text-white border-b border-[#394B61] shadow-xl font-['Plus_Jakarta_Sans',sans-serif]">
-      {/* Top micro bar in #000000 for corporate contact & PWA notice */}
-      <div className="bg-[#000000] text-slate-300 text-[10px] sm:text-[11px] py-1.5 px-3 sm:px-6 lg:px-8 border-b border-[#182F4F] overflow-hidden">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center space-x-1.5 min-w-0 truncate">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#F27C36] animate-pulse shrink-0" />
-            <span className="truncate font-semibold text-white">LUMESA · Renta y venta de equipos de impresión</span>
-          </div>
-
-          <div className="flex items-center space-x-3 shrink-0 text-slate-200">
-            <a href="tel:4448123000" className="hover:text-white transition whitespace-nowrap">
-              <span>Tel: (444) 812-3000</span>
-            </a>
-            <span className="text-slate-600 hidden md:inline">•</span>
-            <span className="hidden md:inline text-[#F27C36] font-semibold">01 800 KYOCERA</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
-          
-          {/* Logo (Clean, completely un-encapsulated - Navigates to Online Store / Home) */}
-          <div className="shrink-0 flex items-center min-w-0">
+    <header className="sticky top-0 z-50 bg-[#102540] text-white border-b border-[#1E3A5F] shadow-md font-['Plus_Jakarta_Sans',sans-serif]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative flex items-center justify-between h-16 lg:h-[68px] gap-4">
+          {/* Left: Mobile Hamburger + Desktop Brand Logo */}
+          <div className="flex items-center shrink-0">
             <button
-              onClick={() => onSelectSection('inicio')}
-              className="flex items-center group focus:outline-none p-0 bg-transparent border-0 cursor-pointer"
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen((prev) => !prev);
+                setSearchOpen(false);
+              }}
+              className="lg:hidden p-2 -ml-2 rounded-lg text-white hover:bg-white/10 transition cursor-pointer"
+              aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+            >
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6 text-[#F27C36]" />
+              ) : (
+                <Menu className="w-6 h-6 text-white" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onSelectSection('inicio');
+                setMobileMenuOpen(false);
+              }}
+              className="hidden lg:flex items-center focus:outline-none p-0 bg-transparent border-0 cursor-pointer shrink-0"
               title="LUMESA"
             >
               <img
                 src="/lumesalogo.png"
                 alt="LUMESA"
-                className="h-8 sm:h-10 md:h-12 w-auto max-w-[120px] sm:max-w-[160px] md:max-w-[200px] object-contain transition duration-200 group-hover:opacity-90 drop-shadow-sm select-none"
+                className="h-9 xl:h-10 w-auto max-w-[165px] object-contain transition duration-200 hover:opacity-90 select-none"
                 onError={(e) => {
-                  e.currentTarget.src = "https://appdesignproyectos.com/lumesalogo.png";
+                  e.currentTarget.src = 'https://appdesignproyectos.com/lumesalogo.png';
                 }}
               />
             </button>
           </div>
 
-          {/* Desktop Navigation Menu */}
-          <nav className="hidden lg:flex items-center space-x-1 xl:space-x-1.5">
-            {navLinks.map((link) => {
-              const isActive = activeSection === link.id || (link.id === 'renta_venta' && (activeSection as string) === 'hardware');
-              return (
-                <button
-                  key={link.id}
-                  onClick={() => onSelectSection(link.id)}
-                  className={`px-3 py-2 text-xs xl:text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                    isActive
-                      ? 'bg-[#394B61] text-white border border-[#F27C36]/60 shadow-sm'
-                      : 'text-slate-200 hover:text-white hover:bg-[#394B61]/50'
-                  }`}
-                >
-                  <span className={isActive ? 'text-[#F27C36] font-bold' : ''}>
-                    {link.name}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
+          {/* Mobile Centered Logo */}
+          <button
+            type="button"
+            onClick={() => {
+              onSelectSection('inicio');
+              setMobileMenuOpen(false);
+            }}
+            className="lg:hidden absolute left-1/2 -translate-x-1/2 flex items-center focus:outline-none p-0 bg-transparent border-0 cursor-pointer"
+            title="LUMESA"
+          >
+            <img
+              src="/lumesalogo.png"
+              alt="LUMESA"
+              className="h-7 sm:h-8 w-auto max-w-[130px] object-contain select-none"
+              onError={(e) => {
+                e.currentTarget.src = 'https://appdesignproyectos.com/lumesalogo.png';
+              }}
+            />
+          </button>
 
-          {/* Action Buttons: Responsive for mobile and desktop */}
-          <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
-            {/* Panel admin button: visible on md+, on mobile available in hamburger drawer */}
+          {/* Center: Clean Desktop Navigation Links */}
+          <nav
+            aria-label="Navegación principal"
+            className="hidden lg:flex items-center gap-7 xl:gap-9"
+          >
             <button
-              onClick={onOpenAdmin}
-              className={`hidden md:flex p-2 sm:p-2.5 rounded-xl border transition items-center justify-center shadow-sm shrink-0 cursor-pointer ${
-                activeSection === 'admin'
-                  ? 'bg-[#F27C36] text-white border-[#F27C36] shadow-[#F27C36]/20 ring-1 ring-[#F27C36]'
-                  : 'bg-[#394B61] hover:bg-[#000000] text-white border-[#394B61] hover:border-[#F27C36]'
+              type="button"
+              onClick={() => onSelectSection('inicio')}
+              className={`relative py-2 text-sm whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                activeSection === 'inicio'
+                  ? 'text-white font-bold'
+                  : 'text-slate-200 hover:text-white font-medium'
               }`}
-              title="Panel de Administración LUMESA"
-              aria-label="Panel Admin"
             >
-              <ShieldCheck className="w-5 h-5 text-[#F27C36]" />
+              <span>Inicio</span>
+              {activeSection === 'inicio' && (
+                <span className="absolute left-0 right-0 -bottom-0.5 h-[3px] rounded-full bg-[#F27C36]" />
+              )}
             </button>
 
-            {/* PWA Install Button: visible on lg+, on mobile available in hamburger drawer */}
-            <div className="hidden lg:block">
-              <PWAInstallButton variant="header" />
+            <button
+              type="button"
+              onClick={() => onSelectSection('tienda')}
+              className={`relative py-2 text-sm whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                isEquiposActive
+                  ? 'text-white font-bold'
+                  : 'text-slate-200 hover:text-white font-medium'
+              }`}
+            >
+              <span>Equipos</span>
+              {isEquiposActive && (
+                <span className="absolute left-0 right-0 -bottom-0.5 h-[3px] rounded-full bg-[#F27C36]" />
+              )}
+            </button>
+
+            {/* Soluciones Dropdown */}
+            <div ref={solutionsRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setSolutionsOpen((prev) => !prev)}
+                className={`relative py-2 text-sm whitespace-nowrap shrink-0 inline-flex items-center gap-1 transition-colors cursor-pointer ${
+                  isSolutionsActive
+                    ? 'text-white font-bold'
+                    : 'text-slate-200 hover:text-white font-medium'
+                }`}
+                aria-expanded={solutionsOpen}
+              >
+                <span>Soluciones</span>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    solutionsOpen ? 'rotate-180 text-[#F27C36]' : 'text-slate-300'
+                  }`}
+                />
+                {isSolutionsActive && (
+                  <span className="absolute left-0 right-0 -bottom-0.5 h-[3px] rounded-full bg-[#F27C36]" />
+                )}
+              </button>
+
+              {solutionsOpen && (
+                <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-60 rounded-xl bg-white text-slate-800 shadow-2xl border border-slate-200 py-2 z-50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelectSection('renta_venta');
+                      setSolutionsOpen(false);
+                    }}
+                    className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-start gap-3 transition cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-[#F27C36] mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-sm font-bold text-[#102540]">Renta y Venta de Equipos</div>
+                      <div className="text-xs text-slate-500">Catálogo y comparador técnico</div>
+                    </div>
+                  </button>
+
+                  {showSoftware && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectSection('software');
+                        setSolutionsOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-start gap-3 transition cursor-pointer"
+                    >
+                      <Cpu className="w-4 h-4 text-[#F27C36] mt-0.5 shrink-0" />
+                      <div>
+                        <div className="text-sm font-bold text-[#102540]">Software Kyocera</div>
+                        <div className="text-xs text-slate-500">Gestión documental y control</div>
+                      </div>
+                    </button>
+                  )}
+
+                  <div className="my-1 border-t border-slate-100" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelectSection('contacto');
+                      setSolutionsOpen(false);
+                    }}
+                    className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-start gap-3 transition cursor-pointer"
+                  >
+                    <PhoneCall className="w-4 h-4 text-[#F27C36] mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-sm font-bold text-[#102540]">Asesoría y Cotización</div>
+                      <div className="text-xs text-slate-500">Planes mensuales a tu medida</div>
+                    </div>
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Carrito de compras: ALWAYS VISIBLE */}
             <button
-              onClick={onOpenCart}
-              className="relative p-2 sm:p-2.5 rounded-xl bg-[#394B61] hover:bg-[#000000] text-white border border-[#394B61] hover:border-[#F27C36] transition flex items-center justify-center shadow-sm shrink-0 cursor-pointer"
-              aria-label={`Carrito de compras con ${totalCartCount} productos`}
-              title="Ver Carrito de Compras"
+              type="button"
+              onClick={() => onSelectSection('nosotros')}
+              className={`relative py-2 text-sm whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                activeSection === 'nosotros'
+                  ? 'text-white font-bold'
+                  : 'text-slate-200 hover:text-white font-medium'
+              }`}
             >
-              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              <span>Nosotros</span>
+              {activeSection === 'nosotros' && (
+                <span className="absolute left-0 right-0 -bottom-0.5 h-[3px] rounded-full bg-[#F27C36]" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onSelectSection('contacto')}
+              className={`relative py-2 text-sm whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                activeSection === 'contacto'
+                  ? 'text-white font-bold'
+                  : 'text-slate-200 hover:text-white font-medium'
+              }`}
+            >
+              <span>Contacto</span>
+              {activeSection === 'contacto' && (
+                <span className="absolute left-0 right-0 -bottom-0.5 h-[3px] rounded-full bg-[#F27C36]" />
+              )}
+            </button>
+          </nav>
+
+          {/* Right: Minimal Icon Actions (Search, Cart, subtle Admin) */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setSearchOpen((prev) => !prev);
+                setMobileMenuOpen(false);
+              }}
+              className={`p-2 rounded-lg transition cursor-pointer ${
+                searchOpen
+                  ? 'bg-white/15 text-[#F27C36]'
+                  : 'text-white hover:bg-white/10'
+              }`}
+              aria-label="Buscar equipos"
+              title="Buscar equipos"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenCart}
+              className="relative p-2 rounded-lg text-white hover:bg-white/10 transition cursor-pointer"
+              aria-label={`Carrito de compras con ${totalCartCount} productos`}
+              title="Carrito de Compras"
+            >
+              <ShoppingCart className="w-5 h-5" />
               {totalCartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] sm:min-w-[20px] h-4.5 sm:h-5 px-1 rounded-full bg-[#F27C36] text-white text-[10px] sm:text-[11px] font-bold flex items-center justify-center shadow-lg animate-pulse">
+                <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#F27C36] text-white text-[10px] font-bold flex items-center justify-center leading-none tabular-nums shadow-sm">
                   {totalCartCount}
                 </span>
               )}
             </button>
 
-            {/* Botón COTIZAR: ALWAYS VISIBLE */}
+            {/* Discreet Admin access on desktop */}
             <button
-              onClick={onOpenQuickQuote}
-              className="inline-flex items-center space-x-1 sm:space-x-1.5 bg-[#F27C36] hover:bg-[#d96624] active:bg-[#c2591b] text-white px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-extrabold tracking-wider uppercase transition shadow-md shrink-0 cursor-pointer"
-              title="Solicitar Cotización Inmediata"
+              type="button"
+              onClick={onOpenAdmin}
+              className={`hidden lg:flex p-2 rounded-lg transition cursor-pointer ${
+                activeSection === 'admin'
+                  ? 'bg-[#F27C36] text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
+              }`}
+              title="Panel de Administración LUMESA"
+              aria-label="Panel Admin"
             >
-              <span>COTIZAR</span>
-              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 hidden sm:inline" />
-            </button>
-
-            {/* Mobile Hamburger Menu Toggle: ALWAYS CLEARLY VISIBLE ON MOBILE (< lg) */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 sm:p-2.5 rounded-xl text-white bg-[#394B61] hover:bg-[#2b3c50] border border-[#394B61] transition shrink-0 cursor-pointer flex items-center justify-center ml-0.5"
-              aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú de navegación"}
-            >
-              {mobileMenuOpen ? (
-                <X className="w-5 h-5 text-[#F27C36]" />
-              ) : (
-                <Menu className="w-5 h-5 text-white" />
-              )}
+              <ShieldCheck className="w-[18px] h-[18px]" />
             </button>
           </div>
         </div>
       </div>
 
+      {/* Collapsible Quick Search Bar */}
+      {searchOpen && (
+        <div className="bg-[#0B1B30] border-t border-[#1E3A5F] px-4 sm:px-6 lg:px-8 py-3">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="max-w-2xl mx-auto flex items-center gap-2"
+          >
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={headerSearch}
+                onChange={(e) => setHeaderSearch(e.target.value)}
+                placeholder="Buscar equipo por modelo (ej. MA3500cix, MZ2501ci)..."
+                className="w-full bg-white text-slate-900 placeholder-slate-400 text-sm pl-10 pr-9 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#F27C36]"
+              />
+              {headerSearch && (
+                <button
+                  type="button"
+                  onClick={() => setHeaderSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="px-4 py-2.5 bg-[#F27C36] hover:bg-[#d96624] text-white text-sm font-bold rounded-lg transition whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              Buscar
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#182F4F] border-t border-[#394B61] px-4 pt-3 pb-6 space-y-3">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300 px-3 py-1">
-            Secciones Públicas
-          </div>
-
+        <div className="lg:hidden bg-[#102540] border-t border-[#1E3A5F] px-4 pt-3 pb-6 space-y-3 shadow-2xl">
           <div className="space-y-1">
-            {navLinks.map((link) => {
+            {mobileNavLinks.map((link) => {
               const Icon = link.icon;
-              const isActive = activeSection === link.id;
+              const isActive =
+                activeSection === link.id ||
+                (link.id === 'renta_venta' && (activeSection as string) === 'hardware');
               return (
                 <button
                   key={link.id}
+                  type="button"
                   onClick={() => {
                     onSelectSection(link.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-semibold flex items-center space-x-3 transition ${
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-3 transition cursor-pointer ${
                     isActive
-                      ? 'bg-[#394B61] text-white border border-[#F27C36]'
-                      : 'text-slate-200 hover:bg-[#394B61]/60 hover:text-white'
+                      ? 'bg-[#1B375B] text-white'
+                      : 'text-slate-200 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-[#F27C36]' : 'text-slate-400'}`} />
-                  <span className={isActive ? 'text-[#F27C36] font-bold' : ''}>
-                    {link.name}
-                  </span>
+                  <span className={isActive ? 'text-[#F27C36] font-bold' : ''}>{link.name}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Dedicated Admin Roles in Mobile Menu */}
-          <div className="pt-3 border-t border-[#394B61] space-y-2">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-[#F27C36] px-1">
-              Acceso a Roles de Administración
+          <div className="pt-2">
+            <PWAInstallButton variant="header" />
+          </div>
+
+          {/* Admin Access in Mobile Drawer */}
+          <div className="pt-3 border-t border-[#1E3A5F] space-y-2">
+            <div className="text-xs font-semibold text-slate-400 px-1">
+              Administración
             </div>
 
-            {/* Direct Link: Admin Página Web (CMS) */}
             <button
+              type="button"
               onClick={() => {
                 if (onSelectRoleAndOpenAdmin) {
                   onSelectRoleAndOpenAdmin('admin_web');
@@ -229,19 +441,17 @@ export const Header: React.FC<HeaderProps> = ({
                 }
                 setMobileMenuOpen(false);
               }}
-              className="w-full py-2.5 px-3 bg-[#394B61]/70 hover:bg-[#394B61] text-white rounded-xl text-xs font-bold border border-[#F27C36]/40 text-left flex items-center justify-between transition"
+              className="w-full py-2.5 px-3 bg-[#173254] hover:bg-[#1E3E66] text-white rounded-xl text-xs font-bold text-left flex items-center justify-between transition cursor-pointer"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-[#F27C36]" />
                 <span>Admin Página Web (CMS)</span>
               </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F27C36]/20 text-[#F27C36] font-mono">
-                Slider & Textos
-              </span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             </button>
 
-            {/* Direct Link: Admin Tienda en Línea */}
             <button
+              type="button"
               onClick={() => {
                 if (onSelectRoleAndOpenAdmin) {
                   onSelectRoleAndOpenAdmin('admin_tienda');
@@ -250,19 +460,17 @@ export const Header: React.FC<HeaderProps> = ({
                 }
                 setMobileMenuOpen(false);
               }}
-              className="w-full py-2.5 px-3 bg-[#394B61]/70 hover:bg-[#394B61] text-white rounded-xl text-xs font-bold border border-emerald-500/40 text-left flex items-center justify-between transition"
+              className="w-full py-2.5 px-3 bg-[#173254] hover:bg-[#1E3E66] text-white rounded-xl text-xs font-bold text-left flex items-center justify-between transition cursor-pointer"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <Store className="w-4 h-4 text-emerald-400" />
                 <span>Admin Tienda en Línea</span>
               </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">
-                Productos & Pedidos
-              </span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             </button>
 
-            {/* Direct Link: Super Administrador */}
             <button
+              type="button"
               onClick={() => {
                 if (onSelectRoleAndOpenAdmin) {
                   onSelectRoleAndOpenAdmin('super_admin');
@@ -271,26 +479,13 @@ export const Header: React.FC<HeaderProps> = ({
                 }
                 setMobileMenuOpen(false);
               }}
-              className="w-full py-2.5 px-3 bg-[#000000] hover:bg-[#394B61] text-white rounded-xl text-xs font-bold border border-[#394B61] text-left flex items-center justify-between transition"
+              className="w-full py-2.5 px-3 bg-[#0B1B30] hover:bg-[#173254] text-white rounded-xl text-xs font-bold text-left flex items-center justify-between transition cursor-pointer"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <KeyRound className="w-4 h-4 text-[#F27C36]" />
-                <span>Super Administrador (Total)</span>
+                <span>Super Administrador</span>
               </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F27C36]/20 text-[#F27C36] font-mono">
-                Full Access
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                onSelectSection('contacto');
-                setMobileMenuOpen(false);
-              }}
-              className="w-full mt-2 py-3 bg-[#F27C36] hover:bg-[#d96624] text-white rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wider text-center flex items-center justify-center space-x-1.5 transition shadow"
-            >
-              <span>COTIZAR</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             </button>
           </div>
         </div>
@@ -298,4 +493,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-

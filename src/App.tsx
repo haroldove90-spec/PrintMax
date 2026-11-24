@@ -628,7 +628,7 @@ export default function App() {
       {/* LUMESA Splash Screen with clean un-encapsulated logo */}
       <SplashScreen />
 
-      {/* Header (LUMESA Corporate Deep Navy #182F4F with #F27C36 accents and PWA button) - Only visible on public site */}
+      {/* Header (LUMESA Corporate Navy with clean desktop/mobile layout) - Only visible on public site */}
       {activeSection !== 'admin' && (
         <Header
           activeSection={activeSection}
@@ -645,6 +645,10 @@ export default function App() {
           }}
           currentUser={currentUser}
           showSoftware={siteContent.visibility?.showSoftwareSection ?? false}
+          onSearchCatalog={(query) => {
+            setSearchQuery(query);
+            navigateToSection('tienda');
+          }}
         />
       )}
 
