@@ -72,8 +72,7 @@ function parseListingTypeValue(
   }
   if (existing) return existing;
   if (rentalVal && rentalVal > 0 && priceVal <= 0) return 'renta';
-  if (rentalVal && rentalVal > 0 && priceVal > 0) return 'ambos';
-  return 'venta';
+  return 'ambos';
 }
 
 function mapCategorySlugAndLabel(

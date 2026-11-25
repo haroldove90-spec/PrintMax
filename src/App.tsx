@@ -1020,27 +1020,6 @@ export default function App() {
         <PWAInstallButton variant="floating" />
       )}
 
-      {/* Floating Shopping Cart Button (Always accessible on public sections) */}
-      {activeSection !== 'admin' && (
-        <aside aria-label="Carrito flotante" className="fixed bottom-22 right-6 z-40">
-          <button
-            onClick={() => setIsCartOpen(true)}
-            className="group relative flex items-center space-x-2 bg-[#182F4F] hover:bg-[#394B61] active:bg-[#000000] text-white p-3.5 sm:px-4 sm:py-3 rounded-full border border-[#394B61] hover:border-[#F27C36] shadow-2xl transition transform hover:scale-105"
-            title="Ver Carrito de Compras LUMESA"
-          >
-            <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-[#F27C36] shrink-0" />
-            <span className="hidden sm:inline text-xs font-bold tracking-wide">
-              Carrito ({cartItems.reduce((acc, it) => acc + it.quantity, 0)})
-            </span>
-            {cartItems.reduce((acc, it) => acc + it.quantity, 0) > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-[#F27C36] text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-[#F27C36]/50 animate-bounce">
-                {cartItems.reduce((acc, it) => acc + it.quantity, 0)}
-              </span>
-            )}
-          </button>
-        </aside>
-      )}
-
       {/* Floating WhatsApp Action Button */}
       {activeSection !== 'admin' && siteContent.whatsappButton?.enabled !== false && (
         <aside aria-label="Contacto rápido" className="fixed bottom-6 right-6 z-40">

@@ -13,7 +13,7 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 import { Product, StoreCategory } from '../types';
-import { allowsSale, allowsRent, buildRentalWhatsAppUrl } from '../utils/productHelpers';
+import { buildRentalWhatsAppUrl } from '../utils/productHelpers';
 
 interface OnlineStoreSectionProps {
   products: Product[];
@@ -230,11 +230,6 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
       });
   }, [products, selectedTypes, selectedTechs, selectedFormats, searchQuery, sortBy]);
 
-  const bannerProductImage = useMemo(() => {
-    const withImage = products.find((p) => p.image && p.image.trim().length > 0);
-    return withImage?.image || '';
-  }, [products]);
-
   const renderFilterGroups = () => (
     <div className="space-y-5">
       {/* Tipo de equipo */}
@@ -399,12 +394,32 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
     >
       {/* Top Section Banner ("Equipos de impresión") */}
       <div className="relative overflow-hidden bg-gradient-to-r from-white via-[#F9FAFC] to-[#EEF2F6] border-b border-slate-200/90">
-        {/* Decorative orange curved sweep on desktop */}
+        {/* Mobile Orange Banner Accent ABOVE Title (< md) */}
+        <div className="md:hidden relative h-12 w-full overflow-hidden bg-gradient-to-r from-[#F27C36] via-[#FF8A3D] to-[#E66418]">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 400 48"
+            preserveAspectRatio="none"
+            className="absolute inset-0 w-full h-full pointer-events-none select-none"
+          >
+            <path
+              d="M0,48 C95,12 225,6 400,26 L400,48 Z"
+              fill="#FFFFFF"
+              opacity="0.96"
+            />
+            <path
+              d="M150,48 C230,22 320,18 400,32 L400,48 Z"
+              fill="#F9FAFC"
+            />
+          </svg>
+        </div>
+
+        {/* Desktop Orange Curved Sweep on Right (md+, without floating equipment image) */}
         <svg
           aria-hidden="true"
           viewBox="0 0 600 220"
           preserveAspectRatio="none"
-          className="hidden md:block absolute right-0 bottom-0 h-full w-[58%] lg:w-[52%] pointer-events-none select-none"
+          className="hidden md:block absolute right-0 bottom-0 h-full w-[52%] lg:w-[46%] pointer-events-none select-none"
         >
           <defs>
             <linearGradient id="lumesaBannerOrange" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -423,9 +438,9 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
           />
         </svg>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex items-center justify-between gap-6">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-6 sm:py-8 lg:py-10 flex items-center justify-between gap-6">
           {/* Left: Vertical orange accent + Title & Subtitle */}
-          <div className="flex items-stretch gap-3.5 sm:gap-4 max-w-xl z-10">
+          <div className="flex items-stretch gap-3 sm:gap-4 max-w-xl z-10">
             <span
               aria-hidden="true"
               className="w-1.5 rounded-full bg-[#F27C36] shrink-0"
@@ -438,28 +453,6 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                 Conoce nuestra selección de equipos Kyocera disponibles para renta y venta.
               </p>
             </div>
-          </div>
-
-          {/* Right: Clean Kyocera visual showcase on desktop */}
-          <div className="hidden md:flex items-center justify-end relative z-10 shrink-0 pr-2 lg:pr-6">
-            {bannerProductImage ? (
-              <div className="h-28 lg:h-36 w-52 lg:w-72 flex items-center justify-end">
-                <img
-                  src={bannerProductImage}
-                  alt="Equipo de impresión Kyocera"
-                  referrerPolicy="no-referrer"
-                  className="max-h-full max-w-full object-contain drop-shadow-xl"
-                />
-              </div>
-            ) : (
-              <div className="h-24 lg:h-32 w-48 lg:w-64 rounded-2xl bg-white/90 border border-slate-200/80 shadow-md flex items-center justify-center gap-3 px-5">
-                <Printer className="w-10 h-10 text-[#102540]" />
-                <div className="text-left">
-                  <div className="text-sm font-extrabold text-[#102540] tracking-tight">KYOCERA</div>
-                  <div className="text-xs text-slate-500">ECOSYS & TASKalfa</div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -632,10 +625,9 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                 {filteredProducts.map((product) => {
-                  const canRent = allowsRent(product);
-                  const canSale = allowsSale(product);
+                  const isEquipment = getEquipmentType(product) !== 'otros';
                   const speedLabel = getSpeedDisplay(product);
                   const formatLabel = getPaperFormat(product) || '—';
                   const subtitle = getCardSubtitle(product);
@@ -722,9 +714,9 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                         </button>
                       </div>
 
-                      {/* Action Buttons (Respects Admin Sale/Rent Assignment) */}
+                      {/* Dual Action Buttons: Rentar ahora (WhatsApp) + Comprar ahora */}
                       <div className="space-y-2 pt-1">
-                        {canRent && (
+                        {isEquipment && (
                           <a
                             href={buildRentalWhatsAppUrl(product, whatsappPhone)}
                             target="_blank"
@@ -736,21 +728,14 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                           </a>
                         )}
 
-                        {canSale && (
-                          <button
-                            type="button"
-                            onClick={() => onBuyNow(product)}
-                            disabled={!product.inStock}
-                            className={`w-full py-2.5 px-3 rounded-lg text-xs sm:text-[13px] font-bold transition flex items-center justify-center gap-2 whitespace-nowrap ${
-                              product.inStock
-                                ? 'bg-[#102540] hover:bg-[#193860] active:bg-[#0B1B30] text-white shadow-xs cursor-pointer'
-                                : 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                            }`}
-                          >
-                            <ShoppingCart className="w-4 h-4 shrink-0" />
-                            <span>{product.inStock ? 'Comprar ahora' : 'Sin existencia'}</span>
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => onBuyNow(product)}
+                          className="w-full py-2.5 px-3 rounded-lg bg-[#102540] hover:bg-[#193860] active:bg-[#0B1B30] text-white text-xs sm:text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-xs whitespace-nowrap cursor-pointer"
+                        >
+                          <ShoppingCart className="w-4 h-4 shrink-0" />
+                          <span>Comprar ahora</span>
+                        </button>
                       </div>
                     </article>
                   );

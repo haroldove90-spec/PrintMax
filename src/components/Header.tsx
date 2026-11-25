@@ -89,8 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const mobileNavLinks: { id: AppSection; name: string; icon: React.ElementType }[] = [
     { id: 'inicio', name: 'Inicio', icon: Home },
-    { id: 'tienda', name: 'Equipos (Tienda en Línea)', icon: Store },
-    { id: 'renta_venta', name: 'Soluciones de Renta / Venta', icon: Printer },
+    { id: 'tienda', name: 'Equipos', icon: Store },
     ...(showSoftware ? [{ id: 'software' as AppSection, name: 'Software Kyocera', icon: Cpu }] : []),
     { id: 'nosotros', name: 'Nosotros', icon: Building2 },
     { id: 'contacto', name: 'Contacto', icon: PhoneCall }
@@ -218,39 +217,25 @@ export const Header: React.FC<HeaderProps> = ({
 
               {solutionsOpen && (
                 <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-60 rounded-xl bg-white text-slate-800 shadow-2xl border border-slate-200 py-2 z-50">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSelectSection('renta_venta');
-                      setSolutionsOpen(false);
-                    }}
-                    className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-start gap-3 transition cursor-pointer"
-                  >
-                    <Printer className="w-4 h-4 text-[#F27C36] mt-0.5 shrink-0" />
-                    <div>
-                      <div className="text-sm font-bold text-[#102540]">Renta y Venta de Equipos</div>
-                      <div className="text-xs text-slate-500">Catálogo y comparador técnico</div>
-                    </div>
-                  </button>
-
                   {showSoftware && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onSelectSection('software');
-                        setSolutionsOpen(false);
-                      }}
-                      className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-start gap-3 transition cursor-pointer"
-                    >
-                      <Cpu className="w-4 h-4 text-[#F27C36] mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-sm font-bold text-[#102540]">Software Kyocera</div>
-                        <div className="text-xs text-slate-500">Gestión documental y control</div>
-                      </div>
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSelectSection('software');
+                          setSolutionsOpen(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-start gap-3 transition cursor-pointer"
+                      >
+                        <Cpu className="w-4 h-4 text-[#F27C36] mt-0.5 shrink-0" />
+                        <div>
+                          <div className="text-sm font-bold text-[#102540]">Software Kyocera</div>
+                          <div className="text-xs text-slate-500">Gestión documental y control</div>
+                        </div>
+                      </button>
+                      <div className="my-1 border-t border-slate-100" />
+                    </>
                   )}
-
-                  <div className="my-1 border-t border-slate-100" />
 
                   <button
                     type="button"
