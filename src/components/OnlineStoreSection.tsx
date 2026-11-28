@@ -10,10 +10,16 @@ import {
   Info,
   Gauge,
   FileText,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Download
 } from 'lucide-react';
 import { Product, StoreCategory } from '../types';
-import { buildRentalWhatsAppUrl } from '../utils/productHelpers';
+import {
+  buildRentalWhatsAppUrl,
+  resolveProductDatasheetUrl,
+  buildDatasheetDownloadUrl,
+  getDatasheetDownloadFilename
+} from '../utils/productHelpers';
 
 interface OnlineStoreSectionProps {
   products: Product[];
@@ -631,6 +637,11 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                   const speedLabel = getSpeedDisplay(product);
                   const formatLabel = getPaperFormat(product) || '—';
                   const subtitle = getCardSubtitle(product);
+                  const resolvedDatasheetUrl = resolveProductDatasheetUrl(product);
+                  const datasheetDownloadHref = resolvedDatasheetUrl
+                    ? buildDatasheetDownloadUrl(resolvedDatasheetUrl, product)
+                    : undefined;
+                  const datasheetFilename = getDatasheetDownloadFilename(product);
 
                   return (
                     <article
@@ -703,15 +714,29 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                           </div>
                         </div>
 
-                        {/* Ver especificaciones link */}
-                        <button
-                          type="button"
-                          onClick={() => onOpenProductDetail(product)}
-                          className="w-full py-1.5 mb-3 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-[#F27C36] hover:text-[#d96624] transition cursor-pointer"
-                        >
-                          <Info className="w-3.5 h-3.5 shrink-0" />
-                          <span>Ver especificaciones</span>
-                        </button>
+                        {/* Ver especificaciones + Descargar ficha técnica PDF */}
+                        <div className="space-y-1 mb-3">
+                          <button
+                            type="button"
+                            onClick={() => onOpenProductDetail(product)}
+                            className="w-full py-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-[#F27C36] hover:text-[#d96624] transition cursor-pointer"
+                          >
+                            <Info className="w-3.5 h-3.5 shrink-0" />
+                            <span>Ver especificaciones</span>
+                          </button>
+
+                          {datasheetDownloadHref && (
+                            <a
+                              href={datasheetDownloadHref}
+                              download={datasheetFilename}
+                              rel="noopener noreferrer"
+                              className="w-full py-1 inline-flex items-center justify-center gap-1.5 text-[11px] font-bold text-[#102540] hover:text-[#1D63D6] transition"
+                            >
+                              <Download className="w-3.5 h-3.5 shrink-0 text-[#1D63D6]" />
+                              <span>Descargar ficha técnica (PDF)</span>
+                            </a>
+                          )}
+                        </div>
                       </div>
 
                       {/* Dual Action Buttons: Rentar ahora (WhatsApp) + Comprar ahora */}

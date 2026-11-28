@@ -8,7 +8,12 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { Product } from '../types';
-import { buildRentalWhatsAppUrl } from '../utils/productHelpers';
+import {
+  buildRentalWhatsAppUrl,
+  resolveProductDatasheetUrl,
+  buildDatasheetDownloadUrl,
+  getDatasheetDownloadFilename
+} from '../utils/productHelpers';
 import { downloadProductDatasheetPdf } from '../utils/productPdfGenerator';
 
 interface ProductDetailModalProps {
@@ -30,7 +35,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 }) => {
   if (!isOpen || !product) return null;
 
-  const hasExternalDatasheet = Boolean(product.datasheetUrl && product.datasheetUrl.trim().length > 0);
+  const resolvedDatasheetUrl = resolveProductDatasheetUrl(product);
+  const downloadHref = resolvedDatasheetUrl
+    ? buildDatasheetDownloadUrl(resolvedDatasheetUrl, product)
+    : undefined;
+  const downloadFilename = getDatasheetDownloadFilename(product);
 
   return (
     <div
@@ -254,12 +263,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <span>Solicitar informes por WhatsApp</span>
             </a>
 
-            {hasExternalDatasheet ? (
+            {downloadHref ? (
               <a
-                href={product.datasheetUrl}
-                target="_blank"
+                href={downloadHref}
+                download={downloadFilename}
                 rel="noopener noreferrer"
-                download
                 className="w-full py-3.5 px-5 rounded-xl bg-[#102540] hover:bg-[#193860] active:bg-[#0B1B30] text-white font-bold text-sm transition flex items-center justify-center gap-2.5 shadow-sm text-center"
               >
                 <Download className="w-5 h-5 shrink-0" />

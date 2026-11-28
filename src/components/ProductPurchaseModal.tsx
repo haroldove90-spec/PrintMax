@@ -10,7 +10,12 @@ import {
   Printer
 } from 'lucide-react';
 import { Product } from '../types';
-import { buildPurchaseWhatsAppUrl } from '../utils/productHelpers';
+import {
+  buildPurchaseWhatsAppUrl,
+  resolveProductDatasheetUrl,
+  buildDatasheetDownloadUrl,
+  getDatasheetDownloadFilename
+} from '../utils/productHelpers';
 import { downloadProductDatasheetPdf } from '../utils/productPdfGenerator';
 
 interface ProductPurchaseModalProps {
@@ -105,9 +110,11 @@ export const ProductPurchaseModal: React.FC<ProductPurchaseModalProps> = ({
 
   if (!isOpen || !product) return null;
 
-  const hasExternalDatasheet = Boolean(
-    product.datasheetUrl && product.datasheetUrl.trim().length > 0
-  );
+  const resolvedDatasheetUrl = resolveProductDatasheetUrl(product);
+  const downloadHref = resolvedDatasheetUrl
+    ? buildDatasheetDownloadUrl(resolvedDatasheetUrl, product)
+    : undefined;
+  const downloadFilename = getDatasheetDownloadFilename(product);
 
   const subtitle = resolveSubtitle(product);
   const speedText = resolveSpeedText(product);
@@ -321,12 +328,11 @@ export const ProductPurchaseModal: React.FC<ProductPurchaseModalProps> = ({
           {/* Bottom Action Bar: PDF Link + WhatsApp Info + Add to Cart */}
           <div className="mt-7 pt-5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* 1. Descargar ficha técnica (PDF) */}
-            {hasExternalDatasheet ? (
+            {downloadHref ? (
               <a
-                href={product.datasheetUrl}
-                target="_blank"
+                href={downloadHref}
+                download={downloadFilename}
                 rel="noopener noreferrer"
-                download
                 className="inline-flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm font-bold text-[#1D63D6] hover:text-[#144BA8] underline underline-offset-4 py-2 transition whitespace-nowrap"
               >
                 <FileText className="w-4 h-4 shrink-0" />

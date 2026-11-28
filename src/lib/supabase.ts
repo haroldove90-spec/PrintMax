@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { SiteContent, Product, OrderDetails, OrderStatus } from '../types';
+import { normalizeDatasheetUrl, resolveProductDatasheetUrl } from '../utils/productHelpers';
 
 export const SUPABASE_URL = 'https://mzxmiwvesflacxxerlxl.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable_pvTWBDSQh30B6D-yBxUlnQ_RBEymjgM';
@@ -150,7 +151,11 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
           inStock: Boolean(item.in_stock ?? item.inStock ?? true),
           stockQuantity: item.stock_quantity !== undefined && item.stock_quantity !== null ? Number(item.stock_quantity) : item.stockQuantity,
           minStockAlert: item.min_stock_alert !== undefined && item.min_stock_alert !== null ? Number(item.min_stock_alert) : item.minStockAlert,
-          datasheetUrl: item.datasheet_url || item.datasheetUrl || undefined,
+          datasheetUrl: resolveProductDatasheetUrl({
+            code: item.code,
+            name: item.name,
+            datasheetUrl: item.datasheet_url || item.datasheetUrl || undefined
+          }),
           rating: Number(item.rating || 5.0),
           reviewsCount: Number(item.reviews_count || item.reviewsCount || 0),
           originalRef: item.original_ref || item.originalRef || undefined
@@ -193,7 +198,7 @@ function mapProductToDbRow(product: Product) {
     in_stock: product.inStock ?? true,
     stock_quantity: product.stockQuantity ?? (product.inStock ? 5 : 0),
     min_stock_alert: product.minStockAlert ?? 2,
-    datasheet_url: product.datasheetUrl || null,
+    datasheet_url: normalizeDatasheetUrl(product.datasheetUrl) || null,
     rating: product.rating ?? 5.0,
     reviews_count: product.reviewsCount ?? 0,
     original_ref: product.originalRef || null,
