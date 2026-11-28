@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   Home,
   Building2,
-  Printer,
+  Layers,
   Cpu,
   Store,
   PhoneCall,
@@ -44,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [solutionsOpen, setSolutionsOpen] = useState(false);
+  const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [headerSearch, setHeaderSearch] = useState('');
 
@@ -87,13 +88,10 @@ export const Header: React.FC<HeaderProps> = ({
     activeSection === 'renta_venta' ||
     (activeSection as string) === 'hardware';
 
-  const mobileNavLinks: { id: AppSection; name: string; icon: React.ElementType }[] = [
-    { id: 'inicio', name: 'Inicio', icon: Home },
-    { id: 'tienda', name: 'Equipos', icon: Store },
-    ...(showSoftware ? [{ id: 'software' as AppSection, name: 'Software Kyocera', icon: Cpu }] : []),
-    { id: 'nosotros', name: 'Nosotros', icon: Building2 },
-    { id: 'contacto', name: 'Contacto', icon: PhoneCall }
-  ];
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+    setMobileSolutionsOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-[#102540] text-white border-b border-[#1E3A5F] shadow-md font-['Plus_Jakarta_Sans',sans-serif]">
@@ -380,30 +378,147 @@ export const Header: React.FC<HeaderProps> = ({
       {mobileMenuOpen && (
         <div className="lg:hidden bg-[#102540] border-t border-[#1E3A5F] px-4 pt-3 pb-6 space-y-3 shadow-2xl">
           <div className="space-y-1">
-            {mobileNavLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive =
-                activeSection === link.id ||
-                (link.id === 'renta_venta' && (activeSection as string) === 'hardware');
-              return (
-                <button
-                  key={link.id}
-                  type="button"
-                  onClick={() => {
-                    onSelectSection(link.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-3 transition cursor-pointer ${
-                    isActive
-                      ? 'bg-[#1B375B] text-white'
-                      : 'text-slate-200 hover:bg-white/10 hover:text-white'
+            {/* Inicio */}
+            <button
+              type="button"
+              onClick={() => {
+                onSelectSection('inicio');
+                closeMobileMenu();
+              }}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-3 transition cursor-pointer ${
+                activeSection === 'inicio'
+                  ? 'bg-[#1B375B] text-white'
+                  : 'text-slate-200 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Home className={`w-4 h-4 ${activeSection === 'inicio' ? 'text-[#F27C36]' : 'text-slate-400'}`} />
+              <span className={activeSection === 'inicio' ? 'text-[#F27C36] font-bold' : ''}>Inicio</span>
+            </button>
+
+            {/* Equipos */}
+            <button
+              type="button"
+              onClick={() => {
+                onSelectSection('tienda');
+                closeMobileMenu();
+              }}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-3 transition cursor-pointer ${
+                isEquiposActive
+                  ? 'bg-[#1B375B] text-white'
+                  : 'text-slate-200 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Store className={`w-4 h-4 ${isEquiposActive ? 'text-[#F27C36]' : 'text-slate-400'}`} />
+              <span className={isEquiposActive ? 'text-[#F27C36] font-bold' : ''}>Equipos</span>
+            </button>
+
+            {/* Soluciones (Expandable Submenu matching Desktop) */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setMobileSolutionsOpen((prev) => !prev)}
+                aria-expanded={mobileSolutionsOpen}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-between gap-3 transition cursor-pointer ${
+                  isSolutionsActive || mobileSolutionsOpen
+                    ? 'bg-[#1B375B] text-white'
+                    : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-3">
+                  <Layers
+                    className={`w-4 h-4 ${
+                      isSolutionsActive || mobileSolutionsOpen ? 'text-[#F27C36]' : 'text-slate-400'
+                    }`}
+                  />
+                  <span className={isSolutionsActive ? 'text-[#F27C36] font-bold' : ''}>
+                    Soluciones
+                  </span>
+                </span>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    mobileSolutionsOpen ? 'rotate-180 text-[#F27C36]' : 'text-slate-400'
                   }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#F27C36]' : 'text-slate-400'}`} />
-                  <span className={isActive ? 'text-[#F27C36] font-bold' : ''}>{link.name}</span>
-                </button>
-              );
-            })}
+                />
+              </button>
+
+              {mobileSolutionsOpen && (
+                <div className="mt-1 ml-4 pl-3 border-l border-[#294A75] space-y-1">
+                  {showSoftware && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectSection('software');
+                        closeMobileMenu();
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold flex items-start gap-2.5 transition cursor-pointer ${
+                        activeSection === 'software'
+                          ? 'bg-[#1B375B] text-[#F27C36]'
+                          : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <Cpu className="w-4 h-4 text-[#F27C36] mt-0.5 shrink-0" />
+                      <div>
+                        <div className="font-bold">Software Kyocera</div>
+                        <div className="text-[11px] text-slate-400 font-normal">
+                          Gestión documental y control
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelectSection('contacto');
+                      closeMobileMenu();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-slate-200 hover:bg-white/10 hover:text-white flex items-start gap-2.5 transition cursor-pointer"
+                  >
+                    <PhoneCall className="w-4 h-4 text-[#F27C36] mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-bold">Asesoría y Cotización</div>
+                      <div className="text-[11px] text-slate-400 font-normal">
+                        Planes mensuales a tu medida
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Nosotros */}
+            <button
+              type="button"
+              onClick={() => {
+                onSelectSection('nosotros');
+                closeMobileMenu();
+              }}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-3 transition cursor-pointer ${
+                activeSection === 'nosotros'
+                  ? 'bg-[#1B375B] text-white'
+                  : 'text-slate-200 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Building2 className={`w-4 h-4 ${activeSection === 'nosotros' ? 'text-[#F27C36]' : 'text-slate-400'}`} />
+              <span className={activeSection === 'nosotros' ? 'text-[#F27C36] font-bold' : ''}>Nosotros</span>
+            </button>
+
+            {/* Contacto */}
+            <button
+              type="button"
+              onClick={() => {
+                onSelectSection('contacto');
+                closeMobileMenu();
+              }}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-3 transition cursor-pointer ${
+                activeSection === 'contacto'
+                  ? 'bg-[#1B375B] text-white'
+                  : 'text-slate-200 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <PhoneCall className={`w-4 h-4 ${activeSection === 'contacto' ? 'text-[#F27C36]' : 'text-slate-400'}`} />
+              <span className={activeSection === 'contacto' ? 'text-[#F27C36] font-bold' : ''}>Contacto</span>
+            </button>
           </div>
 
           <div className="pt-2">
