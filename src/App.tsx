@@ -1,23 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Header } from './components/Header';
-import { HeroSlider } from './components/HeroSlider';
-import { TrustStats } from './components/TrustStats';
-import { AboutSection } from './components/AboutSection';
-import { HardwareCatalog } from './components/HardwareCatalog';
-import { OnlineStoreSection } from './components/OnlineStoreSection';
-import { SoftwareSolutionsSection } from './components/SoftwareSolutionsSection';
-import { CoverageMapSection } from './components/CoverageMapSection';
-import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
-import { CartDrawer } from './components/CartDrawer';
-import { CheckoutModal } from './components/CheckoutModal';
-import { ProductDetailModal } from './components/ProductDetailModal';
-import { ProductPurchaseModal } from './components/ProductPurchaseModal';
-import { ProductComparatorModal } from './components/ProductComparatorModal';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { AdminLoginModal } from './components/admin/AdminLoginModal';
-import { ProductFormModal } from './components/admin/ProductFormModal';
-import { OrderDetailModal } from './components/admin/OrderDetailModal';
 import { SplashScreen } from './components/SplashScreen';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { PRODUCTS } from './data/mockData';
@@ -50,15 +33,35 @@ import {
   MessageCircle, 
   Store, 
   Printer, 
-  Calculator, 
   Cpu, 
-  Clock, 
   Building2, 
   ArrowRight, 
-  ChevronRight, 
-  ShieldCheck,
-  ShoppingCart
+  ChevronRight
 } from 'lucide-react';
+
+// Code-split sections and heavy modals so initial page loads stay fast and lightweight
+const HeroSlider = lazy(() => import('./components/HeroSlider').then((m) => ({ default: m.HeroSlider })));
+const TrustStats = lazy(() => import('./components/TrustStats').then((m) => ({ default: m.TrustStats })));
+const AboutSection = lazy(() => import('./components/AboutSection').then((m) => ({ default: m.AboutSection })));
+const OnlineStoreSection = lazy(() => import('./components/OnlineStoreSection').then((m) => ({ default: m.OnlineStoreSection })));
+const SoftwareSolutionsSection = lazy(() => import('./components/SoftwareSolutionsSection').then((m) => ({ default: m.SoftwareSolutionsSection })));
+const CoverageMapSection = lazy(() => import('./components/CoverageMapSection').then((m) => ({ default: m.CoverageMapSection })));
+const ContactSection = lazy(() => import('./components/ContactSection').then((m) => ({ default: m.ContactSection })));
+const CartDrawer = lazy(() => import('./components/CartDrawer').then((m) => ({ default: m.CartDrawer })));
+const CheckoutModal = lazy(() => import('./components/CheckoutModal').then((m) => ({ default: m.CheckoutModal })));
+const ProductDetailModal = lazy(() => import('./components/ProductDetailModal').then((m) => ({ default: m.ProductDetailModal })));
+const ProductPurchaseModal = lazy(() => import('./components/ProductPurchaseModal').then((m) => ({ default: m.ProductPurchaseModal })));
+const ProductComparatorModal = lazy(() => import('./components/ProductComparatorModal').then((m) => ({ default: m.ProductComparatorModal })));
+const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })));
+const AdminLoginModal = lazy(() => import('./components/admin/AdminLoginModal').then((m) => ({ default: m.AdminLoginModal })));
+const ProductFormModal = lazy(() => import('./components/admin/ProductFormModal').then((m) => ({ default: m.ProductFormModal })));
+const OrderDetailModal = lazy(() => import('./components/admin/OrderDetailModal').then((m) => ({ default: m.OrderDetailModal })));
+
+const SectionLoader: React.FC = () => (
+  <div className="min-h-[45vh] flex items-center justify-center bg-white">
+    <div className="w-8 h-8 rounded-full border-3 border-slate-200 border-t-[#F27C36] animate-spin" />
+  </div>
+);
 
 export default function App() {
   // Navigation: SEPARATE INDEPENDENT SECTIONS with reload persistence
@@ -191,20 +194,37 @@ export default function App() {
     return INITIAL_ADMIN_USERS[0]; // Default to Super Admin so user can test immediately
   });
 
-  // Sync state changes to LocalStorage
+  const hasHydratedProductsRef = useRef(false);
+  const hasHydratedOrdersRef = useRef(false);
+  const hasHydratedContentRef = useRef(false);
+  const ordersFetchedFromCloudRef = useRef(false);
+
+  // Sync state changes to LocalStorage (skip redundant initial mount writes)
   useEffect(() => {
+    if (!hasHydratedProductsRef.current) {
+      hasHydratedProductsRef.current = true;
+      return;
+    }
     try {
       localStorage.setItem('lumesa_products', JSON.stringify(products));
     } catch {}
   }, [products]);
 
   useEffect(() => {
+    if (!hasHydratedOrdersRef.current) {
+      hasHydratedOrdersRef.current = true;
+      return;
+    }
     try {
       localStorage.setItem('lumesa_orders', JSON.stringify(orders));
     } catch {}
   }, [orders]);
 
   useEffect(() => {
+    if (!hasHydratedContentRef.current) {
+      hasHydratedContentRef.current = true;
+      return;
+    }
     try {
       localStorage.setItem('lumesa_site_content', JSON.stringify(siteContent));
     } catch {}
@@ -226,15 +246,14 @@ export default function App() {
     } catch {}
   }, [activeSection]);
 
-  // Initial Sync from Supabase Cloud (with intelligent timestamp conflict resolution)
+  // Initial Sync from Supabase Cloud (only public content + products on startup)
   useEffect(() => {
     let isMounted = true;
     async function loadCloudData() {
       try {
-        const [cloudContent, cloudProducts, cloudOrders] = await Promise.all([
+        const [cloudContent, cloudProducts] = await Promise.all([
           fetchSiteContentFromSupabase(),
-          fetchProductsFromSupabase(),
-          fetchOrdersFromSupabase()
+          fetchProductsFromSupabase()
         ]);
         if (!isMounted) return;
 
@@ -315,9 +334,6 @@ export default function App() {
           );
           setProducts(cleanedCloudProducts);
         }
-        if (cloudOrders && cloudOrders.length > 0) {
-          setOrders(cloudOrders);
-        }
       } catch (err) {
         console.warn('Supabase initial fetch skipped:', err);
       }
@@ -325,6 +341,23 @@ export default function App() {
     loadCloudData();
     return () => { isMounted = false; };
   }, []);
+
+  // Load Orders from Supabase lazily only when entering the Admin Dashboard
+  useEffect(() => {
+    if (activeSection !== 'admin' || ordersFetchedFromCloudRef.current) return;
+    let isMounted = true;
+    ordersFetchedFromCloudRef.current = true;
+    fetchOrdersFromSupabase()
+      .then((cloudOrders) => {
+        if (isMounted && cloudOrders && cloudOrders.length > 0) {
+          setOrders(cloudOrders);
+        }
+      })
+      .catch((err) => {
+        console.warn('Supabase orders fetch skipped:', err);
+      });
+    return () => { isMounted = false; };
+  }, [activeSection]);
 
   // Cart state
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -680,6 +713,7 @@ export default function App() {
 
       {/* MAIN VIEW: RENDERS ONLY THE ACTIVE INDEPENDENT SECTION */}
       <main className="flex-1">
+        <Suspense fallback={<SectionLoader />}>
         {/* ========================================================= */}
         {/* 1. SECCIÓN INDEPENDIENTE: INICIO CON SLIDER Y CMS VIVO */}
         {/* ========================================================= */}
@@ -915,6 +949,7 @@ export default function App() {
             onChangeRole={handleChangeAdminRole}
           />
         )}
+        </Suspense>
       </main>
 
       {/* Footer Corporativo */}
@@ -926,94 +961,112 @@ export default function App() {
         />
       )}
 
-      {/* Modals & Drawers */}
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        items={cartItems}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onProceedToCheckout={handleProceedToCheckout}
-      />
+      {/* Lazy-Loaded Modals & Drawers (mounted only when opened) */}
+      <Suspense fallback={null}>
+        {isCartOpen && (
+          <CartDrawer
+            isOpen={isCartOpen}
+            onClose={() => setIsCartOpen(false)}
+            items={cartItems}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
+            onProceedToCheckout={handleProceedToCheckout}
+          />
+        )}
 
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        onBackToCart={() => {
-          setIsCheckoutOpen(false);
-          setIsCartOpen(true);
-        }}
-        items={cartItems}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onClearCart={handleClearCart}
-        onOrderCreated={handleOrderCreated}
-        paymentConfig={siteContent.paymentConfig}
-        coupons={siteContent.coupons}
-        whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
-      />
+        {isCheckoutOpen && (
+          <CheckoutModal
+            isOpen={isCheckoutOpen}
+            onClose={() => setIsCheckoutOpen(false)}
+            onBackToCart={() => {
+              setIsCheckoutOpen(false);
+              setIsCartOpen(true);
+            }}
+            items={cartItems}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
+            onClearCart={handleClearCart}
+            onOrderCreated={handleOrderCreated}
+            paymentConfig={siteContent.paymentConfig}
+            coupons={siteContent.coupons}
+            whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
+          />
+        )}
 
-      <ProductDetailModal
-        product={selectedProduct}
-        isOpen={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        onAddToCart={handleAddToCart}
-        onBuyNow={handleBuyNow}
-        isCompared={selectedProduct ? comparedProducts.some((p) => p.id === selectedProduct.id) : false}
-        onToggleCompare={handleToggleCompare}
-        whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
-      />
+        {selectedProduct && (
+          <ProductDetailModal
+            product={selectedProduct}
+            isOpen={!!selectedProduct}
+            onClose={() => setSelectedProduct(null)}
+            onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
+            isCompared={comparedProducts.some((p) => p.id === selectedProduct.id)}
+            onToggleCompare={handleToggleCompare}
+            whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
+          />
+        )}
 
-      <ProductPurchaseModal
-        product={purchaseProduct}
-        isOpen={!!purchaseProduct}
-        onClose={() => setPurchaseProduct(null)}
-        onAddToCart={handleAddFromPurchaseModal}
-        whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
-      />
+        {purchaseProduct && (
+          <ProductPurchaseModal
+            product={purchaseProduct}
+            isOpen={!!purchaseProduct}
+            onClose={() => setPurchaseProduct(null)}
+            onAddToCart={handleAddFromPurchaseModal}
+            whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
+          />
+        )}
 
-      <ProductComparatorModal
-        isOpen={isComparatorOpen}
-        onClose={() => setIsComparatorOpen(false)}
-        comparedProducts={comparedProducts}
-        onRemoveProduct={handleRemoveCompared}
-        onClearAll={handleClearAllCompared}
-        onAddToCart={handleAddToCart}
-        onBuyNow={handleBuyNow}
-        whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
-      />
+        {isComparatorOpen && (
+          <ProductComparatorModal
+            isOpen={isComparatorOpen}
+            onClose={() => setIsComparatorOpen(false)}
+            comparedProducts={comparedProducts}
+            onRemoveProduct={handleRemoveCompared}
+            onClearAll={handleClearAllCompared}
+            onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
+            whatsappPhone={siteContent.whatsappButton?.phone || siteContent.contact.whatsapp}
+          />
+        )}
 
-      {/* Admin Specific Modals */}
-      <AdminLoginModal
-        isOpen={isAdminLoginOpen}
-        onClose={() => setIsAdminLoginOpen(false)}
-        currentUser={currentUser}
-        onLogin={(user) => {
-          setCurrentUser(user);
-          navigateToSection('admin');
-        }}
-      />
+        {/* Admin Specific Modals */}
+        {isAdminLoginOpen && (
+          <AdminLoginModal
+            isOpen={isAdminLoginOpen}
+            onClose={() => setIsAdminLoginOpen(false)}
+            currentUser={currentUser}
+            onLogin={(user) => {
+              setCurrentUser(user);
+              navigateToSection('admin');
+            }}
+          />
+        )}
 
-      <ProductFormModal
-        isOpen={isProductFormOpen}
-        onClose={() => {
-          setIsProductFormOpen(false);
-          setProductToEdit(null);
-        }}
-        productToEdit={productToEdit}
-        onSave={handleSaveProduct}
-        categories={siteContent.storeCategories}
-      />
+        {isProductFormOpen && (
+          <ProductFormModal
+            isOpen={isProductFormOpen}
+            onClose={() => {
+              setIsProductFormOpen(false);
+              setProductToEdit(null);
+            }}
+            productToEdit={productToEdit}
+            onSave={handleSaveProduct}
+            categories={siteContent.storeCategories}
+          />
+        )}
 
-      <OrderDetailModal
-        isOpen={isOrderDetailOpen}
-        onClose={() => {
-          setIsOrderDetailOpen(false);
-          setOrderToInspect(null);
-        }}
-        order={orderToInspect}
-        onUpdateStatus={handleUpdateOrderStatus}
-      />
+        {isOrderDetailOpen && (
+          <OrderDetailModal
+            isOpen={isOrderDetailOpen}
+            onClose={() => {
+              setIsOrderDetailOpen(false);
+              setOrderToInspect(null);
+            }}
+            order={orderToInspect}
+            onUpdateStatus={handleUpdateOrderStatus}
+          />
+        )}
+      </Suspense>
 
       {/* Floating PWA Installation prompt on bottom-left for visitors */}
       {activeSection !== 'admin' && (

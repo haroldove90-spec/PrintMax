@@ -73,6 +73,9 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate, slides, show
                   <img
                     src={slide.imageUrl}
                     alt={slide.title}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchPriority={index === 0 ? 'high' : 'low'}
                     className="w-full h-full object-cover object-center scale-105 transition-transform duration-10000"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-[#000000] via-[#182F4F]/80 to-[#000000]/60" />

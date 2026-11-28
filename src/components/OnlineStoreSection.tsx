@@ -632,7 +632,7 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-                {filteredProducts.map((product) => {
+                {filteredProducts.map((product, index) => {
                   const isEquipment = getEquipmentType(product) !== 'otros';
                   const speedLabel = getSpeedDisplay(product);
                   const formatLabel = getPaperFormat(product) || '—';
@@ -660,6 +660,8 @@ export const OnlineStoreSection: React.FC<OnlineStoreSectionProps> = ({
                             <img
                               src={product.image}
                               alt={product.name}
+                              loading={index < 4 ? 'eager' : 'lazy'}
+                              decoding="async"
                               referrerPolicy="no-referrer"
                               className="max-h-full max-w-full object-contain transition-transform duration-200 group-hover:scale-105"
                             />
